@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id         Int         @id @default(autoincrement())
+  email      String?     @unique // Prisma setzt automatisch TEXT
+  name       String?     // TEXT für den Namen
+  challenges Challenge[] // Relation zu Challenges
+}
+
+model Challenge {
+  id         Int      @id @default(autoincrement())
+  title      String   // TEXT für den Titel
+  category   String?  // Optionaler TEXT
+  difficulty String?  // Optionaler Schwierigkeitsgrad
+  description String?  // Feld für die Beschreibung
+  duration   Int?     // Integer für die Dauer
+  completed  Boolean  @default(false) // Standardwert ist false
+  author     User     @relation(fields: [authorId], references: [id]) // Relation zu User
+  authorId   Int      // Fremdschlüssel
+  progress   Float    // Fortschritt als Float-Wert
+  age        Int //Alter
+  gender     String
+  created_at DateTime
+  updated_at DateTime
+  city_adress String
+  goal       String
+
+}
+    
