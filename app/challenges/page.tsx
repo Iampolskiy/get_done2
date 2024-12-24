@@ -1,6 +1,6 @@
 import { Challenge } from "@/types/types";
 import { PrismaClient } from "@prisma/client";
-import ChallengesClient from "./components/ChallengesClient";
+import ChallengesClient from "./ChallengesClient";
 
 export default async function ChallengesPage() {
   const prisma = new PrismaClient();

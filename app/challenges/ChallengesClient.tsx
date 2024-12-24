@@ -25,19 +25,22 @@ export default function ChallengesClient({
               <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
                 {challenge.title}
               </div>
-              <div className="w-40 bg-gray-200 rounded h-4">
-                <div
-                  className="bg-blue-500 h-4 rounded"
-                  style={{ width: `${challenge.progress.toString()}%` }}
-                ></div>
-              </div>
-              <div className="my-2 w-2/3">{challenge.description}</div>
               <div>Kategorie: {challenge.category}</div>
+              <div>Goal: {challenge.goal}</div>
+              <div>
+                Progress:
+                <div className="w-80 bg-gray-200 rounded h-4">
+                  <div
+                    className="bg-blue-500 h-4 rounded"
+                    style={{ width: `${challenge.progress.toString()}%` }}
+                  ></div>
+                </div>
+              </div>
+              {/* <div className="my-2 w-2/3">{challenge.description}</div> */}
               <div>Autor: {challenge.author?.name}</div>
               <div>Difficulty: {challenge.difficulty}</div>
-              <div>Goal: {challenge.goal}</div>
-              <div>Created At: {challenge.created_at.toLocaleString()}</div>
-              <div>Updated At: {challenge.updated_at.toLocaleString()}</div>
+              {/* <div>Created At: {challenge.created_at.toLocaleString()}</div>
+              <div>Updated At: {challenge.updated_at.toLocaleString()}</div> */}
               <div>
                 Status: {challenge.completed ? "Completed" : "In progress"}
               </div>

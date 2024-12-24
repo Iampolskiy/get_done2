@@ -43,8 +43,12 @@ export default function Header() {
 
       {/* Navigation */}
       <nav className="flex items-center space-x-4">
-        {/*         <Link href="/">Home</Link>
-         */}{" "}
+        <Link
+          href="/create"
+          className={usePathname() === "/create" ? "text-blue-500" : ""}
+        >
+          Create New
+        </Link>
         <Link href="/" className={usePathname() === "/" ? "text-blue-500" : ""}>
           Home
         </Link>
@@ -56,7 +60,6 @@ export default function Header() {
         </Link>
         {/* My Account Dropdown */}
         <div className="relative" ref={dropdownRef}>
-          {" "}
           {/* Ref für das Dropdown-Menü */}
           <div
             className="flex items-center space-x-2 cursor-pointer"

@@ -8,11 +8,12 @@ export default async function ChallengePage({
 }: {
   params: { id: string };
 }) {
+  const { id } = await params;
   const prisma = new PrismaClient();
-  const id = parseInt(params.id, 10);
+  const numericId = parseInt(id, 10);
   const challenge = (await prisma.challenge.findUnique({
     where: {
-      id: id,
+      id: numericId,
     },
     include: {
       author: true, // Lade auch die Autoren-Information
