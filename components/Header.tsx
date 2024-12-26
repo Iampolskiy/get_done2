@@ -6,7 +6,12 @@ import Image from "next/image";
 import logo from "../public/logo.png";
 import { usePathname } from "next/navigation";
 
-export default function Header() {
+interface HeaderProps {
+  children?: React.ReactNode;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function Header({ children }: HeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null); // Funktion zum Öffnen/Schließen des Dropdown-Menüs
   const toggleDropdown = () => {
@@ -51,6 +56,14 @@ export default function Header() {
         </Link>
         <Link href="/" className={usePathname() === "/" ? "text-blue-500" : ""}>
           Home
+        </Link>
+        <Link
+          href="/allmychallenges"
+          className={
+            usePathname() === "/allmychallenges" ? "text-blue-500" : ""
+          }
+        >
+          My Challenges
         </Link>
         <Link
           href="/challenges"

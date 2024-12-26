@@ -18,6 +18,36 @@ datasource db {
 
 model User {
   id         Int         @id @default(autoincrement())
+  clerkId    String?      @unique // Clerk-Benutzer-ID
+  email      String?     @unique // Prisma setzt automatisch TEXT
+  name       String?     // TEXT für den Namen
+  challenges Challenge[] // Relation zu Challenges
+}
+ 
+ 
+model Challenge {
+  id           Int      @id @default(autoincrement())
+  title        String   // TEXT für den Titel
+  category     String?  // Optionaler TEXT
+  difficulty   String?  // Optionaler Schwierigkeitsgrad
+  description  String?  // Feld für die Beschreibung
+  duration     Int?     // Integer für die Dauer
+  completed    Boolean?  @default(false) // Standardwert ist false
+  author       User     @relation(fields: [authorId], references: [id]) // Relation zu User
+  authorId     Int      // Fremdschlüssel
+  progress     Float?   // Fortschritt als Float-Wert
+  age          Int?     // Alter
+  gender       String?
+  created_at   DateTime?
+  updated_at   DateTime?
+  city_address String?
+  goal         String?
+}
+
+
+
+/* model User {
+  id         Int         @id @default(autoincrement())
   email      String?     @unique // Prisma setzt automatisch TEXT
   name       String?     // TEXT für den Namen
   challenges Challenge[] // Relation zu Challenges
@@ -42,4 +72,4 @@ model Challenge {
   goal       String
 
 }
-    
+     */

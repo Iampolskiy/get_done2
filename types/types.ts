@@ -1,4 +1,4 @@
-export type Challenge = {
+/* export type Challenge = {
   id?: number;
   title?: string;
   category?: string;
@@ -8,15 +8,15 @@ export type Challenge = {
   progress: number;
   duration: number;
   author?: {
-    name: string;
+    user: User;
   };
   age: number;
   gender: string;
   created_at: Date;
   updated_at: Date;
-  city_adress: string;
+  city_address: string;
   goal: string;
-};
+}; */
 
 export type Challenges = {
   challenge: Challenge[];
@@ -24,6 +24,7 @@ export type Challenges = {
 
 export type User = {
   id: number;
+  clerkId: number;
   name: string;
   email: string;
   challenges: {
@@ -33,4 +34,30 @@ export type User = {
 
 export type Users = {
   user: User[];
+};
+
+// types/types.ts
+
+export type Challenge = {
+  id: number;
+  title: string;
+  category?: string | null;
+  difficulty?: string | null;
+  description?: string | null;
+  duration?: number | null;
+  completed?: boolean | null;
+  author: {
+    id: number;
+    email?: string | null;
+    clerkId?: string | null;
+    name?: string | null;
+  };
+  authorId: number;
+  progress?: number | null;
+  age?: number | null;
+  gender?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  city_address?: string | null;
+  goal?: string | null;
 };
