@@ -1,5 +1,5 @@
 import { Challenge } from "@/types/types";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
 import MyChallengeClient from "./MyChallengeClient";
 
 export default async function ChallengesPage({
@@ -8,7 +8,6 @@ export default async function ChallengesPage({
   params: { id: string };
 }) {
   const { id } = await params;
-  const prisma = new PrismaClient();
   const numericId = parseInt(id, 10);
   const challenge = (await prisma.challenge.findUnique({
     where: {

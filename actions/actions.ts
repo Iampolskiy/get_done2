@@ -1,7 +1,8 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
+import prisma from "@/lib/prisma"; // Singleton Prisma Client
 
 export async function createChallenge(formData: FormData): Promise<void> {
   // Authentifiziere den aktuellen Benutzer
@@ -53,7 +54,11 @@ export async function createChallenge(formData: FormData): Promise<void> {
           id: user.id, // Verwende die tatsächliche Benutzer-ID
         },
       },
-      // `created_at` und `updated_at` werden automatisch von Prisma verwaltet
+
+      created_at: new Date(),
+      updated_at: new Date(),
     },
   });
+
+  redirect("/allmychallenges?success=true");
 }

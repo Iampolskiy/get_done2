@@ -1,9 +1,10 @@
 // app/myChallengesPage.tsx
 
 import { currentUser } from "@clerk/nextjs/server";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import React from "react";
 import MyChallengesClient from "./MyChallengesClient";
+import Feedback from "@/components/Feedback";
 
 // Singleton PrismaClient zur Vermeidung von Verbindungslecks
 /* const prisma = global.prisma || new PrismaClient();
@@ -13,7 +14,6 @@ if (process.env.NODE_ENV !== "production") global.prisma = prisma; */
 export default async function myChallengesPage() {
   const userNow = await currentUser();
   const userNowEmail = userNow?.emailAddresses?.[0]?.emailAddress;
-  const prisma = new PrismaClient();
 
   // Überprüfe, ob der Benutzer authentifiziert ist und eine E-Mail-Adresse hat
   if (!userNow || !userNowEmail) {
@@ -47,5 +47,10 @@ export default async function myChallengesPage() {
 
   console.log("Serialisierte Challenges:", challenges);
 
-  return <MyChallengesClient challenges={challenges} />;
+  return (
+    <>
+      <Feedback />
+      <MyChallengesClient challenges={challenges} />;
+    </>
+  );
 }

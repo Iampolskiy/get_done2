@@ -18,7 +18,6 @@ export default async function createPage() {
     <>
       <form
         action={createChallenge} // Adjust the action path accordingly
-        method="POST"
         className="max-w-lg mx-auto p-6 bg-white shadow-md rounded"
       >
         <h2 className="text-2xl font-bold mb-4">Create New Challenge</h2>
@@ -48,7 +47,7 @@ export default async function createPage() {
           />
         </div>
 
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label htmlFor="difficulty" className="block text-gray-700">
             Difficulty:
           </label>
@@ -146,7 +145,7 @@ export default async function createPage() {
             name="goal"
             className="w-full mt-1 p-2 border rounded"
           />
-        </div>
+        </div> */}
 
         <button
           type="submit"
