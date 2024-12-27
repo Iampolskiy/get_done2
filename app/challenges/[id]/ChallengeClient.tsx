@@ -24,17 +24,17 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         <div className="w-80 bg-gray-200 rounded h-4">
           <div
             className="bg-blue-500 h-4 rounded"
-            style={{ width: `${challenge?.progress.toString()}%` }}
+            style={{ width: `${challenge.progress?.toString()}%` }}
           ></div>
         </div>
         <div>AuthorId: {challenge.author?.name}</div>
-        <div>City_adress: {challenge?.city_adress}</div>
-        <div>Gender: {challenge?.gender}</div>
-        <div>Age: {challenge?.age}</div>
-        <div>Duration: {challenge?.duration}</div>
-        <div>Difficulty: {challenge?.difficulty}</div>
-        <div>Updated_at: {challenge?.updated_at.toDateString()}</div>
-        <div>Created_at: {challenge?.created_at.toString()}</div>
+        <div>City_adress: {challenge.city_address}</div>
+        <div>Gender: {challenge.gender}</div>
+        <div>Age: {challenge.age}</div>
+        <div>Duration: {challenge.duration}</div>
+        <div>Difficulty: {challenge.difficulty}</div>
+        <div>Updated_at: {challenge.updated_at?.toString()}</div>
+        <div>Created_at: {challenge.created_at?.toString()}</div>
       </div>
     </>
   );

@@ -45,7 +45,7 @@ model Challenge {
 }
 
 
-
+ 
 /* model User {
   id         Int         @id @default(autoincrement())
   email      String?     @unique // Prisma setzt automatisch TEXT

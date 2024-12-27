@@ -1,4 +1,7 @@
+"use client";
+
 import { Challenge } from "@/types/types";
+import Link from "next/link";
 import React from "react";
 type MyChallengesClientProps = {
   challenges: Challenge[];
@@ -14,23 +17,37 @@ export default function MyChallengesClient({
       </div>
       <div>
         {challenges.length > 0 ? (
-          <ul>
+          <div className=" flex w-full flex-wrap justify-center ">
             {challenges.map((challenge) => (
-              <li key={challenge.id}>
+              <Link
+                className="challengeCard border border-gray-300 rounded p-4 m-2 "
+                key={challenge.id}
+                href={`/allmychallenges/${challenge.id}`}
+              >
                 <h2>{challenge.title}</h2>
-                <p>{challenge.description}</p>
-                <p>Kategorie: {challenge.category}</p>
-                <p>Schwierigkeit: {challenge.difficulty}</p>
-                <p>Dauer: {challenge.duration} Tage</p>
-                <p>Fortschritt: {challenge.progress}%</p>
-                <p>Stadtadresse: {challenge.city_address}</p>
-                <p>Ziel: {challenge.goal}</p>
-                <p>Abgeschlossen: {challenge.completed ? "Ja" : "Nein"}</p>
-                <p>Erstellt am: {challenge.created_at?.toLocaleString()}</p>
-                <p>Aktualisiert am: {challenge.updated_at?.toLocaleString()}</p>
-              </li>
+                <p>Description: {challenge.description}</p>
+                <p>Category: {challenge.category}</p>
+                <p>Difficulty: {challenge.difficulty}</p>
+                <p>Duration: {challenge.duration} Tage</p>
+                <div>
+                  Progress:
+                  <div className="w-80 bg-gray-200 rounded h-4">
+                    <div
+                      className="bg-blue-500 h-4 rounded"
+                      style={{ width: `${challenge.progress?.toString()}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <p>City_Adress: {challenge.city_address}</p>
+                <p>Goal: {challenge.goal}</p>
+                <p>Completed: {challenge.completed ? "Ja" : "Nein"}</p>
+                <p>Created_at: {challenge.created_at?.toLocaleString()}</p>
+                <p>Updated_at: {challenge.updated_at?.toLocaleString()}</p>
+                <p>Author: {challenge.author?.name}</p>
+              </Link>
             ))}
-          </ul>
+          </div>
         ) : (
           <p>Keine Challenges gefunden.</p>
         )}

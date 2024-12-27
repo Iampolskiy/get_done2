@@ -32,7 +32,7 @@ export default function ChallengesClient({
                 <div className="w-80 bg-gray-200 rounded h-4">
                   <div
                     className="bg-blue-500 h-4 rounded"
-                    style={{ width: `${challenge.progress.toString()}%` }}
+                    style={{ width: `${challenge.progress?.toString()}%` }}
                   ></div>
                 </div>
               </div>
