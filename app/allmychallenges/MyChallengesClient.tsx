@@ -11,15 +11,14 @@ export default function MyChallengesClient({
   challenges,
 }: MyChallengesClientProps) {
   return (
-    <>
-      <div>
-        <h1>Meine Challenges</h1>
-      </div>
+    <div className="container mx-auto px-14">
+      <h1>Meine Challenges</h1>
       <div>
         {challenges.length > 0 ? (
           <div className=" flex w-full flex-wrap justify-center ">
             {challenges.map((challenge) => (
               <Link
+                style={{ width: "390px" }}
                 className="challengeCard border border-gray-300 rounded p-4 m-2 "
                 key={challenge.id}
                 href={`/allmychallenges/${challenge.id}`}
@@ -44,7 +43,7 @@ export default function MyChallengesClient({
                 <p>Completed: {challenge.completed ? "Ja" : "Nein"}</p>
                 <p>Created_at: {challenge.created_at?.toLocaleString()}</p>
                 <p>Updated_at: {challenge.updated_at?.toLocaleString()}</p>
-                <p>Author: {challenge.author?.name}</p>
+                <p>Author: {challenge.author.name}</p>
               </Link>
             ))}
           </div>
@@ -52,6 +51,6 @@ export default function MyChallengesClient({
           <p>Keine Challenges gefunden.</p>
         )}
       </div>
-    </>
+    </div>
   );
 }

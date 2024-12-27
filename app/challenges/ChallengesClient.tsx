@@ -37,7 +37,7 @@ export default function ChallengesClient({
                 </div>
               </div>
               {/* <div className="my-2 w-2/3">{challenge.description}</div> */}
-              <div>Autor: {challenge.author?.name}</div>
+              <div>Autor: {challenge.author.name}</div>
               <div>Difficulty: {challenge.difficulty}</div>
               {/* <div>Created At: {challenge.created_at.toLocaleString()}</div>
               <div>Updated At: {challenge.updated_at.toLocaleString()}</div> */}

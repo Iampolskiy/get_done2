@@ -1,68 +1,59 @@
 "use server";
+
 import { currentUser } from "@clerk/nextjs/server";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
 
-export async function createChallenge(formdata: FormData) {
-  const prisma = new PrismaClient();
-
+export async function createChallenge(formData: FormData): Promise<void> {
+  // Authentifiziere den aktuellen Benutzer
   const userNow = await currentUser();
 
   if (!userNow) {
     throw new Error("Benutzer ist nicht authentifiziert");
   }
-  const userNowId = userNow?.id;
+
   const userNowEmail = userNow.emailAddresses?.[0]?.emailAddress;
 
-  console.log("Aktuelle Benutzer-E-Mail:", userNowEmail);
+  if (!userNowEmail) {
+    throw new Error("Keine E-Mail-Adresse gefunden für den aktuellen Benutzer");
+  }
 
+  // Finde den Benutzer in der Datenbank anhand der E-Mail
   const user = await prisma.user.findUnique({
     where: {
       email: userNowEmail,
     },
   });
 
-  console.log("Benutzer:", user);
-  console.log("userNowId:", userNowId);
-
   if (!user) {
     throw new Error("Benutzer nicht gefunden");
   }
 
+  // Erstelle die neue Challenge und verbinde sie mit dem authentifizierten Benutzer
   await prisma.challenge.create({
-    include: {
-      author: true,
-    },
-
     data: {
-      title: formdata.get("title") as string,
-      category: formdata.get("category") as string,
-      difficulty: formdata.get("difficulty") as string,
-      description: formdata.get("description") as string,
-      duration: parseInt(formdata.get("duration") as string, 10) as number,
-      completed: false,
-      goal: formdata.get("goal") as string,
-      age: parseInt(formdata.get("age") as string, 10) as number,
-      gender: formdata.get("gender") as string,
-      city_address: formdata.get("city_address") as string,
-      progress: parseInt(formdata.get("progress") as string, 10) as number,
-      created_at: new Date(),
-      updated_at: new Date(),
+      title: formData.get("title") as string,
+      category: (formData.get("category") as string) || undefined,
+      difficulty: (formData.get("difficulty") as string) || undefined,
+      description: (formData.get("description") as string) || undefined,
+      duration: formData.get("duration")
+        ? parseInt(formData.get("duration") as string, 10)
+        : undefined,
+      progress: formData.get("progress")
+        ? parseFloat(formData.get("progress") as string)
+        : undefined,
+      age: formData.get("age")
+        ? parseInt(formData.get("age") as string, 10)
+        : undefined,
+      gender: (formData.get("gender") as string) || undefined,
+      city_address: (formData.get("city_address") as string) || undefined,
+      goal: (formData.get("goal") as string) || undefined,
+      completed: false, // Standardwert
       author: {
         connect: {
-          id: 91, // Replace with the actual author's ID
+          id: user.id, // Verwende die tatsächliche Benutzer-ID
         },
       },
+      // `created_at` und `updated_at` werden automatisch von Prisma verwaltet
     },
   });
 }
-
-/* export async function getUserEmail(email: string) {
-  const prisma = new PrismaClient();
-
-  const user = await prisma.user.findUnique({
-    where: {
-      email: email,
-    },
-  });
-  return user?.id;
-} */
