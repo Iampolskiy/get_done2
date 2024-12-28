@@ -11,7 +11,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   return (
     <>
       <h2 className="text-2xl font-bold m-4 text-center">Challenge Details</h2>
-      <div className="challengeCard border border-gray-300 rounded p-4 m-2 ">
+      <div className=" challengeCard border border-gray-300 rounded p-4 m-2 ">
         <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
           {challenge?.title}
         </div>
@@ -21,10 +21,12 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         <div>Desrciption: {challenge?.description}</div>
         <div>Goal: {challenge?.goal}</div>
         <div>Progress:</div>
-        <div className="w-80 bg-gray-200 rounded h-4">
+        <div className="w-80 bg-gray-200 rounded h-4 hover:bg-gray-300">
           <div
-            className="bg-blue-500 h-4 rounded"
-            style={{ width: `${challenge.progress?.toString()}%` }}
+            className="bg-blue-500 h-4 rounded hover:bg-blue-600"
+            style={{
+              width: `${challenge.progress?.toString()}%`,
+            }}
           ></div>
         </div>
         <div>AuthorId: {challenge.author?.name}</div>
@@ -33,8 +35,8 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         <div>Age: {challenge.age}</div>
         <div>Duration: {challenge.duration}</div>
         <div>Difficulty: {challenge.difficulty}</div>
-        <div>Updated_at: {challenge.updated_at?.toString()}</div>
-        <div>Created_at: {challenge.created_at?.toString()}</div>
+        <div>Updated_at: {challenge.updated_at?.toLocaleString()}</div>
+        <div>Created_at: {challenge.created_at?.toLocaleString()}</div>
       </div>
     </>
   );

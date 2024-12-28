@@ -17,14 +17,14 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="de">
         <body>
-          <SignedOut>
-            <SignInButton />
-          </SignedOut>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-          <Header />
-
+          <Header>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </Header>
           <main className="min-h-screen">{children}</main>
           <Footer />
         </body>

@@ -1,8 +1,13 @@
-// app/components/Footer.tsx
-export default function Footer() {
+import React from "react";
+
+const Footer: React.FC = () => {
   return (
-    <footer className="p-4 bg-gray-800 text-white text-center">
-      <p>&copy; {new Date().getFullYear()} Get Done vorbehalten.</p>
+    <footer className="bg-gray-900 text-white py-4 mt-8">
+      <div className="container mx-auto text-center">
+        © {new Date().getFullYear()} Get Done. Alle Rechte vorbehalten.
+      </div>
     </footer>
   );
-}
+};
+
+export default Footer;

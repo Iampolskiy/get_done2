@@ -47,7 +47,7 @@ export default async function createPage() {
           />
         </div>
 
-        {/* <div className="mb-4">
+        <div className="mb-4">
           <label htmlFor="difficulty" className="block text-gray-700">
             Difficulty:
           </label>
@@ -145,7 +145,7 @@ export default async function createPage() {
             name="goal"
             className="w-full mt-1 p-2 border rounded"
           />
-        </div> */}
+        </div>
 
         <button
           type="submit"

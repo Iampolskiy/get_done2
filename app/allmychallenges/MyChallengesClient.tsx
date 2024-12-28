@@ -19,7 +19,7 @@ export default function MyChallengesClient({
             {challenges.map((challenge) => (
               <Link
                 style={{ width: "390px" }}
-                className="challengeCard border border-gray-300 rounded p-4 m-2 "
+                className=" hover:bg-gray-100 challengeCard border border-gray-300 rounded p-4 m-2 "
                 key={challenge.id}
                 href={`/allmychallenges/${challenge.id}`}
               >

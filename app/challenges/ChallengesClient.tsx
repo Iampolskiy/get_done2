@@ -21,7 +21,7 @@ export default function ChallengesClient({
             className=""
             key={challenge.id}
           >
-            <div className="challengeCard border border-gray-300 rounded p-4 m-2 ">
+            <div className="hover:bg-gray-100 hover:shadow-md  challengeCard border border-gray-300 rounded p-4 m-2 ">
               <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
                 {challenge.title}
               </div>
@@ -31,7 +31,7 @@ export default function ChallengesClient({
                 Progress:
                 <div className="w-80 bg-gray-200 rounded h-4">
                   <div
-                    className="bg-blue-500 h-4 rounded"
+                    className="bg-blue-500 h-4 rounded "
                     style={{ width: `${challenge.progress?.toString()}%` }}
                   ></div>
                 </div>

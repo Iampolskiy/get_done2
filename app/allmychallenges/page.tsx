@@ -6,11 +6,6 @@ import React from "react";
 import MyChallengesClient from "./MyChallengesClient";
 import Feedback from "@/components/Feedback";
 
-// Singleton PrismaClient zur Vermeidung von Verbindungslecks
-/* const prisma = global.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") global.prisma = prisma; */
-
 export default async function myChallengesPage() {
   const userNow = await currentUser();
   const userNowEmail = userNow?.emailAddresses?.[0]?.emailAddress;
@@ -35,17 +30,14 @@ export default async function myChallengesPage() {
       author: true, // Optional: Um zusätzliche Daten des Autors zu erhalten
     },
   });
-
-  console.log("Gefundene Challenges:", challengesRaw);
-
+  console.log("Challenges:", challengesRaw);
   const challenges = challengesRaw.map((challenge) => ({
     ...challenge,
     created_at: challenge.created_at ? challenge.created_at.toJSON() : null,
     updated_at: challenge.updated_at ? challenge.updated_at.toJSON() : null,
     // hier übergebe ich zu challeneges die nach JSON convertierten created_at und updated_at Werte sonst kann ich diese nicht vom server nach client schicken als props.
   }));
-
-  console.log("Serialisierte Challenges:", challenges);
+  /* console.log("Serialisierte Challenges:", challenges); */
 
   return (
     <>
