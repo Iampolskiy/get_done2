@@ -1,6 +1,7 @@
 "use client";
 import { deleteChallenge } from "@/actions/actions";
 import { Challenge } from "@/types/types";
+import Link from "next/link";
 import React from "react";
 
 type ChallengeClientProps = {
@@ -12,14 +13,6 @@ export default function ChallengesClient({ challenge }: ChallengeClientProps) {
     <div className="container mx-auto px-14">
       <h1>Challenge {challenge.id} </h1>
       <div className=" flex w-full flex-wrap justify-center ">
-        <div>
-          <form action={deleteChallenge}>
-            <input type="hidden" name="id" value={challenge.id} />
-            <button className="bg-blue-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
-              Delete Challenge
-            </button>
-          </form>
-        </div>
         <div>
           <div className="challengeCard border border-gray-300 rounded p-4 m-2 ">
             <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
@@ -50,6 +43,25 @@ export default function ChallengesClient({ challenge }: ChallengeClientProps) {
             <div>Duration: {challenge.duration}</div>
             <div>Created_at: {challenge.created_at?.toLocaleString()}</div>
             <div>Updated_at: {challenge.updated_at?.toLocaleString()}</div>
+          </div>
+        </div>
+        {/* delete action button */}
+        <div>
+          <div>
+            <form action={deleteChallenge}>
+              <input type="hidden" name="id" value={challenge.id} />
+              <button className="bg-blue-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
+                Delete Challenge
+              </button>
+            </form>
+          </div>
+          <div>
+            <Link href={`/edit/${challenge.id}`}>
+              <input type="hidden" name="id" value={challenge.id} />
+              <button className="bg-blue-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
+                Edit Challenge
+              </button>
+            </Link>
           </div>
         </div>
       </div>
