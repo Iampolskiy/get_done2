@@ -1,5 +1,5 @@
 "use client";
-import { deleteChallenge } from "@/actions/actions";
+import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 import { Challenge } from "@/types/types";
 import Link from "next/link";
 import React from "react";

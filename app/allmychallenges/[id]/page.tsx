@@ -34,9 +34,9 @@ export default async function ChallengesPage({
   if (!challenge) {
     return <div>Challenge not found</div>;
   }
-
+  /* 
   console.log("Gefundene Challenge:", challenge);
-  console.log("123", params);
+  console.log("123", params); */
 
   // HTML zurückgeben
   return <MyChallengeClient challenge={challenge} />;

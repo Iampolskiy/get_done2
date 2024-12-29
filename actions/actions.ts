@@ -76,8 +76,6 @@ export async function deleteChallenge(formData: FormData): Promise<void> {
 
   // Authentifiziere den aktuellen Benutzer
   const userNow = await currentUser();
-  console.log(userNow);
-
   if (!userNow) {
     throw new Error("Benutzer ist nicht authentifiziert");
   }
@@ -130,12 +128,14 @@ export async function updateChallenge(formData: FormData): Promise<void> {
   const description = formData.get("description") as string;
   const category = formData.get("category") as string | null;
   const difficulty = formData.get("difficulty") as string | null;
-  const progressStr = formData.get("progress") as string | null;
-  const completedStr = formData.get("completed") as string | null;
-
+  const progress = formData.get("progress") as string | null;
+  const completed = formData.get("completed") as string | null;
+  const goal = formData.get("goal") as string | null;
+  const age = formData.get("age") as string | null;
+  const gender = formData.get("gender") as string | null;
+  const city_address = formData.get("city_address") as string | null;
+  const duration = formData.get("duration") as string | null;
   // Konvertiere string Werte zu den entsprechenden Typen
-  const progress = progressStr ? parseFloat(progressStr) : undefined;
-  const completed = completedStr === "true" ? true : false;
 
   if (!id) {
     throw new Error("Keine ID angegeben");
@@ -191,8 +191,22 @@ export async function updateChallenge(formData: FormData): Promise<void> {
         description: description || challenge.description,
         category: category || challenge.category,
         difficulty: difficulty || challenge.difficulty,
-        progress: progress !== undefined ? progress : challenge.progress,
-        completed: completed !== undefined ? completed : challenge.completed,
+        progress:
+          progress !== undefined
+            ? parseFloat(progress as string)
+            : challenge.progress,
+        completed:
+          completed !== undefined
+            ? completed === "undefined"
+            : challenge.completed,
+        goal: goal || challenge.goal,
+        age: parseInt(age as string, 10) || challenge.age,
+
+        gender: gender || challenge.gender,
+        city_address: city_address || challenge.city_address,
+        duration: parseInt(duration as string, 10) || challenge.duration,
+        authorId: user.id,
+
         // Weitere Felder können hier hinzugefügt werden
       },
     });

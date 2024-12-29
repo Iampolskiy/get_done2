@@ -1,6 +1,6 @@
 import React from "react";
 import { currentUser } from "@clerk/nextjs/server";
-import { createChallenge } from "@/actions/actions";
+import { createChallenge } from "@/actions/challengeActions/createChallenge";
 
 export default async function createPage() {
   const userNow = await currentUser();
