@@ -212,7 +212,7 @@ export async function updateChallenge(formData: FormData): Promise<void> {
     });
 
     // Weiterleitung nach erfolgreichem Aktualisieren
-    redirect("/allmychallenges?success=true");
+    redirect("/allmychallenges?editSuccess=true");
   } catch (error: unknown) {
     console.error("Fehler beim Aktualisieren der Herausforderung:", error);
     // Weiterleitung mit Fehler-Query-Parameter

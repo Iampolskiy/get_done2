@@ -40,6 +40,7 @@ export type Users = {
 
 export type Challenge = {
   id: number;
+
   title: string;
   category?: string | null;
   difficulty?: string | null;
@@ -60,4 +61,5 @@ export type Challenge = {
   updated_at?: string | null;
   city_address?: string | null;
   goal?: string | null;
+  image?: Buffer | null;
 };

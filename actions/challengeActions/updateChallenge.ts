@@ -91,5 +91,5 @@ export async function updateChallenge(formData: FormData): Promise<void> {
   });
 
   // Weiterleitung nach erfolgreichem Aktualisieren
-  redirect("/allmychallenges?success=true");
+  redirect("/allmychallenges?editSuccess=true");
 }

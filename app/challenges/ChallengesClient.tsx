@@ -25,6 +25,7 @@ export default function ChallengesClient({
               <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
                 {challenge.title}
               </div>
+
               <div>Kategorie: {challenge.category}</div>
               <div>Goal: {challenge.goal}</div>
               <div>

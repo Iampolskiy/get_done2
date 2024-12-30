@@ -29,6 +29,12 @@ export async function createChallenge(formData: FormData): Promise<void> {
     throw new Error("Benutzer nicht gefunden");
   }
 
+  // Verarbeite das Bild, falls vorhanden
+  const imageFile = formData.get("image") as File | null;
+  let imageData: Buffer | null = null;
+  if (imageFile) {
+    imageData = Buffer.from(await imageFile.arrayBuffer());
+  }
   // Erstelle die neue Challenge und verbinde sie mit dem authentifizierten Benutzer
   await prisma.challenge.create({
     data: {
@@ -57,6 +63,7 @@ export async function createChallenge(formData: FormData): Promise<void> {
 
       created_at: new Date(),
       updated_at: new Date(),
+      image: imageData || undefined,
     },
   });
 
