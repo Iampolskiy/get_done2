@@ -24,8 +24,24 @@ export default function MyChallengesClient({
                 href={`/allmychallenges/${challenge.id}`}
               >
                 <h2>{challenge.title}</h2>
-                <p>Description: {challenge.description}</p>
+                <h2>IMGAE{challenge.image}</h2>
+                {/* <div>
+                  {challenge.image
+                    ? `data:image/png;base64,${btoa(
+                        challenge.image.toString()
+                      )}`
+                    : null}
+                </div> */}
+                {/* <div>
+                  IMAGE:
+                  {challenge.image
+                    ? `data:image/png;base64,${btoa(
+                        challenge.image?.toString() ?? "x"
+                      )}`
+                    : null}
+                </div> */}
                 <p>Category: {challenge.category}</p>
+
                 <p>Difficulty: {challenge.difficulty}</p>
                 <p>Duration: {challenge.duration} Tage</p>
                 <div>
@@ -37,7 +53,6 @@ export default function MyChallengesClient({
                     ></div>
                   </div>
                 </div>
-
                 <p>City_Adress: {challenge.city_address}</p>
                 <p>Goal: {challenge.goal}</p>
                 <p>Completed: {challenge.completed ? "Ja" : "Nein"}</p>

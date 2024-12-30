@@ -18,6 +18,8 @@
   goal: string;
 }; */
 
+/* import { Buffer } from "buffer"; */
+
 export type Challenges = {
   challenge: Challenge[];
 };
@@ -61,5 +63,9 @@ export type Challenge = {
   updated_at?: string | null;
   city_address?: string | null;
   goal?: string | null;
-  image?: Buffer | null;
+  image?: Uint8Array<ArrayBufferLike> | null;
+};
+
+export type ChallengeWithImageUrl = Omit<Challenge, "image"> & {
+  imageUrl?: string | null; // Neues Feld für den Base64-String
 };
