@@ -1,5 +1,5 @@
 "use client";
-import { CldImage } from "next-cloudinary";
+import { CldImage, CldUploadWidget } from "next-cloudinary";
 import { Challenge } from "@/types/types";
 import Link from "next/link";
 import React from "react";
@@ -46,20 +46,33 @@ export default function ChallengesClient({
               <div>
                 Status: {challenge.completed ? "Completed" : "In progress"}
               </div>
+              <CldImage
+                src="cld-sample-5" // Use this sample image or upload your own via the Media Explorer
+                width="400" // Transform the image: auto-crop to square aspect_ratio
+                height="400"
+                alt="CldOgImage"
+                crop={{
+                  type: "auto",
+                  source: true,
+                }}
+              />
             </div>
           </Link>
         ))}
       </div>
-      <CldImage
-        src="cld-sample-5" // Use this sample image or upload your own via the Media Explorer
-        width="500" // Transform the image: auto-crop to square aspect_ratio
-        height="500"
-        alt="CldOgImage"
-        crop={{
-          type: "auto",
-          source: true,
+
+      <CldUploadWidget uploadPreset="IMG_upload1">
+        {({ open }) => {
+          return (
+            <button
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+              onClick={() => open()}
+            >
+              Upload an Image
+            </button>
+          );
         }}
-      />
+      </CldUploadWidget>
     </div>
   );
 }
