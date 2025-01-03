@@ -1,4 +1,5 @@
 "use client";
+import { CldImage } from "next-cloudinary";
 import { Challenge } from "@/types/types";
 import Link from "next/link";
 import React from "react";
@@ -49,6 +50,16 @@ export default function ChallengesClient({
           </Link>
         ))}
       </div>
+      <CldImage
+        src="cld-sample-5" // Use this sample image or upload your own via the Media Explorer
+        width="500" // Transform the image: auto-crop to square aspect_ratio
+        height="500"
+        alt="CldOgImage"
+        crop={{
+          type: "auto",
+          source: true,
+        }}
+      />
     </div>
   );
 }

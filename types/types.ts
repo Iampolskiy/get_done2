@@ -63,7 +63,7 @@ export type Challenge = {
   updated_at?: string | null;
   city_address?: string | null;
   goal?: string | null;
-  image?: Uint8Array<ArrayBufferLike> | null;
+  image?: string | null;
 };
 
 export type ChallengeWithImageUrl = Omit<Challenge, "image"> & {

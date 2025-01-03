@@ -42,7 +42,7 @@ model Challenge {
   updated_at   DateTime?
   city_address String?
   goal         String?
-  image        Bytes?   // Hier speichern wir das Bild
+  image        String?   // Hier speichern wir das Bild
 }
 
 

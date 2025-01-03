@@ -59,6 +59,7 @@ export default function MyChallengesClient({
                 <p>Created_at: {challenge.created_at?.toLocaleString()}</p>
                 <p>Updated_at: {challenge.updated_at?.toLocaleString()}</p>
                 <p>Author: {challenge.author.name}</p>
+                <p>Age: {challenge.age}</p>
               </Link>
             ))}
           </div>
