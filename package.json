@@ -14,9 +14,11 @@
     "cloudinary": "^2.5.1",
     "next": "15.1.2",
     "next-cloudinary": "^6.16.0",
+    "pinata": "^1.10.1",
     "prisma": "^6.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "^0.0.1",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {

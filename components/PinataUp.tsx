@@ -1,15 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 export default function CloudinaryUp() {
+  const [uploading, setUploading] = useState(false);
   return (
     <div>
       <input
+        disabled={uploading}
         type="file"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
+        onChange={async (e) => {
+          const file = e.target.files?.[0] as File;
           console.log(file);
+          const data = new FormData();
+          data.append("file", file);
+          setUploading(true);
+          const uploadRequest = await fetch("api/files", {
+            method: "POST",
+            body: data,
+          });
+          setUploading(false);
         }}
       />
     </div>
