@@ -1,4 +1,4 @@
-import PinataUp from "@/components/CloudinaryUp";
+import PinataUp from "@/components/PinataUp";
 import { currentUser } from "@clerk/nextjs/server";
 import React from "react";
 

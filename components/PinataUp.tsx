@@ -1,25 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
-
-export default function CloudinaryUp() {
-  const [uploading, setUploading] = useState(false);
+export default function PinataUp() {
   return (
     <div>
       <input
-        disabled={uploading}
         type="file"
         onChange={async (e) => {
           const file = e.target.files?.[0] as File;
           console.log(file);
           const data = new FormData();
           data.append("file", file);
-          setUploading(true);
-          const uploadRequest = await fetch("api/files", {
-            method: "POST",
-            body: data,
-          });
-          setUploading(false);
+          try {
+            if (!file) {
+              return (
+                <>
+                  <h1>Kein File</h1>
+                </>
+              );
+            } else {
+              const uploadRequest = await fetch("/app/api/test", {
+                // Stelle sicher, dass die URL korrekt ist
+                method: "POST",
+                body: data,
+              });
+              if (!uploadRequest.ok) throw new Error(uploadRequest.statusText);
+
+              if (uploadRequest.ok) {
+                const uploadResponse = await uploadRequest.json();
+                console.log(uploadResponse);
+              }
+            }
+          } catch (error) {
+            console.error(error);
+          }
         }}
       />
     </div>
