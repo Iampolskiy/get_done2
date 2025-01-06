@@ -9,7 +9,7 @@ export default function PinataUp() {
           const file = e.target.files?.[0] as File;
           console.log(file);
           const data = new FormData();
-          data.append("file", file);
+          data.set("file", file);
           try {
             if (!file) {
               return (
@@ -18,7 +18,7 @@ export default function PinataUp() {
                 </>
               );
             } else {
-              const uploadRequest = await fetch("/app/api/test", {
+              const uploadRequest = await fetch("/api/test", {
                 // Stelle sicher, dass die URL korrekt ist
                 method: "POST",
                 body: data,
