@@ -13,8 +13,13 @@ export async function POST(request: NextRequest) {
     const data = await request.formData();
     console.log("Request Body:", data);
     const file: File | null = data.get("file") as unknown as File;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const uploaddData = await pinata.upload.file(file);
-    return NextResponse.json("", { status: 200 });
+    const url = await pinata.gateways.createSignedURL({
+      cid: uploaddData.cid,
+      expires: 3600,
+    });
+    return NextResponse.json(url, { status: 200 });
   } catch (error) {
     {
       console.log(error);

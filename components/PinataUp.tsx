@@ -1,8 +1,15 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
+
 export default function PinataUp() {
+  const [url, setUrl] = useState("/pen.png");
+  console.log(url);
+
   return (
     <div>
+      <div>{<Image src={url} alt="INGAGE" width={200} height={200} />}</div>
       <input
         type="file"
         onChange={async (e) => {
@@ -27,6 +34,8 @@ export default function PinataUp() {
 
               if (uploadRequest.ok) {
                 const uploadResponse = await uploadRequest.json();
+
+                setUrl(uploadResponse);
                 console.log(uploadResponse);
               }
             }
