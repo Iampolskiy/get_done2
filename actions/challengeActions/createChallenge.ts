@@ -45,6 +45,30 @@ export async function createChallenge(formData: FormData): Promise<void> {
       age: formData.get("age")
         ? parseInt(formData.get("age") as string, 10)
         : undefined,
+
+      /* 
+        
+        
+        
+        
+        
+        
+        
+        
+        */
+
+      image: formData.get("image")
+        ? (formData.get("image") as string)
+        : undefined,
+
+      /* 
+        
+        
+        
+        
+        
+        */
+
       gender: (formData.get("gender") as string) || undefined,
       city_address: (formData.get("city_address") as string) || undefined,
       goal: (formData.get("goal") as string) || undefined,
@@ -54,10 +78,8 @@ export async function createChallenge(formData: FormData): Promise<void> {
           id: user.id, // Verwende die tatsächliche Benutzer-ID
         },
       },
-
       created_at: new Date(),
       updated_at: new Date(),
-      image: formData.get("image_url") as string,
     },
   });
 

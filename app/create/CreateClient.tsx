@@ -53,8 +53,8 @@ export default function CreateClient() {
           </label>
           <input
             type="file"
-            id="image"
-            name="image"
+            id={imageUrls[0]}
+            name={imageUrls[0]}
             className="w-full mt-1 p-2 border rounded"
             onChange={async (e) => {
               const file = e.target.files?.[0] as File;
