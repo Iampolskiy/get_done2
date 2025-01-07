@@ -57,6 +57,7 @@ export async function createChallenge(formData: FormData): Promise<void> {
 
       created_at: new Date(),
       updated_at: new Date(),
+      image: formData.get("image_url") as string,
     },
   });
 

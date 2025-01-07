@@ -1,9 +1,11 @@
 "use client";
 
 import { createChallenge } from "@/actions/challengeActions/createChallenge";
-import React from "react";
+import Image from "next/image";
+import React, { useState } from "react";
 
 export default function CreateClient() {
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   return (
     <>
       <form
@@ -26,6 +28,25 @@ export default function CreateClient() {
         </div>
 
         {/* Bild-Upload-Feld */}
+        <div>
+          <div>
+            {imageUrls.length > 0 &&
+              imageUrls.map((imageUrl) => (
+                <Image
+                  onClick={() => {
+                    setImageUrls(imageUrls.filter((url) => url !== imageUrl));
+                    console.log(imageUrls);
+                    return imageUrls;
+                  }}
+                  key={imageUrl}
+                  src={imageUrl}
+                  alt="INGAGE"
+                  width={200}
+                  height={200}
+                />
+              ))}
+          </div>
+        </div>
         <div className="mb-4">
           <label htmlFor="image" className="block text-gray-700">
             Image:
@@ -34,8 +55,40 @@ export default function CreateClient() {
             type="file"
             id="image"
             name="image"
-            accept="image/*" // Beschränkt die Auswahl auf Bilddateien
             className="w-full mt-1 p-2 border rounded"
+            onChange={async (e) => {
+              const file = e.target.files?.[0] as File;
+              console.log(file);
+              const data = new FormData();
+              data.set("file", file);
+              try {
+                if (!file) {
+                  return (
+                    <>
+                      <h1>Kein File</h1>
+                    </>
+                  );
+                } else {
+                  const uploadRequest = await fetch("/api/test", {
+                    // Stelle sicher, dass die URL korrekt ist
+                    method: "POST",
+                    body: data,
+                  });
+                  if (!uploadRequest.ok)
+                    throw new Error(uploadRequest.statusText);
+
+                  if (uploadRequest.ok) {
+                    const uploadResponse = await uploadRequest.json();
+                    console.log(uploadResponse);
+
+                    setImageUrls([...imageUrls, uploadResponse]);
+                    console.log(uploadResponse);
+                  }
+                }
+              } catch (error) {
+                console.error(error);
+              }
+            }}
           />
         </div>
 

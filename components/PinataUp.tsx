@@ -4,12 +4,27 @@ import Image from "next/image";
 import { useState } from "react";
 
 export default function PinataUp() {
-  const [url, setUrl] = useState("/pen.png");
-  console.log(url);
-
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  console.log("oben", imageUrls);
   return (
     <div>
-      <div>{<Image src={url} alt="INGAGE" width={200} height={200} />}</div>
+      <div>
+        {imageUrls.length > 0 &&
+          imageUrls.map((imageUrl) => (
+            <Image
+              onClick={() => {
+                setImageUrls(imageUrls.filter((url) => url !== imageUrl));
+                console.log(imageUrls);
+                return imageUrls;
+              }}
+              key={imageUrl}
+              src={imageUrl}
+              alt="INGAGE"
+              width={200}
+              height={200}
+            />
+          ))}
+      </div>
       <input
         type="file"
         onChange={async (e) => {
@@ -34,8 +49,9 @@ export default function PinataUp() {
 
               if (uploadRequest.ok) {
                 const uploadResponse = await uploadRequest.json();
+                console.log(uploadResponse);
 
-                setUrl(uploadResponse);
+                setImageUrls([...imageUrls, uploadResponse]);
                 console.log(uploadResponse);
               }
             }
