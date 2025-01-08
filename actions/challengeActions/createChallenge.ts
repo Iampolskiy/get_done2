@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma"; // Singleton Prisma Client
 
-export async function createChallenge(formData: FormData): Promise<void> {
+export async function createChallenge(
+  imageUrls: string[],
+  formData: FormData
+): Promise<void> {
   // Authentifiziere den aktuellen Benutzer
   const userNow = await currentUser();
 
@@ -46,9 +49,10 @@ export async function createChallenge(formData: FormData): Promise<void> {
         ? parseInt(formData.get("age") as string, 10)
         : undefined,
 
-      image: formData.get("image")
+      image: imageUrls[0],
+      /* image: formData.get("image")
         ? (formData.get("image") as string)
-        : undefined,
+        : undefined, */
 
       /* 
         

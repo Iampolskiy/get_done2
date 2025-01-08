@@ -6,10 +6,15 @@ import React, { useState } from "react";
 
 export default function CreateClient() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget as HTMLFormElement);
+    await createChallenge(imageUrls, formData); // Pass both formData and imageUrls as arguments to createChallenge
+  };
   return (
     <>
       <form
-        action={createChallenge} // Adjust the action path accordingly
+        onSubmit={handleSubmit}
         className="max-w-lg mx-auto p-6 bg-white shadow-md rounded"
       >
         <h2 className="text-2xl font-bold mb-4">Create New Challenge</h2>
