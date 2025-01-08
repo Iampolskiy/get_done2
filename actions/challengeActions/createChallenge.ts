@@ -46,17 +46,6 @@ export async function createChallenge(formData: FormData): Promise<void> {
         ? parseInt(formData.get("age") as string, 10)
         : undefined,
 
-      /* 
-        
-        
-        
-        
-        
-        
-        
-        
-        */
-
       image: formData.get("image")
         ? (formData.get("image") as string)
         : undefined,
