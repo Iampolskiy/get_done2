@@ -55,6 +55,18 @@ export async function deleteChallenge(formData: FormData): Promise<void> {
     where: { id: parseInt(id, 10) },
   });
 
+  /* await prisma.$transaction(async (tx) => {
+    // Lösche verknüpfte Bilder
+    await tx.image.deleteMany({
+      where: { challengeId: parseInt(id, 10) },
+    });
+
+    // Lösche die Challenge
+    await tx.challenge.delete({
+      where: { id: parseInt(id, 10) },
+    });
+  }); */
+
   // Weiterleitung nach erfolgreichem Löschen
   redirect("/allmychallenges?deletesuccess=true");
 }
