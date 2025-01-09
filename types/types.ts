@@ -63,9 +63,33 @@ export type Challenge = {
   updated_at?: string | null;
   city_address?: string | null;
   goal?: string | null;
-  image?: string | null;
+  image?: string[] | string | null | undefined;
 };
 
 export type ChallengeWithImageUrl = Omit<Challenge, "image"> & {
   imageUrl?: string | null; // Neues Feld für den Base64-String
 };
+
+export type Images = {
+  id: number;
+  url: string;
+  description?: string | null;
+  duration?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  challenge: Challenge;
+  challengeId: number;
+  user: User;
+  userId: number;
+};
+
+/*  /*   id          Int       @id @default(autoincrement())
+  url         String    // URL oder Pfad zum Bild
+  description String?
+  duration    Int       // Dauer oder Tag, z.B. "Tag 16"
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @updatedAt
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  challengeId Int       // Fremdschlüssel zu Challenge
+  user        User?     @relation(fields: [userId], references: [id])
+  userId   */

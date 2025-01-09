@@ -8,13 +8,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
-
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
-
 
 model User {
   id         Int         @id @default(autoincrement())
@@ -22,8 +19,8 @@ model User {
   email      String?     @unique // Prisma setzt automatisch TEXT
   name       String?     // TEXT für den Namen
   challenges Challenge[] // Relation zu Challenges
+  images     Image[]     // Relation zu Images
 }
- 
  
 model Challenge {
   id           Int      @id @default(autoincrement())
@@ -32,7 +29,7 @@ model Challenge {
   difficulty   String?  // Optionaler Schwierigkeitsgrad
   description  String?  // Feld für die Beschreibung
   duration     Int?     // Integer für die Dauer
-  completed    Boolean?  @default(false) // Standardwert ist false
+  completed    Boolean? @default(false) // Standardwert ist false
   author       User     @relation(fields: [authorId], references: [id]) // Relation zu User
   authorId     Int      // Fremdschlüssel
   progress     Float?   // Fortschritt als Float-Wert
@@ -42,35 +39,18 @@ model Challenge {
   updated_at   DateTime?
   city_address String?
   goal         String?
-  image        String?   // Hier speichern wir das Bild
+  images       Image[]   // Relation zu Images
 }
 
-
- 
-/* model User {
-  id         Int         @id @default(autoincrement())
-  email      String?     @unique // Prisma setzt automatisch TEXT
-  name       String?     // TEXT für den Namen
-  challenges Challenge[] // Relation zu Challenges
+model Image {
+  id          Int       @id @default(autoincrement())
+  url         String    // URL oder Pfad zum Bild
+  description String?
+  duration    Int       // Dauer oder Tag, z.B. "Tag 16"
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @updatedAt
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  challengeId Int       // Fremdschlüssel zu Challenge
+  user        User?     @relation(fields: [userId], references: [id])
+  userId      Int?      // Fremdschlüssel zu User (optional)
 }
-
-model Challenge {
-  id         Int      @id @default(autoincrement())
-  title      String   // TEXT für den Titel
-  category   String?  // Optionaler TEXT
-  difficulty String?  // Optionaler Schwierigkeitsgrad
-  description String?  // Feld für die Beschreibung
-  duration   Int?     // Integer für die Dauer
-  completed  Boolean  @default(false) // Standardwert ist false
-  author     User     @relation(fields: [authorId], references: [id]) // Relation zu User
-  authorId   Int      // Fremdschlüssel
-  progress   Float    // Fortschritt als Float-Wert
-  age        Int //Alter
-  gender     String
-  created_at DateTime
-  updated_at DateTime
-  city_adress String
-  goal       String
-
-}
-     */
