@@ -6,6 +6,8 @@ import React, { useState } from "react";
 
 export default function CreateClient() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isUploading, setUploading] = useState(false);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget as HTMLFormElement);
@@ -54,14 +56,16 @@ export default function CreateClient() {
         </div>
         <div className="mb-4">
           <label htmlFor="image" className="block text-gray-700">
-            Image:
+            {isUploading ? "Uploading..." : "Image:"}
           </label>
           <input
+            disabled={isUploading}
             type="file"
             id={imageUrls[0]}
             name={imageUrls[0]}
             className="w-full mt-1 p-2 border rounded"
             onChange={async (e) => {
+              setUploading(true);
               const file = e.target.files?.[0] as File;
               console.log(file);
               const data = new FormData();
@@ -93,6 +97,7 @@ export default function CreateClient() {
               } catch (error) {
                 console.error(error);
               }
+              setUploading(false);
             }}
           />
         </div>
@@ -210,10 +215,11 @@ export default function CreateClient() {
         </div>
 
         <button
+          disabled={isUploading}
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
         >
-          Create
+          {isUploading ? "Uploading..." : "Create Challenge"}
         </button>
       </form>
     </>
