@@ -63,14 +63,10 @@ export type Challenge = {
   updated_at?: string | null;
   city_address?: string | null;
   goal?: string | null;
-  image?: string[] | string | null | undefined;
+  images?: string[];
 };
 
-export type ChallengeWithImageUrl = Omit<Challenge, "image"> & {
-  imageUrl?: string | null; // Neues Feld für den Base64-String
-};
-
-export type Images = {
+export type Image = {
   id: number;
   url: string;
   description?: string | null;
