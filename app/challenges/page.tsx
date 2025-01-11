@@ -4,12 +4,17 @@ import ChallengesClient from "./ChallengesClient";
 
 export default async function ChallengesPage() {
   // Direkt die Datenbank abfragen
-  const challenges = (await prisma.challenge.findMany({
-    include: {
-      author: true, // Lade auch die Autoren-Information
-    },
+  const challenges = (
+    await prisma.challenge.findMany({
+      include: {
+        author: true, // Lade auch die Autoren-Information
+        images: true,
+      },
+    })
+  ).map((challenge) => ({
+    ...challenge,
+    images: challenge.images.map((image) => image.url), // Extrahiere nur die URLs
   })) as Challenge[];
 
-  // HTML zurückgeben
   return <ChallengesClient challenges={challenges} />;
 }
