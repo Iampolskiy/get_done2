@@ -1,4 +1,3 @@
-import { Challenge } from "@/types/types";
 import { PrismaClient } from "@prisma/client";
 import MyChallengeClient from "./MyChallengeClient";
 import { currentUser } from "@clerk/nextjs/server";
@@ -22,14 +21,15 @@ export default async function ChallengesPage({
   const { id } = await params;
   const prisma = new PrismaClient();
   const numericId = parseInt(id, 10);
-  const challenge = (await prisma.challenge.findUnique({
+  const challenge = await prisma.challenge.findUnique({
     where: {
       id: numericId,
     },
     include: {
       author: true, // Lade auch die Autoren-Information
+      images: true,
     },
-  })) as Challenge;
+  });
 
   if (!challenge) {
     return <div>Challenge not found</div>;
@@ -37,7 +37,9 @@ export default async function ChallengesPage({
   /* 
   console.log("Gefundene Challenge:", challenge);
   console.log("123", params); */
-
-  // HTML zurückgeben
-  return <MyChallengeClient challenge={challenge} />;
+  const challengeWithImages = {
+    ...challenge,
+    images: challenge.images.map((image) => image.url),
+  };
+  return <MyChallengeClient challenge={challengeWithImages} />;
 }

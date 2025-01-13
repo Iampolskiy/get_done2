@@ -1,6 +1,7 @@
 "use client";
 import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 import { Challenge } from "@/types/types";
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -17,6 +18,20 @@ export default function ChallengesClient({ challenge }: ChallengeClientProps) {
           <div className="challengeCard border border-gray-300 rounded p-4 m-2 ">
             <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
               {challenge.title}
+            </div>
+            <div>
+              {challenge.images &&
+                challenge.images.length > 1 &&
+                challenge.images?.map((image, index) => (
+                  <Image
+                    key={index}
+                    src={image}
+                    alt={`Image for ${challenge.title}`}
+                    width={200}
+                    height={200}
+                    className="m-2 rounded"
+                  />
+                ))}
             </div>
             <div>Kategorie: {challenge.category}</div>
             <div>Goal: {challenge.goal}</div>
