@@ -20,8 +20,19 @@ export default function ChallengesClient({ challenge }: ChallengeClientProps) {
               {challenge.title}
             </div>
             <div>
+              {/* <Image
+                src={
+                  challenge.images?.[0]
+                    ? challenge.images?.[0]
+                    : "no image available"
+                }
+                alt={`Image for ${challenge.title}`}
+                width={200}
+                height={200}
+                className="m-2 rounded"
+              /> */}
               {challenge.images &&
-                challenge.images.length > 1 &&
+                challenge.images.length > 0 &&
                 challenge.images?.map((image, index) => (
                   <Image
                     key={index}
