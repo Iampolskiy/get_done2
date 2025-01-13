@@ -1,6 +1,7 @@
 "use client";
 
 import { Challenge } from "@/types/types";
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 type MyChallengesClientProps = {
@@ -24,22 +25,23 @@ export default function MyChallengesClient({
                 href={`/allmychallenges/${challenge.id}`}
               >
                 <h2>{challenge.title}</h2>
-                <h2>IMGAE{challenge.image}</h2>
-                {/* <div>
-                  {challenge.image
-                    ? `data:image/png;base64,${btoa(
-                        challenge.image.toString()
-                      )}`
-                    : null}
-                </div> */}
-                {/* <div>
-                  IMAGE:
-                  {challenge.image
-                    ? `data:image/png;base64,${btoa(
-                        challenge.image?.toString() ?? "x"
-                      )}`
-                    : null}
-                </div> */}
+
+                {challenge.images && challenge.images.length > 0 ? (
+                  <div className="flex flex-wrap mt-4">
+                    {challenge.images.map((url, index) => (
+                      <Image
+                        key={index}
+                        src={url} // Pinata-URL
+                        alt={`Image for ${challenge.title}`}
+                        width={200}
+                        height={200}
+                        className="m-2 rounded"
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p>No images available</p>
+                )}
                 <p>Category: {challenge.category}</p>
 
                 <p>Difficulty: {challenge.difficulty}</p>

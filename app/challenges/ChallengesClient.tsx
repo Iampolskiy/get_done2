@@ -30,7 +30,7 @@ export default function ChallengesClient({
               </div>
               <div>
                 {challenge.images && challenge.images.length > 0 ? (
-                  <div className="flex flex-wrap">
+                  <div className="flex flex-wrap mt-4 ">
                     {challenge.images.map((url, index) => (
                       <Image
                         key={index}

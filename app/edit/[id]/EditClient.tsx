@@ -14,7 +14,7 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
         action={updateChallenge} // Adjust the action path accordingly
         className="max-w-lg mx-auto p-6 bg-white shadow-md rounded"
       >
-        <h2 className="text-2xl font-bold mb-4">Create New Challenge</h2>
+        <h2 className="text-2xl font-bold mb-4">Edit {challenge.title}</h2>
 
         <div className="mb-4">
           <label htmlFor="title" className="block text-gray-700">
