@@ -28,14 +28,7 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
           />
         </div>
         {/* hidden input id für die action updatechallenge */}
-        <input
-          type="hidden"
-          name="id"
-          value={challenge.id}
-          readOnly
-          hidden
-          id="id"
-        />
+        <input type="hidden" name="id" value={challenge.id} readOnly hidden />
 
         <div className="mb-4">
           <label htmlFor="category" className="block text-gray-700">

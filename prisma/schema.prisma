@@ -35,8 +35,8 @@ model Challenge {
   progress     Float?   // Fortschritt als Float-Wert
   age          Int?     // Alter
   gender       String?
-  created_at   DateTime?
-  updated_at   DateTime?
+  created_at   DateTime?  @default(now())
+  updated_at   DateTime?  @updatedAt
   city_address String?
   goal         String?
   images       Image[]    // Relation zu Images
