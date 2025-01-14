@@ -36,7 +36,7 @@ export default function ChallengesClient({ challenge }: ChallengeClientProps) {
                 challenge.images?.map((image, index) => (
                   <Image
                     key={index}
-                    src={image}
+                    src={image.url}
                     alt={`Image for ${challenge.title}`}
                     width={200}
                     height={200}

@@ -63,7 +63,16 @@ export type Challenge = {
   updated_at?: Date | null;
   city_address?: string | null;
   goal?: string | null;
-  images?: string[] | null;
+  images?: {
+    id: number;
+    description: string | null;
+    duration: number;
+    created_at: Date | null;
+    updated_at: Date | null;
+    url: string;
+    challengeId: number;
+    userId: number | null;
+  }[];
 };
 
 export type Image = {

@@ -37,9 +37,9 @@ export default async function ChallengesPage({
   /* 
   console.log("Gefundene Challenge:", challenge);
   console.log("123", params); */
-  const challengeWithImages = {
+  /*  const challengeWithImages = {
     ...challenge,
     images: challenge.images.map((image) => image.url),
-  };
-  return <MyChallengeClient challenge={challengeWithImages} />;
+  }; */
+  return <MyChallengeClient challenge={challenge} />;
 }

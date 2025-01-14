@@ -24,12 +24,17 @@ export default async function editPage({ params }: { params: { id: string } }) {
     },
     include: {
       author: true, // Lade auch die Autoren-Information
+      images: true, // Lade auch die Bilder
     },
-  })) as Challenge;
+  })) as unknown as Challenge;
 
   if (!challenge) {
     return <div>Challenge not found</div>;
   }
+  /* const challengeWithImages = {
+    ...challenge,
+    images: challenge.images?.map((image) => image.url),
+  }; */
 
   return <EditClient challenge={challenge} />;
 }

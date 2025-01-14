@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma"; // Singleton Prisma Client
 
-export async function updateChallenge(formData: FormData): Promise<void> {
+export async function updateChallenge(
+  formData: FormData,
+  imageUrls: string[]
+): Promise<void> {
   const id = formData.get("id") as string;
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;
@@ -17,7 +20,8 @@ export async function updateChallenge(formData: FormData): Promise<void> {
   const gender = formData.get("gender") as string | null;
   const city_address = formData.get("city_address") as string | null;
   const duration = formData.get("duration") as string | null;
-  // Konvertiere string Werte zu den entsprechenden Typen
+  /*   const formImageUrls = formData.getAll("imageUrls");
+   */ // Konvertiere string Werte zu den entsprechenden Typen
 
   if (!id) {
     throw new Error("Keine ID angegeben");
@@ -85,6 +89,13 @@ export async function updateChallenge(formData: FormData): Promise<void> {
       city_address: city_address || challenge.city_address,
       duration: parseInt(duration as string, 10) || challenge.duration,
       authorId: user.id,
+      images: {
+        create: imageUrls.map((url) => ({
+          url,
+          duration: 0,
+          userId: user.id,
+        })), // Erstelle neue Bilder
+      },
 
       // Weitere Felder können hier hinzugefügt werden
     },

@@ -28,11 +28,11 @@ export default function MyChallengesClient({
 
                 {challenge.images && challenge.images.length > 0 ? (
                   <div className="flex flex-wrap mt-4">
-                    {challenge.images.map((url, index) => (
+                    {challenge.images.map((image, index) => (
                       <Image
                         key={index}
-                        src={url} // Pinata-URL
-                        alt={`Image for ${challenge.title}`}
+                        src={image.url} // Pinata-URL
+                        alt={`Image ${index} for ${challenge.title}`}
                         width={200}
                         height={200}
                         className="m-2 rounded"
