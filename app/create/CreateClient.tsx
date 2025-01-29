@@ -43,6 +43,7 @@ export default function CreateClient() {
                   onClick={() => {
                     setImageUrls(imageUrls.filter((url) => url !== imageUrl));
                     console.log(imageUrls);
+                    return imageUrls;
                   }}
                   key={imageUrl}
                   src={imageUrl}
