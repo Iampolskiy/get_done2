@@ -14,6 +14,14 @@ export default function MyChallengesClient({
   return (
     <div className="container mx-auto px-14">
       <h1>Meine Challenges</h1>
+
+      {/* <Image
+        src="https://sapphire-obliged-puma-478.mypinata.cloud/files/bafybeif72pd3u2q2rws5w3dpvjliw66ool4ehjkedtowxmvcxkb4533f5m?X-Algorithm=PINATA1&X-Date=1738117997&X-Expires=30&X-Method=GET&X-Signature=4e7ea9239ae921061e519831f48e38e8c341f974cd8ae0df5e50816f0a8e5ba6"
+        alt="Logo"
+        width={100}
+        height={100}
+        className="m-2 rounded"
+      /> */}
       <div>
         {challenges.length > 0 ? (
           <div className=" flex w-full flex-wrap justify-center ">
