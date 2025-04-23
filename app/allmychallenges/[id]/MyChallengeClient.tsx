@@ -12,7 +12,7 @@ type ChallengeClientProps = {
 export default function ChallengesClient({ challenge }: ChallengeClientProps) {
   return (
     <div className="container mx-auto px-14">
-      <h1>Challenge {challenge.id} </h1>
+      <h1>Challenge challengeId: {challenge.id} </h1>
       <div className=" flex w-full flex-wrap justify-center ">
         <div>
           <div className="challengeCard border border-gray-300 rounded p-4 m-2 ">
@@ -20,17 +20,7 @@ export default function ChallengesClient({ challenge }: ChallengeClientProps) {
               {challenge.title}
             </div>
             <div>
-              {/* <Image
-                src={
-                  challenge.images?.[0]
-                    ? challenge.images?.[0]
-                    : "no image available"
-                }
-                alt={`Image for ${challenge.title}`}
-                width={200}
-                height={200}
-                className="m-2 rounded"
-              /> */}
+              Bild:
               {challenge.images &&
                 challenge.images.length > 0 &&
                 challenge.images?.map((image, index) => (

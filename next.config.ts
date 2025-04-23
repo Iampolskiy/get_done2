@@ -3,9 +3,15 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    /* domains: ["gateway.pinata.cloud"], */
+    /* domains: ["res.cloudinary.com"], */
     remotePatterns: [
       {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        port: "",
+        pathname: "/**",
+      },
+      /* {
         protocol: "https",
         hostname: "sapphire-obliged-puma-478.mypinata.cloud",
         port: "",
@@ -16,7 +22,7 @@ const nextConfig: NextConfig = {
         hostname: "gateway.pinata.cloud",
         port: "",
         pathname: "/ipfs/**",
-      },
+      }, */
     ],
   },
 };

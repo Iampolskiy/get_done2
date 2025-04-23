@@ -31,10 +31,10 @@ export default function ChallengesClient({
               <div>
                 {challenge.images && challenge.images.length > 0 ? (
                   <div className="flex flex-wrap mt-4 ">
-                    {challenge.images.map((url, index) => (
+                    {challenge.images.map((imageUrl, index) => (
                       <Image
                         key={index}
-                        src={url} // Pinata-URL
+                        src={imageUrl.toString()} // Cloudinary-URL
                         alt={`Image for ${challenge.title}`}
                         width={200}
                         height={200}

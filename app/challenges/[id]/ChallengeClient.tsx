@@ -2,6 +2,7 @@
 
 import { Challenge } from "@/types/types";
 import React from "react";
+import Image from "next/image";
 
 type ChallengeClientProps = {
   challenge: Challenge;
@@ -15,6 +16,26 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
           {challenge?.title}
         </div>
+
+        <div>
+          {challenge.images && challenge.images.length > 0 ? (
+            <div className="flex flex-wrap mt-4 ">
+              {challenge.images.map((imageUrl, index) => (
+                <Image
+                  key={index}
+                  src={imageUrl.url} // Cloudinary-URL
+                  alt={`Image for ${challenge.title}`}
+                  width={200}
+                  height={200}
+                  className="m-2 rounded"
+                />
+              ))}
+            </div>
+          ) : (
+            <p>Keine Bilder verfügbar</p>
+          )}
+        </div>
+
         <div>ID: {challenge?.id}</div>
         <div>Title: {challenge?.title}</div>
         <div>Category: {challenge?.category}</div>

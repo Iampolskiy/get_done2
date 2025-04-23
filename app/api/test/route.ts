@@ -1,6 +1,6 @@
-"use server";
+/* "use server";
 import { NextRequest, NextResponse } from "next/server";
-import { pinata } from "@/utils/config";
+import { pinata } from "@/utils/config"; */
 
 /* export const config = {
   api: {
@@ -8,7 +8,7 @@ import { pinata } from "@/utils/config";
   },
 }; */
 
-export async function POST(request: NextRequest) {
+/* export async function POST(request: NextRequest) {
   try {
     const data = await request.formData();
     console.log("Request Body:", data);
@@ -29,4 +29,4 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-}
+} */

@@ -20,8 +20,8 @@ export async function updateChallenge(
   const gender = formData.get("gender") as string | null;
   const city_address = formData.get("city_address") as string | null;
   const duration = formData.get("duration") as string | null;
-  /*   const formImageUrls = formData.getAll("imageUrls");
-   */ // Konvertiere string Werte zu den entsprechenden Typen
+  const formImageUrls = formData.getAll("imageUrls");
+  // Konvertiere string Werte zu den entsprechenden Typen
 
   if (!id) {
     throw new Error("Keine ID angegeben");
@@ -66,6 +66,11 @@ export async function updateChallenge(
     );
   }
 
+  await prisma.image.deleteMany({
+    where: {
+      challengeId: parseInt(id, 10),
+    },
+  });
   // Aktualisiere die Herausforderung
   await prisma.challenge.update({
     where: { id: parseInt(id, 10) },
@@ -91,7 +96,7 @@ export async function updateChallenge(
       authorId: user.id,
       images: {
         create: imageUrls.map((url) => ({
-          url,
+          url: url.toString(),
           duration: 0,
           userId: user.id,
         })), // Erstelle neue Bilder

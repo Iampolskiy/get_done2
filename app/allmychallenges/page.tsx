@@ -34,12 +34,7 @@ export default async function myChallengesPage() {
   console.log("Challenges:", challengesRaw);
   const challenges = challengesRaw.map((challenge) => ({
     ...challenge,
-    /*     created_at: challenge.created_at ? challenge.created_at.toJSON() : null,
-    updated_at: challenge.updated_at ? challenge.updated_at.toJSON() : null, */
-    // hier übergebe ich zu challeneges die nach JSON convertierten created_at und updated_at Werte sonst kann ich diese nicht vom server nach client schicken als props.
-    /* images: challenge.images.map((image) => image.url), */
   }));
-  /* console.log("Serialisierte Challenges:", challenges); */
 
   return (
     <>

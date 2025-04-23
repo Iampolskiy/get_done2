@@ -46,7 +46,7 @@ model Image {
   id          Int       @id @default(autoincrement())
   url         String    // URL oder Pfad zum Bild
   description String?
-  duration    Int       // Dauer oder Tag, z.B. "Tag 16"
+  /* duration    Int       // Dauer oder Tag, z.B. "Tag 16" */
   created_at  DateTime? @default(now())
   updated_at  DateTime? @updatedAt
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)

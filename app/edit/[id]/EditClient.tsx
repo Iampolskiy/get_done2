@@ -2,68 +2,49 @@
 
 import { updateChallenge } from "@/actions/challengeActions/updateChallenge";
 import { Challenge } from "@/types/types";
+import { log } from "console";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 type ChallengeClientProps = {
   challenge: Challenge;
 };
 
 export default function EditClient({ challenge }: ChallengeClientProps) {
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([
+    ...(challenge.images?.map((image) => image.url) || []),
+  ]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  console.log("imageUrls", imageUrls);
   const [isUploading, setUploading] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget as HTMLFormElement);
-    await updateChallenge(formData, imageUrls); // Pass both formData and imageUrls as arguments to createChallenge
+    await updateChallenge(formData, imageUrls);
   };
-
   return (
     <>
       {challenge.id}
       <form
-        onSubmit={handleSubmit} // Adjust the action path accordingly
+        onSubmit={handleSubmit}
         className="max-w-lg mx-auto p-6 bg-white shadow-md rounded"
       >
         <h2 className="text-2xl font-bold mb-4">Edit {challenge.title}</h2>
-
-        {/* <Image
-          src={challenge.images?.map((image) => image.url)}
-          alt={`Image for ${challenge.title}`}
-          width={200}
-          height={200}
-          className="m-2 rounded"
-        /> */}
-
-        {challenge.images?.map((imageUrl, index) => (
-          <Image
-            onClick={() => {
-              setImageUrls(imageUrls.filter((url) => url !== imageUrl.url));
-              console.log(imageUrls);
-              return imageUrls;
-            }}
-            key={index}
-            src={imageUrl.url}
-            alt={`Image for ${challenge.title}`}
-            width={200}
-            height={200}
-            className="m-2 rounded"
-          />
-        ))}
-
         <div>
           <div>
-            test!
-            {imageUrls &&
-              imageUrls.map((imageUrl) => (
+            {imageUrls.length > 0 &&
+              imageUrls.map((imageUrl, index) => (
                 <Image
                   onClick={() => {
                     setImageUrls(imageUrls.filter((url) => url !== imageUrl));
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
                     console.log(imageUrls);
                     return imageUrls;
                   }}
-                  key={imageUrl}
+                  key={imageUrl + index}
                   src={imageUrl}
                   alt="INGAGE"
                   width={200}
@@ -77,6 +58,7 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
           {isUploading ? "Uploading..." : "Image:"}
         </label>
         <input
+          ref={fileInputRef}
           disabled={isUploading}
           type="file"
           id={imageUrls[0]}
@@ -84,37 +66,24 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
           className="w-full mt-1 p-2 border rounded"
           onChange={async (e) => {
             setUploading(true);
-            const file = e.target.files?.[0] as File;
-            console.log(file);
-            const data = new FormData();
-            data.set("file", file);
-            try {
-              if (!file) {
-                return (
-                  <>
-                    <h1>Kein File</h1>
-                  </>
-                );
-              } else {
-                const uploadRequest = await fetch("/api/test", {
-                  // Stelle sicher, dass die URL korrekt ist
+            const files = Array.from(e.target.files ?? []);
+            const uploadedUrls: string[] = [];
+            for (const file of files) {
+              const data = new FormData();
+              data.set("file", file);
+              try {
+                const res = await fetch("/api/upload", {
                   method: "POST",
                   body: data,
                 });
-                if (!uploadRequest.ok)
-                  throw new Error(uploadRequest.statusText);
-
-                if (uploadRequest.ok) {
-                  const uploadResponse = await uploadRequest.json();
-                  console.log(uploadResponse);
-
-                  setImageUrls([...imageUrls, uploadResponse]);
-                  console.log(uploadResponse);
-                }
+                if (!res.ok) throw new Error(res.statusText);
+                const json = await res.json();
+                uploadedUrls.push(json.url); // Nur die URL speichern
+              } catch (err) {
+                console.error("Upload failed:", err);
               }
-            } catch (error) {
-              console.error(error);
             }
+            setImageUrls((prev) => [...prev, ...uploadedUrls]);
             setUploading(false);
           }}
         />
@@ -130,6 +99,7 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
             className="w-full mt-1 p-2 border rounded"
           />
         </div>
+
         {/* hidden input id für die action updatechallenge */}
         <input type="hidden" name="id" value={challenge.id} readOnly hidden />
 
@@ -246,10 +216,11 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
         </div>
 
         <button
+          disabled={isUploading}
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
         >
-          Create
+          {isUploading ? "Uploading..." : "Save"}
         </button>
       </form>
     </>

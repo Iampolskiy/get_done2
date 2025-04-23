@@ -42,7 +42,6 @@ export type Users = {
 
 export type Challenge = {
   id: number;
-
   title: string;
   category?: string | null;
   difficulty?: string | null;
@@ -86,6 +85,10 @@ export type Image = {
   challengeId: number;
   user: User;
   userId: number;
+};
+
+export type ChallengeClientProps = {
+  challenge: Challenge;
 };
 
 /*  /*   id          Int       @id @default(autoincrement())
