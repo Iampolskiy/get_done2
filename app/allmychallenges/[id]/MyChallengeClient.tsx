@@ -1,86 +1,101 @@
 "use client";
+
 import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
-type ChallengeClientProps = {
+type ChallengeDetailProps = {
   challenge: Challenge;
 };
 
-export default function ChallengesClient({ challenge }: ChallengeClientProps) {
+export default function MyChallengeClient({ challenge }: ChallengeDetailProps) {
   return (
-    <div className="container mx-auto px-14">
-      <h1>Challenge challengeId: {challenge.id} </h1>
-      <div className=" flex w-full flex-wrap justify-center ">
-        <div>
-          <div className="challengeCard border border-gray-300 rounded p-4 m-2 ">
-            <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
-              {challenge.title}
+    <section className="bg-gray-50 min-h-screen px-6 py-12">
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden">
+          {challenge.images && challenge.images.length > 0 && (
+            <div className="relative h-64 w-full">
+              <Image
+                src={challenge.images[0].url}
+                alt={challenge.title}
+                fill
+                style={{ objectFit: "cover" }}
+                className="rounded-t-xl"
+              />
             </div>
-            <div>
-              Bild:
-              {challenge.images &&
-                challenge.images.length > 0 &&
-                challenge.images?.map((image, index) => (
-                  <Image
-                    key={index}
-                    src={image.url}
-                    alt={`Image for ${challenge.title}`}
-                    width={200}
-                    height={200}
-                    className="m-2 rounded"
-                  />
-                ))}
+          )}
+
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {challenge.title}
+              </h1>
+              <span
+                className={`text-sm font-medium px-3 py-1 rounded-full ${
+                  challenge.completed
+                    ? "bg-green-100 text-green-700"
+                    : "bg-blue-100 text-blue-700"
+                }`}
+              >
+                {challenge.completed ? "Abgeschlossen" : "In Bearbeitung"}
+              </span>
             </div>
-            <div>Kategorie: {challenge.category}</div>
-            <div>Goal: {challenge.goal}</div>
-            <div>
-              Progress:
-              <div className="w-80 bg-gray-200 rounded h-4">
-                <div
-                  className="bg-blue-500 h-4 rounded"
-                  style={{ width: `${challenge.progress?.toString()}%` }}
-                ></div>
-              </div>
+
+            <p className="text-md text-gray-700 mb-4">{challenge.goal}</p>
+
+            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4">
+              <div
+                className="bg-blue-500 h-2"
+                style={{ width: `${challenge.progress ?? 0}%` }}
+              ></div>
             </div>
-            {/* <div className="my-2 w-2/3">{challenge.description}</div> */}
-            <div>Autor: {challenge.author?.name}</div>
-            <div>Difficulty: {challenge.difficulty}</div>
-            {/* <div>Created At: {challenge.created_at.toLocaleString()}</div>
-              <div>Updated At: {challenge.updated_at.toLocaleString()}</div> */}
-            <div>
-              Status: {challenge.completed ? "Completed" : "In progress"}
+
+            <div className="text-sm text-gray-600 space-y-2">
+              <p>
+                <strong>Kategorie:</strong> {challenge.category}
+              </p>
+              <p>
+                <strong>Dauer:</strong> {challenge.duration} Tage
+              </p>
+              <p>
+                <strong>Schwierigkeit:</strong> {challenge.difficulty}
+              </p>
+              <p>
+                <strong>Erstellt am:</strong>{" "}
+                {challenge.created_at?.toLocaleDateString()}
+              </p>
+              <p>
+                <strong>Letztes Update:</strong>{" "}
+                {challenge.updated_at?.toLocaleDateString()}
+              </p>
             </div>
-            <div>City_adress: {challenge.gender}</div>
-            {/*               <div>Gender: {challenge.gender}</div> */}
-            <div>Age: {challenge.age}</div>
-            <div>Duration: {challenge.duration}</div>
-            <div>Created_at: {challenge.created_at?.toLocaleString()}</div>
-            <div>Updated_at: {challenge.updated_at?.toLocaleString()}</div>
           </div>
-        </div>
-        {/* delete action button */}
-        <div>
-          <div>
-            <form action={deleteChallenge}>
+
+          {/* BUTTONS SECTION */}
+          <div className="flex flex-col md:flex-row gap-4 p-6">
+            <Link href={`/update/${challenge.id}`} className="flex-1">
+              <button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                Fortschritt Eintragen
+              </button>
+            </Link>
+
+            <Link href={`/edit/${challenge.id}`} className="flex-1">
+              <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                Challenge Bearbeiten
+              </button>
+            </Link>
+
+            <form action={deleteChallenge} className="flex-1">
               <input type="hidden" name="id" value={challenge.id} />
-              <button className="bg-blue-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
-                Delete Challenge
+              <button className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">
+                Challenge Löschen
               </button>
             </form>
           </div>
-          <div>
-            <Link href={`/edit/${challenge.id}`}>
-              <input type="hidden" name="id" value={challenge.id} />
-              <button className="bg-blue-500 hover:bg-red-700 text-white font-bold py-2 px-6 rounded">
-                Edit Challenge
-              </button>
-            </Link>
-          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

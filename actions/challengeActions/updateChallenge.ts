@@ -2,110 +2,90 @@
 
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma"; // Singleton Prisma Client
+import prisma from "@/lib/prisma";
+import { v2 as cloudinary } from "cloudinary";
 
-export async function updateChallenge(
-  formData: FormData,
-  imageUrls: string[]
-): Promise<void> {
-  const id = formData.get("id") as string;
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const category = formData.get("category") as string | null;
-  const difficulty = formData.get("difficulty") as string | null;
-  const progress = formData.get("progress") as string | null;
-  const completed = formData.get("completed") as string | null;
-  const goal = formData.get("goal") as string | null;
-  const age = formData.get("age") as string | null;
-  const gender = formData.get("gender") as string | null;
-  const city_address = formData.get("city_address") as string | null;
-  const duration = formData.get("duration") as string | null;
-  const formImageUrls = formData.getAll("imageUrls");
-  // Konvertiere string Werte zu den entsprechenden Typen
+// 📦 Hilfsfunktion zum Upload zu Cloudinary
+async function uploadImages(files: File[]): Promise<string[]> {
+  const uploads = files.map(async (file) => {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const url = await new Promise<string>((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "challenge_updates" },
+        (error, result) => {
+          if (error || !result) {
+            reject(error);
+          } else {
+            resolve(result.secure_url);
+          }
+        }
+      );
+      stream.end(buffer);
+    });
+    return url;
+  });
 
-  if (!id) {
-    throw new Error("Keine ID angegeben");
-  }
+  return Promise.all(uploads);
+}
 
-  // Authentifiziere den aktuellen Benutzer
+export async function createUpdate(challengeId: string, formData: FormData) {
+  // 1. Authentifiziere den aktuellen Benutzer
   const userNow = await currentUser();
+  if (!userNow) throw new Error("Benutzer ist nicht authentifiziert");
 
-  if (!userNow) {
-    throw new Error("Benutzer ist nicht authentifiziert");
-  }
+  const email = userNow.emailAddresses?.[0]?.emailAddress;
+  if (!email) throw new Error("Keine E-Mail-Adresse gefunden");
 
-  const userNowEmail = userNow.emailAddresses?.[0]?.emailAddress;
-
-  if (!userNowEmail) {
-    throw new Error("Keine E-Mail-Adresse gefunden für den aktuellen Benutzer");
-  }
-
-  // Finde den Benutzer in der Datenbank anhand der E-Mail
   const user = await prisma.user.findUnique({
-    where: {
-      email: userNowEmail,
-    },
+    where: { email },
   });
+  if (!user) throw new Error("Benutzer nicht in der Datenbank gefunden");
 
-  if (!user) {
-    throw new Error("Benutzer nicht gefunden");
-  }
-
-  // Überprüfe, ob die Herausforderung dem aktuellen Benutzer gehört
+  // 2. Lade die Challenge und prüfe Ownership
   const challenge = await prisma.challenge.findUnique({
-    where: { id: parseInt(id, 10) },
+    where: { id: parseInt(challengeId, 10) },
   });
-
-  if (!challenge) {
-    throw new Error("Herausforderung nicht gefunden");
-  }
-
+  if (!challenge) throw new Error("Challenge nicht gefunden");
   if (challenge.authorId !== user.id) {
     throw new Error(
-      "Du hast keine Berechtigung, diese Herausforderung zu aktualisieren"
+      "Du hast keine Berechtigung, diese Challenge zu aktualisieren"
     );
   }
 
-  await prisma.image.deleteMany({
-    where: {
-      challengeId: parseInt(id, 10),
-    },
-  });
-  // Aktualisiere die Herausforderung
-  await prisma.challenge.update({
-    where: { id: parseInt(id, 10) },
-    data: {
-      title: title || challenge.title,
-      description: description || challenge.description,
-      category: category || challenge.category,
-      difficulty: difficulty || challenge.difficulty,
-      progress:
-        progress !== undefined
-          ? parseFloat(progress as string)
-          : challenge.progress,
-      completed:
-        completed !== undefined
-          ? completed === "undefined"
-          : challenge.completed,
-      goal: goal || challenge.goal,
-      age: parseInt(age as string, 10) || challenge.age,
+  // 3. Extrahiere Formulardaten
+  const updateText = formData.get("updateText") as string;
+  if (!updateText) throw new Error("Update-Text fehlt");
 
-      gender: gender || challenge.gender,
-      city_address: city_address || challenge.city_address,
-      duration: parseInt(duration as string, 10) || challenge.duration,
-      authorId: user.id,
-      images: {
-        create: imageUrls.map((url) => ({
-          url: url.toString(),
-          duration: 0,
-          userId: user.id,
-        })), // Erstelle neue Bilder
+  const files = formData.getAll("images") as File[];
+
+  // 4. Lade Bilder hoch
+  const imageUrls = await uploadImages(files);
+
+  // 5. Speichere Update + Bilder in einer Transaktion
+  await prisma.$transaction(async (tx) => {
+    const update = await tx.update.create({
+      data: {
+        challengeId: challenge.id,
+        authorId: user.id,
+        content: updateText,
+        type: "UPDATED",
       },
+    });
 
-      // Weitere Felder können hier hinzugefügt werden
-    },
+    if (imageUrls.length > 0) {
+      await tx.image.createMany({
+        data: imageUrls.map((url) => ({
+          url,
+          duration: 0, // Beispielwert
+          challengeId: challenge.id,
+          updateId: update.id,
+          userId: user.id,
+        })),
+      });
+    }
   });
 
-  // Weiterleitung nach erfolgreichem Aktualisieren
-  redirect("/allmychallenges?editSuccess=true");
+  // 6. Weiterleitung
+  redirect(`/update/${challengeId}?editSuccess=true`);
 }

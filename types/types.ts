@@ -1,46 +1,24 @@
-/* export type Challenge = {
-  id?: number;
-  title?: string;
-  category?: string;
-  description?: string;
-  difficulty: string;
-  completed: boolean;
-  progress: number;
-  duration: number;
-  author?: {
-    user: User;
-  };
-  age: number;
-  gender: string;
-  created_at: Date;
-  updated_at: Date;
-  city_address: string;
-  goal: string;
-}; */
+// types/types.ts
 
-/* import { Buffer } from "buffer"; */
-
-export type Challenges = {
+export interface Challenges {
   challenge: Challenge[];
-};
+}
 
-export type User = {
+export interface Users {
+  user: User[];
+}
+
+export interface User {
   id: number;
-  clerkId: number;
+  clerkId: string; // Hinweis: Falls ClerkId optional sein soll, => string | null
   name: string;
   email: string;
   challenges: {
     id: number;
   };
-};
+}
 
-export type Users = {
-  user: User[];
-};
-
-// types/types.ts
-
-export type Challenge = {
+export interface Challenge {
   id: number;
   title: string;
   category?: string | null;
@@ -60,44 +38,37 @@ export type Challenge = {
   gender?: string | null;
   created_at?: Date | null;
   updated_at?: Date | null;
+  edited_at?: Date | null; // ✅ ergänzt
   city_address?: string | null;
   goal?: string | null;
-  images?: {
-    id: number;
-    description: string | null;
-    duration: number;
-    created_at: Date | null;
-    updated_at: Date | null;
-    url: string;
-    challengeId: number;
-    userId: number | null;
-  }[];
-};
+  images?: Image[];
+  updates: UpdateProgress[];
+}
 
-export type Image = {
+export interface Image {
   id: number;
   url: string;
   description?: string | null;
-  duration?: number | null;
-  created_at?: string | null;
-  updated_at?: string | null;
-  challenge: Challenge;
+  duration: number;
+  created_at?: Date | null;
+  updated_at?: Date | null;
   challengeId: number;
-  user: User;
-  userId: number;
-};
+  userId: number | null;
+  updateId?: number | null;
+}
 
-export type ChallengeClientProps = {
+export interface UpdateProgress {
+  id: number;
+  challengeId: number;
+  authorId?: number | null;
+  updateText: string; // ⬅️ MUSS hinzugefügt werden
+  /* content?: string | null; */
+  date: string; // <-- ❗️dieser Eintrag muss vorhanden sein
+  createdAt: string | Date;
+  type: "CREATED" | "UPDATED" | "DELETED";
+  images?: Image[];
+}
+
+export interface ChallengeClientProps {
   challenge: Challenge;
-};
-
-/*  /*   id          Int       @id @default(autoincrement())
-  url         String    // URL oder Pfad zum Bild
-  description String?
-  duration    Int       // Dauer oder Tag, z.B. "Tag 16"
-  created_at  DateTime? @default(now())
-  updated_at  DateTime? @updatedAt
-  challenge   Challenge @relation(fields: [challengeId], references: [id])
-  challengeId Int       // Fremdschlüssel zu Challenge
-  user        User?     @relation(fields: [userId], references: [id])
-  userId   */
+}

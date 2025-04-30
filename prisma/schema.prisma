@@ -15,42 +15,70 @@ datasource db {
 
 model User {
   id         Int         @id @default(autoincrement())
-  clerkId    String?      @unique // Clerk-Benutzer-ID
+  clerkId    String?     @unique // Clerk-Benutzer-ID
   email      String?     @unique // Prisma setzt automatisch TEXT
-  name       String?     // TEXT für den Namen
+  name       String? // TEXT für den Namen
   challenges Challenge[] // Relation zu Challenges
-  images     Image[]     // Relation zu Images
+  images     Image[] // Relation zu Images
+  updates    Update[] // <-- NEU: Relation zu Updates
 }
- 
+
 model Challenge {
-  id           Int      @id @default(autoincrement())
-  title        String   // TEXT für den Titel
-  category     String?  // Optionaler TEXT
-  difficulty   String?  // Optionaler Schwierigkeitsgrad
-  description  String?  // Feld für die Beschreibung
-  duration     Int?     // Integer für die Dauer
-  completed    Boolean? @default(false) // Standardwert ist false
-  author       User     @relation(fields: [authorId], references: [id]) // Relation zu User
-  authorId     Int      // Fremdschlüssel
-  progress     Float?   // Fortschritt als Float-Wert
-  age          Int?     // Alter
+  id           Int       @id @default(autoincrement())
+  title        String // TEXT für den Titel
+  category     String? // Optionaler TEXT
+  difficulty   String? // Optionaler Schwierigkeitsgrad
+  description  String? // Feld für die Beschreibung
+  duration     Int? // Integer für die Dauer
+  completed    Boolean?  @default(false) // Standardwert ist false
+  author       User      @relation(fields: [authorId], references: [id]) // Relation zu User
+  authorId     Int // Fremdschlüssel
+  progress     Float? // Fortschritt als Float-Wert
+  age          Int? // Alter
   gender       String?
-  created_at   DateTime?  @default(now())
-  updated_at   DateTime?  @updatedAt
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @updatedAt
+  edited_at    DateTime? // 👈 explizit manuell setzen bei manuellen Edits
   city_address String?
   goal         String?
-  images       Image[]    // Relation zu Images
+  images       Image[] // Relation zu Images
+  updates      Update[] // <-- NEU: Gegenstück der Relation
 }
 
 model Image {
   id          Int       @id @default(autoincrement())
-  url         String    // URL oder Pfad zum Bild
+  url         String
   description String?
-  /* duration    Int       // Dauer oder Tag, z.B. "Tag 16" */
+  duration    Int
   created_at  DateTime? @default(now())
   updated_at  DateTime? @updatedAt
+
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  challengeId Int       // Fremdschlüssel zu Challenge
+  challengeId Int
+
   user        User?     @relation(fields: [userId], references: [id])
-  userId      Int?      // Fremdschlüssel zu User (optional)
+  userId      Int?
+
+  update      Update?   @relation(fields: [updateId], references: [id], onDelete: Cascade) // ✅ richtiger Bezug
+  updateId    Int?      // Bild gehört zu EINEM Update
+}
+
+
+model Update {
+  id          Int        @id @default(autoincrement())
+  challengeId Int
+  challenge   Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  authorId    Int?
+  author      User?      @relation(fields: [authorId], references: [id])
+  content     String?
+  createdAt   DateTime   @default(now())
+  type        UpdateType
+  images      Image[]    // ✅ Ein Update kann mehrere Bilder haben
+}
+
+
+enum UpdateType {
+  CREATED
+  UPDATED
+  DELETED
 }

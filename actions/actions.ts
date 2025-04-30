@@ -122,7 +122,7 @@ export async function deleteChallenge(formData: FormData): Promise<void> {
 }
 
 // Server Action zum Aktualisieren einer Herausforderung
-export async function updateChallenge(formData: FormData): Promise<void> {
+export async function editChallenge(formData: FormData): Promise<void> {
   const id = formData.get("id") as string;
   const title = formData.get("title") as string;
   const description = formData.get("description") as string;

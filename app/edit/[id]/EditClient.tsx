@@ -1,8 +1,9 @@
 "use client";
 
-import { updateChallenge } from "@/actions/challengeActions/updateChallenge";
+import { editChallenge } from "@/actions/challengeActions/editChallenge";
 import { Challenge } from "@/types/types";
-import { log } from "console";
+/* import { log } from "console";
+ */
 import Image from "next/image";
 import React, { useState, useRef } from "react";
 
@@ -21,7 +22,7 @@ export default function EditClient({ challenge }: ChallengeClientProps) {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget as HTMLFormElement);
-    await updateChallenge(formData, imageUrls);
+    await editChallenge(formData, imageUrls);
   };
   return (
     <>
