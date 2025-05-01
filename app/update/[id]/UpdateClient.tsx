@@ -8,6 +8,7 @@ import { createUpdate } from "@/actions/challengeActions/updateChallenge";
 import { Challenge } from "@/types/types";
 import "keen-slider/keen-slider.min.css";
 import { useKeenSlider } from "keen-slider/react";
+import { log } from "console";
 
 type UpdateClientProps = {
   challenge: Challenge;
@@ -91,9 +92,9 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
                 {formattedDates[idx]}
               </span>
               <p className="text-gray-800">{u.updateText}</p>
-
               {u.images && u.images.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
+                  <h3 className="text-lg font-semibold">Bilder:</h3>
                   {u.images.map((img, i) => (
                     <Image
                       key={i}
@@ -150,6 +151,9 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
                       URL.createObjectURL(file)
                     );
                     setPreviewImages((prev) => [...prev, ...previews]);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
                   }
                 }}
               />
