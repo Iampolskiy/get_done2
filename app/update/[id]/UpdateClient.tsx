@@ -8,7 +8,6 @@ import { createUpdate } from "@/actions/challengeActions/updateChallenge";
 import { Challenge } from "@/types/types";
 import "keen-slider/keen-slider.min.css";
 import { useKeenSlider } from "keen-slider/react";
-import { log } from "console";
 
 type UpdateClientProps = {
   challenge: Challenge;
@@ -30,9 +29,9 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [filesToUpload, setFilesToUpload] = useState<File[]>([]);
   const [formattedDates, setFormattedDates] = useState<string[]>([]);
+  const [isUploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Datum formatieren
   useEffect(() => {
     const dates = challenge.updates.map((u) =>
       new Intl.DateTimeFormat("de-DE", {
@@ -46,10 +45,9 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setUploading(true);
     const form = event.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
-
-    const uploadedUrls: string[] = [];
 
     for (const file of filesToUpload) {
       const data = new FormData();
@@ -60,11 +58,12 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
       });
       const json = await res.json();
       if (json.url) {
-        formData.append("imageUrls", json.url); // WICHTIG: Name ist imageUrls
+        formData.append("imageUrls", json.url);
       }
     }
 
     await createUpdate(challenge.id.toString(), formData);
+    setUploading(false);
   };
 
   return (
@@ -81,32 +80,48 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
           </Link>
         </div>
 
+        {/* Challenge-Bild */}
+        <div className="bg-white rounded-xl shadow hover:shadow-lg overflow-hidden">
+          {challenge.images && challenge.images.length > 0 && (
+            <div className="relative h-64 w-full">
+              <Image
+                src={challenge.images[0].url}
+                alt={challenge.title}
+                fill
+                style={{ objectFit: "cover" }}
+                className="rounded-t-xl"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Carousel */}
         <div ref={sliderRef} className="keen-slider">
           {challenge.updates.map((u, idx) => (
             <div
               key={u.id}
-              className="keen-slider__slide bg-white rounded-2xl shadow p-6 flex flex-col gap-4"
+              className="keen-slider__slide bg-white rounded-2xl shadow p-4 md:p-6 flex flex-col gap-4"
             >
-              <span className="text-sm text-gray-500">
-                {formattedDates[idx]}
-              </span>
-              <p className="text-gray-800">{u.updateText}</p>
               {u.images && u.images.length > 0 && (
                 <div className="grid grid-cols-2 gap-4">
-                  <h3 className="text-lg font-semibold">Bilder:</h3>
                   {u.images.map((img, i) => (
                     <Image
                       key={i}
                       src={img.url}
                       alt={`Bild ${i + 1}`}
-                      width={200}
+                      width={300}
                       height={200}
-                      className="rounded-md object-cover"
+                      className="rounded-md object-cover w-full h-auto"
                     />
                   ))}
                 </div>
               )}
+              <div>
+                <span className="text-sm text-gray-500">
+                  {formattedDates[idx]}
+                </span>
+                <p className="text-gray-800 mt-2">{u.updateText}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -122,7 +137,7 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
             <input type="hidden" name="challengeId" value={challenge.id} />
 
             <label className="block text-sm font-medium text-gray-700">
-              Neuer Tages-Eintrag für heute
+              Neuer Tages-Eintrag
             </label>
             <textarea
               name="updateText"
@@ -131,7 +146,7 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-200 focus:border-blue-500"
             />
 
-            {/* 🔄 Upload & Vorschau */}
+            {/* Bild-Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Bilder hinzufügen
@@ -168,7 +183,16 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
                     alt={`Vorschau ${index + 1}`}
                     width={200}
                     height={200}
-                    className="rounded-md object-cover"
+                    className="rounded-md object-cover cursor-pointer"
+                    onClick={() => {
+                      // 🔁 Entferne sowohl das Vorschaubild als auch die zugehörige Datei
+                      setPreviewImages((prev) =>
+                        prev.filter((_, i) => i !== index)
+                      );
+                      setFilesToUpload((prev) =>
+                        prev.filter((_, i) => i !== index)
+                      );
+                    }}
                   />
                 ))}
               </div>
@@ -176,9 +200,14 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
 
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg"
+              disabled={isUploading}
+              className={`w-full text-white font-semibold py-2 px-4 rounded-lg transition ${
+                isUploading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
-              Speichern
+              {isUploading ? "Speichern..." : "Speichern"}
             </button>
           </form>
         </div>

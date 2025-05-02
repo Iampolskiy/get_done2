@@ -4,13 +4,40 @@ import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useEffect, useState } from "react";
+
+// ✅ NEU: Keen Slider importiert
+import "keen-slider/keen-slider.min.css";
+import { useKeenSlider } from "keen-slider/react";
 
 type ChallengeDetailProps = {
   challenge: Challenge;
 };
 
 export default function MyChallengeClient({ challenge }: ChallengeDetailProps) {
+  // ✅ NEU: Slider & Datum vorbereiten
+  const [sliderRef] = useKeenSlider<HTMLDivElement>({
+    initial: Math.max(challenge.updates?.length - 1 || 0, 0),
+    slides: {
+      perView: 1.2,
+      spacing: 15,
+      origin: "center",
+    },
+  });
+
+  const [formattedDates, setFormattedDates] = useState<string[]>([]);
+
+  useEffect(() => {
+    const dates = challenge.updates?.map((u) =>
+      new Intl.DateTimeFormat("de-DE", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(u.date))
+    );
+    setFormattedDates(dates || []);
+  }, [challenge.updates]);
+
   return (
     <section className="bg-gray-50 min-h-screen px-6 py-12">
       <div className="max-w-3xl mx-auto">
@@ -52,7 +79,7 @@ export default function MyChallengeClient({ challenge }: ChallengeDetailProps) {
               ></div>
             </div>
 
-            <div className="text-sm text-gray-600 space-y-2">
+            <div className="text-sm text-gray-600 space-y-2 mb-6">
               <p>
                 <strong>Kategorie:</strong> {challenge.category}
               </p>
@@ -71,6 +98,41 @@ export default function MyChallengeClient({ challenge }: ChallengeDetailProps) {
                 {challenge.updated_at?.toLocaleDateString()}
               </p>
             </div>
+
+            {/* ✅ NEU: Update-Carousel */}
+            {challenge.updates?.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-2">Updates</h2>
+                <div ref={sliderRef} className="keen-slider">
+                  {challenge.updates.map((u, idx) => (
+                    <div
+                      key={u.id}
+                      className="keen-slider__slide bg-gray-100 rounded-xl p-4 space-y-2 shadow-sm"
+                    >
+                      <span className="text-sm text-gray-500">
+                        {formattedDates[idx]}
+                      </span>
+                      <p className="text-gray-700">{u.updateText}</p>
+
+                      {u.images && u.images.length > 0 && (
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {u.images.map((img, i) => (
+                            <Image
+                              key={i}
+                              src={img.url}
+                              alt={`Bild ${i + 1}`}
+                              width={150}
+                              height={150}
+                              className="rounded object-cover"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* BUTTONS SECTION */}

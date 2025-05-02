@@ -61,5 +61,5 @@ export async function createUpdate(challengeId: string, formData: FormData) {
   });
 
   // 5. ✅ Weiterleitung
-  redirect(`/update/${challengeId}?editSuccess=true`);
+  redirect(`/allmychallenges/${challengeId}?editSuccess=true`);
 }
