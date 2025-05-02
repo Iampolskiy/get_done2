@@ -87,6 +87,9 @@ export default function CreateClient() {
                   console.error("Upload failed:", err);
                 }
               }
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+              }
               setImageUrls((prev) => [...prev, ...uploadedUrls]);
               setUploading(false);
             }}
