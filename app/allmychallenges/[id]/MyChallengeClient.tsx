@@ -1,163 +1,202 @@
+// app/allmychallenges/[id]/MyChallengeClient.tsx
 "use client";
 
-import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
-
-// ✅ NEU: Keen Slider importiert
-import "keen-slider/keen-slider.min.css";
+import { useState, useCallback, useEffect } from "react";
+import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 import { useKeenSlider } from "keen-slider/react";
+import "keen-slider/keen-slider.min.css";
 
-type ChallengeDetailProps = {
-  challenge: Challenge;
-};
+type Props = { challenge: Challenge };
 
-export default function MyChallengeClient({ challenge }: ChallengeDetailProps) {
-  // ✅ NEU: Slider & Datum vorbereiten
-  const [sliderRef] = useKeenSlider<HTMLDivElement>({
-    initial: Math.max(challenge.updates?.length - 1 || 0, 0),
-    slides: {
-      perView: 1.2,
-      spacing: 15,
-      origin: "center",
-    },
+export default function MyChallengeClient({ challenge }: Props) {
+  /* ------------------------------------------------------------------ */
+  /*  SICHERE DATEN                                                     */
+  /* ------------------------------------------------------------------ */
+  const images = challenge.images ?? [];
+  const updates = challenge.updates ?? [];
+
+  /* ------------------------------------------------------------------ */
+  /*  STATE & SLIDER‑SETUP                                              */
+  /* ------------------------------------------------------------------ */
+  const [activeIdx, setActiveIdx] = useState(updates.length - 1);
+
+  /* Slider ① – Update‑Cards ----------------------------------------- */
+  const [cardRef, cardInstance] = useKeenSlider<HTMLDivElement>({
+    initial: activeIdx,
+    slideChanged: (s) => setActiveIdx(s.track.details.rel),
+    slides: { perView: 1, spacing: 24, origin: "center" },
   });
 
-  const [formattedDates, setFormattedDates] = useState<string[]>([]);
+  /* Slider ② – Timeline (nur falls > 8) ------------------------------ */
+  const needTlSlider = updates.length > 8;
+  const [tlRef, tlInstance] = useKeenSlider<HTMLDivElement>(
+    needTlSlider
+      ? { rubberband: false, slides: { perView: 8, spacing: 12 } }
+      : undefined
+  );
 
+  /* ❗ Synchronisation beider Slider über activeIdx ------------------ */
   useEffect(() => {
-    const dates = challenge.updates?.map((u) =>
-      new Intl.DateTimeFormat("de-DE", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(new Date(u.date))
-    );
-    setFormattedDates(dates || []);
-  }, [challenge.updates]);
+    if (cardInstance.current) cardInstance.current.moveToIdx(activeIdx, true);
+    if (needTlSlider && tlInstance.current)
+      tlInstance.current.moveToIdx(activeIdx, true);
+  }, [activeIdx, cardInstance, tlInstance, needTlSlider]); /** <- NEU **/
 
+  /* Direktes Anspringen per Timeline‑Dot ----------------------------- */
+  const goTo = useCallback((idx: number) => setActiveIdx(idx), []);
+
+  /* ------------------------------------------------------------------ */
+  /*  RENDER                                                            */
+  /* ------------------------------------------------------------------ */
   return (
-    <section className="bg-gray-50 min-h-screen px-6 py-12">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-xl shadow hover:shadow-lg transition-all duration-300 overflow-hidden">
-          {challenge.images && challenge.images.length > 0 && (
-            <div className="relative h-64 w-full">
-              <Image
-                src={challenge.images[0].url}
-                alt={challenge.title}
-                fill
-                style={{ objectFit: "cover" }}
-                className="rounded-t-xl"
-              />
-            </div>
-          )}
+    <section className="bg-neutral-50 min-h-screen px-4 md:px-8 py-10">
+      {/* ---------- HEADER ------------------------------------------ */}
+      <header className="max-w-3xl mx-auto space-y-4">
+        {images.length > 0 && (
+          <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-sm">
+            <Image
+              src={images[0].url}
+              alt={challenge.title}
+              fill
+              sizes="(max-width:768px) 100vw, 768px"
+              className="object-cover"
+            />
+          </div>
+        )}
 
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {challenge.title}
-              </h1>
-              <span
-                className={`text-sm font-medium px-3 py-1 rounded-full ${
-                  challenge.completed
-                    ? "bg-green-100 text-green-700"
-                    : "bg-blue-100 text-blue-700"
-                }`}
-              >
-                {challenge.completed ? "Abgeschlossen" : "In Bearbeitung"}
-              </span>
-            </div>
-
-            <p className="text-md text-gray-700 mb-4">{challenge.goal}</p>
-
-            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4">
-              <div
-                className="bg-blue-500 h-2"
-                style={{ width: `${challenge.progress ?? 0}%` }}
-              ></div>
-            </div>
-
-            <div className="text-sm text-gray-600 space-y-2 mb-6">
-              <p>
-                <strong>Kategorie:</strong> {challenge.category}
-              </p>
-              <p>
-                <strong>Dauer:</strong> {challenge.duration} Tage
-              </p>
-              <p>
-                <strong>Schwierigkeit:</strong> {challenge.difficulty}
-              </p>
-              <p>
-                <strong>Erstellt am:</strong>{" "}
-                {challenge.created_at?.toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Letztes Update:</strong>{" "}
-                {challenge.updated_at?.toLocaleDateString()}
-              </p>
-            </div>
-
-            {/* ✅ NEU: Update-Carousel */}
-            {challenge.updates?.length > 0 && (
-              <div>
-                <h2 className="text-xl font-semibold mb-2">Updates</h2>
-                <div ref={sliderRef} className="keen-slider">
-                  {challenge.updates.map((u, idx) => (
-                    <div
-                      key={u.id}
-                      className="keen-slider__slide bg-gray-100 rounded-xl p-4 space-y-2 shadow-sm"
-                    >
-                      <span className="text-sm text-gray-500">
-                        {formattedDates[idx]}
-                      </span>
-                      <p className="text-gray-700">{u.updateText}</p>
-
-                      {u.images && u.images.length > 0 && (
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {u.images.map((img, i) => (
-                            <Image
-                              key={i}
-                              src={img.url}
-                              alt={`Bild ${i + 1}`}
-                              width={150}
-                              height={150}
-                              className="rounded object-cover"
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">{challenge.title}</h1>
+            {challenge.goal && (
+              <p className="text-gray-600 mt-0.5">{challenge.goal}</p>
             )}
           </div>
+          <span
+            className={`inline-flex items-center h-8 px-3 rounded-full text-sm font-medium ${
+              challenge.completed
+                ? "bg-green-100 text-green-700"
+                : "bg-blue-100 text-blue-700"
+            }`}
+          >
+            {challenge.completed ? "Abgeschlossen" : "In Bearbeitung"}
+          </span>
+        </div>
 
-          {/* BUTTONS SECTION */}
-          <div className="flex flex-col md:flex-row gap-4 p-6">
-            <Link href={`/update/${challenge.id}`} className="flex-1">
-              <button className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition">
-                Fortschritt Eintragen
-              </button>
-            </Link>
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-blue-600"
+            style={{ width: `${challenge.progress ?? 0}%` }}
+          />
+        </div>
 
-            <Link href={`/edit/${challenge.id}`} className="flex-1">
-              <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition">
-                Challenge Bearbeiten
-              </button>
-            </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/update/${challenge.id}`}
+            className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-center transition"
+          >
+            Fortschritt eintragen
+          </Link>
+          <Link
+            href={`/edit/${challenge.id}`}
+            className="flex-1 min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-center transition"
+          >
+            Challenge bearbeiten
+          </Link>
+          <form action={deleteChallenge} className="flex-1 min-w-[140px]">
+            <input type="hidden" name="id" value={challenge.id} />
+            <button
+              type="submit"
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition"
+            >
+              Challenge löschen
+            </button>
+          </form>
+        </div>
+      </header>
 
-            <form action={deleteChallenge} className="flex-1">
-              <input type="hidden" name="id" value={challenge.id} />
-              <button className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition">
-                Challenge Löschen
+      {/* ---------- TIMELINE ---------------------------------------- */}
+      {updates.length > 0 && (
+        <div className="max-w-3xl mx-auto mt-10 space-y-4">
+          <h2 className="font-semibold text-lg">Timeline</h2>
+
+          <div
+            ref={tlRef}
+            className={
+              needTlSlider ? "keen-slider" : "flex overflow-x-auto gap-3"
+            }
+          >
+            {updates.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => goTo(idx)}
+                className={`${needTlSlider ? "keen-slider__slide" : ""} 
+                           shrink-0 w-10 h-10 rounded-full flex items-center justify-center
+                           text-sm font-medium transition border
+                           ${
+                             idx === activeIdx
+                               ? "bg-blue-600 text-white border-blue-600 scale-105"
+                               : "bg-gray-200 text-gray-800 border-transparent hover:bg-gray-300"
+                           }`}
+              >
+                {idx + 1}
               </button>
-            </form>
+            ))}
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ---------- UPDATE‑CARDS ----------------------------------- */}
+      {updates.length > 0 && (
+        <div className="max-w-3xl mx-auto mt-8">
+          <div ref={cardRef} className="keen-slider">
+            {updates.map((u) => {
+              const imgs = u.images ?? [];
+
+              return (
+                <article
+                  key={u.id}
+                  className="keen-slider__slide bg-white rounded-xl shadow p-4 md:p-6 space-y-4"
+                >
+                  {imgs.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {imgs.map((img) => (
+                        <div
+                          key={img.id}
+                          className="relative w-full aspect-[4/3]"
+                        >
+                          <Image
+                            src={img.url}
+                            alt="Update Bild"
+                            fill
+                            sizes="(max-width:768px) 50vw, 200px"
+                            className="object-cover rounded-lg"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <time className="text-sm text-gray-500">
+                      {new Date(u.date).toLocaleDateString("de-DE", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      })}
+                    </time>
+                    <p className="text-gray-700 leading-relaxed">
+                      {u.updateText}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
