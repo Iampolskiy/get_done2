@@ -4,61 +4,36 @@
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
-import { useKeenSlider } from "keen-slider/react";
-import "keen-slider/keen-slider.min.css";
 
 type Props = { challenge: Challenge };
 
 export default function MyChallengeClient({ challenge }: Props) {
   /* ------------------------------------------------------------------ */
-  /*  SICHERE DATEN                                                     */
+  /*  BASIS‑DATEN & STATE                                               */
   /* ------------------------------------------------------------------ */
-  const images = challenge.images ?? [];
+  const coverImg = challenge.images?.[0];
   const updates = challenge.updates ?? [];
 
-  /* ------------------------------------------------------------------ */
-  /*  STATE & SLIDER‑SETUP                                              */
-  /* ------------------------------------------------------------------ */
   const [activeIdx, setActiveIdx] = useState(updates.length - 1);
 
-  /* Slider ① – Update‑Cards ----------------------------------------- */
-  const [cardRef, cardInstance] = useKeenSlider<HTMLDivElement>({
-    initial: activeIdx,
-    slideChanged: (s) => setActiveIdx(s.track.details.rel),
-    slides: { perView: 1, spacing: 24, origin: "center" },
-  });
+  /** aktuell gewähltes Update */
+  const activeUpd = useMemo(() => updates[activeIdx], [updates, activeIdx]);
 
-  /* Slider ② – Timeline (nur falls > 8) ------------------------------ */
-  const needTlSlider = updates.length > 8;
-  const [tlRef, tlInstance] = useKeenSlider<HTMLDivElement>(
-    needTlSlider
-      ? { rubberband: false, slides: { perView: 8, spacing: 12 } }
-      : undefined
-  );
-
-  /* ❗ Synchronisation beider Slider über activeIdx ------------------ */
-  useEffect(() => {
-    if (cardInstance.current) cardInstance.current.moveToIdx(activeIdx, true);
-    if (needTlSlider && tlInstance.current)
-      tlInstance.current.moveToIdx(activeIdx, true);
-  }, [activeIdx, cardInstance, tlInstance, needTlSlider]); /** <- NEU **/
-
-  /* Direktes Anspringen per Timeline‑Dot ----------------------------- */
-  const goTo = useCallback((idx: number) => setActiveIdx(idx), []);
+  const images = activeUpd?.images ?? [];
 
   /* ------------------------------------------------------------------ */
   /*  RENDER                                                            */
   /* ------------------------------------------------------------------ */
   return (
-    <section className="bg-neutral-50 min-h-screen px-4 md:px-8 py-10">
+    <section className="bg-slate-50 min-h-screen px-4 md:px-8 py-10">
       {/* ---------- HEADER ------------------------------------------ */}
       <header className="max-w-3xl mx-auto space-y-4">
-        {images.length > 0 && (
+        {coverImg && (
           <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-sm">
             <Image
-              src={images[0].url}
+              src={coverImg.url}
               alt={challenge.title}
               fill
               sizes="(max-width:768px) 100vw, 768px"
@@ -92,6 +67,7 @@ export default function MyChallengeClient({ challenge }: Props) {
           />
         </div>
 
+        {/* CTA‑Buttons */}
         <div className="flex flex-wrap gap-3">
           <Link
             href={`/update/${challenge.id}`}
@@ -117,23 +93,17 @@ export default function MyChallengeClient({ challenge }: Props) {
         </div>
       </header>
 
-      {/* ---------- TIMELINE ---------------------------------------- */}
+      {/* ---------- TIMELINE --------------------------------------- */}
       {updates.length > 0 && (
         <div className="max-w-3xl mx-auto mt-10 space-y-4">
           <h2 className="font-semibold text-lg">Timeline</h2>
 
-          <div
-            ref={tlRef}
-            className={
-              needTlSlider ? "keen-slider" : "flex overflow-x-auto gap-3"
-            }
-          >
+          <div className="flex overflow-x-auto gap-3 pb-1">
             {updates.map((_, idx) => (
               <button
                 key={idx}
-                onClick={() => goTo(idx)}
-                className={`${needTlSlider ? "keen-slider__slide" : ""} 
-                           shrink-0 w-10 h-10 rounded-full flex items-center justify-center
+                onClick={() => setActiveIdx(idx)}
+                className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center
                            text-sm font-medium transition border
                            ${
                              idx === activeIdx
@@ -148,52 +118,38 @@ export default function MyChallengeClient({ challenge }: Props) {
         </div>
       )}
 
-      {/* ---------- UPDATE‑CARDS ----------------------------------- */}
-      {updates.length > 0 && (
-        <div className="max-w-3xl mx-auto mt-8">
-          <div ref={cardRef} className="keen-slider">
-            {updates.map((u) => {
-              const imgs = u.images ?? [];
+      {/* ---------- AKTUELLES UPDATE ------------------------------- */}
+      {activeUpd && (
+        <div className="max-w-3xl mx-auto mt-8 bg-white rounded-xl shadow p-4 md:p-6 space-y-6">
+          {/* Bilder‑Grid */}
+          {images.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              {images.map((img) => (
+                <div key={img.id} className="relative w-full aspect-[4/3]">
+                  <Image
+                    src={img.url}
+                    alt="Update Bild"
+                    fill
+                    sizes="(max-width:768px) 50vw, 200px"
+                    className="object-cover rounded-lg"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
-              return (
-                <article
-                  key={u.id}
-                  className="keen-slider__slide bg-white rounded-xl shadow p-4 md:p-6 space-y-4"
-                >
-                  {imgs.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4">
-                      {imgs.map((img) => (
-                        <div
-                          key={img.id}
-                          className="relative w-full aspect-[4/3]"
-                        >
-                          <Image
-                            src={img.url}
-                            alt="Update Bild"
-                            fill
-                            sizes="(max-width:768px) 50vw, 200px"
-                            className="object-cover rounded-lg"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <time className="text-sm text-gray-500">
-                      {new Date(u.date).toLocaleDateString("de-DE", {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                      })}
-                    </time>
-                    <p className="text-gray-700 leading-relaxed">
-                      {u.updateText}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
+          {/* Datum & Text */}
+          <div className="space-y-1">
+            <time className="text-sm text-gray-500">
+              {new Date(activeUpd.date).toLocaleDateString("de-DE", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })}
+            </time>
+            <p className="text-gray-700 leading-relaxed">
+              {activeUpd.updateText}
+            </p>
           </div>
         </div>
       )}
