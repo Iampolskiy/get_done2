@@ -52,6 +52,7 @@ model Image {
   duration    Int
   created_at  DateTime? @default(now())
   updated_at  DateTime? @updatedAt
+  isMain      Boolean?   @default(false)
 
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   challengeId Int

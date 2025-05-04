@@ -1,27 +1,34 @@
+/* actions/challengeActions/createChallenge.ts */
 "use server";
 
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+/** Datentyp eines hochgeladenen Bildes */
+export type UploadedImage = {
+  url: string;
+  /** true → Titelbild  */
+  isMain?: boolean;
+};
+
 export async function createChallenge(
-  imageUrls: string[],
+  images: UploadedImage[],
   formData: FormData
 ): Promise<void> {
-  // Authentifiziere den aktuellen Benutzer
-  const userNow = await currentUser();
-  if (!userNow) throw new Error("Benutzer ist nicht authentifiziert");
+  console.log("DEBUG ‑ images im Server Action:", images); // <‑‑ hinzufügen
+  /* ---------- 1) Auth‑Check ---------------------------------- */
+  const me = await currentUser();
+  if (!me) throw new Error("Benutzer ist nicht authentifiziert");
 
-  const userNowEmail = userNow.emailAddresses?.[0]?.emailAddress;
-  if (!userNowEmail) throw new Error("Keine E-Mail-Adresse gefunden");
+  const email = me.emailAddresses?.[0]?.emailAddress;
+  if (!email) throw new Error("Keine E‑Mail‑Adresse gefunden");
 
-  const user = await prisma.user.findUnique({
-    where: { email: userNowEmail },
-  });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new Error("Benutzer nicht gefunden");
 
-  // Extrahiere die Challenge-Daten aus dem Formular
-  const challengeData = {
+  /* ---------- 2) Form‑Daten ---------------------------------- */
+  const data = {
     title: formData.get("title") as string,
     category: (formData.get("category") as string) || undefined,
     difficulty: (formData.get("difficulty") as string) || undefined,
@@ -34,31 +41,32 @@ export async function createChallenge(
     goal: (formData.get("goal") as string) || undefined,
   };
 
-  // Verwende eine Prisma-Transaktion für die atomare Erstellung von Challenge und Bildern
+  /* ---------- 3) Transaktion --------------------------------- */
   await prisma.$transaction(async (tx) => {
-    // Schritt 1: Erstelle die Challenge und speichere ihre ID
+    // Challenge anlegen
     const newChallenge = await tx.challenge.create({
       data: {
-        ...challengeData,
-        author: {
-          connect: {
-            id: user.id, // Verknüpfe den Benutzer mit der Challenge
-          },
-        },
+        ...data,
+        author: { connect: { id: user.id } },
       },
     });
 
-    // Schritt 2: Erstelle die Bilder und verbinde sie mit der Challenge
-    await tx.image.createMany({
-      data: imageUrls.map((url) => ({
-        url,
-        duration: 0, // Beispielwert
-        challengeId: newChallenge.id, // Verwende die generierte ID der Challenge
-        userId: user.id, // Optional: Verknüpfe die Bilder auch mit dem Benutzer
-      })),
-    });
+    // ✨ NEW — maximal 10 Titelbilder abspeichern
+    const coverImages = images.slice(0, 10);
+
+    if (coverImages.length) {
+      await tx.image.createMany({
+        data: coverImages.map(({ url, isMain }) => ({
+          url,
+          isMain: isMain ?? true, // standardmäßig Titelbild
+          duration: 0,
+          challengeId: newChallenge.id,
+          userId: user.id,
+        })),
+      });
+    }
   });
 
-  // Weiterleitung nach erfolgreicher Erstellung
+  /* ---------- 4) Redirect ------------------------------------ */
   redirect("/allmychallenges?success=true");
 }

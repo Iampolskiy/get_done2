@@ -1,5 +1,4 @@
-// types/types.ts
-
+// -------------- BASIS‑INTERFACES ----------------
 export interface Challenges {
   challenge: Challenge[];
 }
@@ -10,14 +9,13 @@ export interface Users {
 
 export interface User {
   id: number;
-  clerkId: string; // Hinweis: Falls ClerkId optional sein soll, => string | null
-  name: string;
-  email: string;
-  challenges: {
-    id: number;
-  };
+  clerkId: string | null;
+  name: string | null;
+  email: string | null;
+  challenges: { id: number }[];
 }
 
+// -------------- CHALLENGE ------------------------
 export interface Challenge {
   id: number;
   title: string;
@@ -26,6 +24,16 @@ export interface Challenge {
   description?: string | null;
   duration?: number | null;
   completed?: boolean | null;
+  progress?: number | null;
+  age?: number | null;
+  gender?: string | null;
+  created_at?: Date | null;
+  updated_at?: Date | null;
+  edited_at?: Date | null;
+  city_address?: string | null;
+  goal?: string | null;
+
+  // Relationen
   author: {
     id: number;
     email?: string | null;
@@ -33,18 +41,12 @@ export interface Challenge {
     name?: string | null;
   };
   authorId: number;
-  progress?: number | null;
-  age?: number | null;
-  gender?: string | null;
-  created_at?: Date | null;
-  updated_at?: Date | null;
-  edited_at?: Date | null; // ✅ ergänzt
-  city_address?: string | null;
-  goal?: string | null;
-  images?: Image[];
-  updates: UpdateProgress[];
+
+  images?: Image[]; // alle Bilder (Haupt + Update)
+  updates: Update[]; // Update‑Einträge
 }
 
+// -------------- IMAGE ---------------------------
 export interface Image {
   id: number;
   url: string;
@@ -52,23 +54,29 @@ export interface Image {
   duration: number;
   created_at?: Date | null;
   updated_at?: Date | null;
-  challengeId: number;
-  userId: number | null;
+
+  challengeId?: number | null;
   updateId?: number | null;
+  userId: number | null;
+
+  isMain?: boolean;
 }
 
-export interface UpdateProgress {
+// -------------- UPDATE --------------------------
+export interface Update {
   id: number;
   challengeId: number;
   authorId?: number | null;
-  updateText: string; // ⬅️ MUSS hinzugefügt werden
-  /* content?: string | null; */
-  date: string; // <-- ❗️dieser Eintrag muss vorhanden sein
+
+  updateText: string; // gespeicherter Text
+  date: string; // Datum als ISO‑String
   createdAt: string | Date;
   type: "CREATED" | "UPDATED" | "DELETED";
+
   images?: Image[];
 }
 
+// -------------- CLIENT‑PROP ---------------------
 export interface ChallengeClientProps {
   challenge: Challenge;
 }

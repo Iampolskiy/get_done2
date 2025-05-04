@@ -1,3 +1,4 @@
+// components/CreateClient.tsx
 "use client";
 
 import { createChallenge } from "@/actions/challengeActions/createChallenge";
@@ -5,76 +6,97 @@ import Image from "next/image";
 import React, { useState, useRef } from "react";
 
 export default function CreateClient() {
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  /** Bilder inkl. Cover‑Flag (isMain) */
+  const [images, setImages] = useState<{ url: string; isMain: boolean }[]>([]);
   const [isUploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget as HTMLFormElement);
-    await createChallenge(imageUrls, formData);
+  /* -------- Bild entfernen (Index) ----------------------------- */
+  const removeImage = (idx: number) =>
+    setImages((prev) => prev.filter((_, i) => i !== idx));
+
+  /* -------- Form‑Submit --------------------------------------- */
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    console.log("DEBUG ‑ images vor createChallenge:", images); // <‑‑ hinzufügen
+    await createChallenge(images, fd);
+  };
+
+  /* -------- Upload‑Handler ------------------------------------ */
+  const handleUpload = async (files: FileList | null) => {
+    if (!files) return;
+
+    const slotsLeft = 10 - images.length; // ✨ NEW – Limit
+    if (slotsLeft <= 0) {
+      alert("Maximal 10 Titelbilder erlaubt.");
+      return;
+    }
+
+    setUploading(true);
+    const newImgs: { url: string; isMain: boolean }[] = [];
+
+    for (const file of Array.from(files).slice(0, slotsLeft)) {
+      const data = new FormData();
+      data.set("file", file);
+
+      try {
+        const res = await fetch("/api/upload", { method: "POST", body: data });
+        if (!res.ok) throw new Error(res.statusText);
+        const json = await res.json();
+        const url = json.url ?? json.secure_url;
+        if (url) newImgs.push({ url, isMain: true }); // ist immer Titelbild
+      } catch (err) {
+        console.error("Upload failed:", err);
+      }
+    }
+
+    setImages((prev) => [...prev, ...newImgs]);
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-lg mx-auto p-6 bg-white shadow-md rounded"
+      className="max-w-lg mx-auto p-6 bg-white shadow-md rounded space-y-4"
     >
-      <h2 className="text-2xl font-bold mb-4">Create New Challenge</h2>
+      <h2 className="text-2xl font-bold">Create New Challenge</h2>
 
-      {/* ✅ Bildvorschau mit Klick zum Entfernen */}
-      {imageUrls.length > 0 && (
-        <div className="mb-4">
-          <Image
-            src={imageUrls[0]}
-            alt="Preview"
-            width={200}
-            height={200}
-            onClick={() => {
-              setImageUrls([]);
-              if (fileInputRef.current) fileInputRef.current.value = "";
-            }}
-            className="cursor-pointer rounded"
-          />
-        </div>
-      )}
-
-      {/* ✅ Bild Upload (nur eine Datei) */}
-      <div className="mb-4">
-        <label htmlFor="image" className="block text-gray-700">
-          {isUploading ? "Uploading..." : "Image:"}
-        </label>
-        <input
-          ref={fileInputRef}
-          disabled={isUploading}
-          type="file"
-          id="image"
-          name="image"
-          accept="image/*"
-          className="w-full mt-1 p-2 border rounded"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            setUploading(true);
-            const data = new FormData();
-            data.set("file", file);
-
-            try {
-              const res = await fetch("/api/upload", {
-                method: "POST",
-                body: data,
-              });
-              if (!res.ok) throw new Error(res.statusText);
-              const json = await res.json();
-              setImageUrls([json.url]); // ✅ Nur ein Bild speichern
-            } catch (err) {
-              console.error("Upload failed:", err);
-            } finally {
-              setUploading(false);
-            }
-          }}
-        />
+      {/* Vorschau – jedes Klick löscht Bild */}
+      <div className="flex flex-wrap gap-4">
+        {images.map((img, idx) => (
+          <div key={img.url + idx} className="relative">
+            <Image
+              src={img.url}
+              alt={`Cover ${idx + 1}`}
+              width={140}
+              height={140}
+              className="rounded cursor-pointer"
+              onClick={() => removeImage(idx)}
+            />
+            <span className="absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">
+              ✕
+            </span>
+          </div>
+        ))}
       </div>
+
+      {/* Upload‑Feld */}
+      <label className="block text-gray-700">
+        {isUploading
+          ? "Uploading…"
+          : `Titelbild${images.length ? " hinzufügen" : ""} (max 10)`}
+      </label>
+      <input
+        ref={fileInputRef}
+        type="file"
+        disabled={isUploading}
+        className="w-full mt-1 p-2 border rounded"
+        onChange={(e) => handleUpload(e.target.files)}
+        multiple
+        accept="image/*"
+      />
 
       {/* 🔁 Restliche Felder (unverändert) */}
       <div className="mb-4">
@@ -201,13 +223,12 @@ export default function CreateClient() {
           className="w-full mt-1 p-2 border rounded"
         />
       </div>
-
       <button
         disabled={isUploading}
         type="submit"
-        className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded"
       >
-        {isUploading ? "Uploading..." : "Create Challenge"}
+        {isUploading ? "Uploading…" : "Create Challenge"}
       </button>
     </form>
   );
