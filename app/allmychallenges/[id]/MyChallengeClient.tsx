@@ -15,7 +15,7 @@ export default function MyChallengeClient({ challenge }: Props) {
   /* ------------------------------------------------------------------ */
   const coverImg = useMemo(() => {
     const imgs = challenge.images ?? [];
-    return imgs.find((i) => i.isMain) ?? imgs[0]; // ✨ geändert: sort fällt weg
+    return imgs.find((i) => i.isMain);
   }, [challenge.images]);
 
   /* ------------------------------------------------------------------ */
