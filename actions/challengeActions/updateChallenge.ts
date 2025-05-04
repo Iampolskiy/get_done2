@@ -1,43 +1,44 @@
+/* actions/challengeActions/updateChallenge.ts */
 "use server";
 
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
-export async function createUpdate(challengeId: string, formData: FormData) {
-  // 1. ✅ Authentifizierung
-  const userNow = await currentUser();
-  if (!userNow) throw new Error("Benutzer ist nicht authentifiziert");
+/**
+ * Legt einen Update‑Eintrag inkl. (optionaler) Bilder an.
+ * Alle Bilder bekommen isMain = false ‑ sie sind keine Titelbilder!
+ */
+export async function createUpdate(
+  challengeId: string,
+  formData: FormData
+): Promise<void> {
+  /* ---------- 1) Auth‑Check ----------------------------------- */
+  const me = await currentUser();
+  if (!me) throw new Error("Benutzer ist nicht authentifiziert");
 
-  const email = userNow.emailAddresses?.[0]?.emailAddress;
+  const email = me.emailAddresses?.[0]?.emailAddress;
   if (!email) throw new Error("Keine E-Mail-Adresse gefunden");
 
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) throw new Error("Benutzer nicht in der Datenbank gefunden");
 
-  // 2. ✅ Challenge prüfen
-  const challenge = await prisma.challenge.findUnique({
-    where: { id: parseInt(challengeId, 10) },
-  });
+  /* ---------- 2) Challenge‑Check ------------------------------ */
+  const id = parseInt(challengeId, 10);
+  const challenge = await prisma.challenge.findUnique({ where: { id } });
   if (!challenge) throw new Error("Challenge nicht gefunden");
-  if (challenge.authorId !== user.id) {
-    throw new Error(
-      "Du hast keine Berechtigung, diese Challenge zu aktualisieren"
-    );
-  }
+  if (challenge.authorId !== user.id)
+    throw new Error("Keine Berechtigung für diese Challenge");
 
-  // 3. ✅ Update-Text lesen
+  /* ---------- 3) Form‑Daten ----------------------------------- */
   const updateText = formData.get("updateText") as string;
-  if (!updateText) throw new Error("Update-Text fehlt");
+  if (!updateText) throw new Error("Update‑Text fehlt");
 
-  // ✅ NEU: URLs von Bildern statt Files
-  const imageUrls = formData.getAll("imageUrls") as string[];
+  const imageUrls = formData.getAll("imageUrls") as string[]; // Cloudinary‑URLs
 
-  // 4. ✅ Speichern mit Prisma-Transaktion
+  /* ---------- 4) Transaktion ---------------------------------- */
   await prisma.$transaction(async (tx) => {
-    const update = await tx.update.create({
+    const upd = await tx.update.create({
       data: {
         challengeId: challenge.id,
         authorId: user.id,
@@ -46,20 +47,20 @@ export async function createUpdate(challengeId: string, formData: FormData) {
       },
     });
 
-    // ✅ Nur wenn Bilder vorhanden sind
-    if (imageUrls.length > 0) {
+    if (imageUrls.length) {
       await tx.image.createMany({
         data: imageUrls.map((url) => ({
           url,
-          duration: 0, // Beispielwert
+          isMain: false, // ✨ NIE Titelbild
+          duration: 0,
           challengeId: challenge.id,
-          updateId: update.id,
+          updateId: upd.id,
           userId: user.id,
         })),
       });
     }
   });
 
-  // 5. ✅ Weiterleitung
+  /* ---------- 5) Redirect ------------------------------------- */
   redirect(`/allmychallenges/${challengeId}?editSuccess=true`);
 }
