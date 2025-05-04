@@ -1,70 +1,88 @@
-import { PrismaClient } from "@prisma/client";
-import MyChallengeClient from "./MyChallengeClient";
+/* app/allmychallenges/[id]/page.tsx */
+"use server";
+
+import {
+  PrismaClient,
+  Image as PrismaImage,
+  Update as PrismaUpdate,
+} from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
+import MyChallengeClient from "./MyChallengeClient";
+
+/* ---------- Frontend‑Typen ----------------------------------- */
+import {
+  Challenge as ChallengeType,
+  Image as ImageType,
+  Update as UpdateType,
+} from "@/types/types";
+
+/* ---------- Prisma Client (Singleton wäre noch besser) ------- */
+const prisma = new PrismaClient();
 
 export default async function ChallengesPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const userNow = await currentUser();
-  const userNowEmail = userNow?.emailAddresses?.[0]?.emailAddress;
+  /* ---------- Auth‑Check ------------------------------------- */
+  const me = await currentUser();
+  const email = me?.emailAddresses?.[0]?.emailAddress;
 
-  if (!userNow || !userNowEmail) {
+  if (!me || !email) {
     return (
       <div>
-        <p>Benutzer ist nicht authentifiziert oder E-Mail-Adresse fehlt.</p>
+        <p>Benutzer ist nicht authentifiziert oder E‑Mail-Adresse fehlt.</p>
       </div>
     );
   }
 
-  const { id } = await params;
-  const prisma = new PrismaClient();
-  const numericId = parseInt(id, 10);
-
-  const challenge = await prisma.challenge.findUnique({
+  /* ---------- Challenge laden -------------------------------- */
+  const numericId = parseInt(params.id, 10);
+  const challengeDb = await prisma.challenge.findUnique({
     where: { id: numericId },
     include: {
       author: true,
-      images: {
-        select: {
-          id: true,
-          description: true,
-          duration: true,
-          created_at: true,
-          updated_at: true,
-          url: true,
-          challengeId: true,
-          userId: true,
-        },
-      },
-      updates: {
-        include: {
-          images: true, // 👈 wichtig: Bilder bei Updates mitladen
-        },
-      },
+      images: true,
+      updates: { include: { images: true } },
     },
   });
 
-  if (!challenge) {
+  if (!challengeDb) {
     return <div>Challenge nicht gefunden</div>;
   }
 
-  // 🔁 Mapping mit erweiterten Typen (inkl. updateText, date, etc.)
-  const mappedChallenge = {
-    ...challenge,
-    updates: (
-      challenge.updates as ((typeof challenge.updates)[0] & { images: any[] })[]
-    ).map((u) => ({
-      id: u.id,
-      updateText: u.content ?? "",
-      date: u.createdAt.toISOString(),
-      createdAt: u.createdAt.toISOString(),
-      type: u.type,
-      challengeId: u.challengeId,
-      userId: u.authorId ?? 0,
-      images: u.images ?? [],
-    })),
+  /* ---------- Helper Mapper --------------------------------- */
+  const mapImage = (img: PrismaImage): ImageType => ({
+    id: img.id,
+    url: img.url,
+    description: img.description ?? null,
+    duration: img.duration,
+    created_at: img.created_at ?? undefined,
+    updated_at: img.updated_at ?? undefined,
+    isMain: img.isMain ?? false,
+    challengeId: img.challengeId,
+    updateId: img.updateId ?? null,
+    userId: img.userId ?? null,
+  });
+
+  const mapUpdate = (
+    u: PrismaUpdate & { images: PrismaImage[] }
+  ): UpdateType => ({
+    id: u.id,
+    challengeId: u.challengeId,
+    authorId: u.authorId ?? null,
+    updateText: u.content ?? "",
+    date: u.createdAt.toISOString(),
+    createdAt: u.createdAt,
+    type: u.type,
+    images: u.images.map(mapImage),
+  });
+
+  /* ---------- In Frontend‑Typ transformieren ----------------- */
+  const mappedChallenge: ChallengeType = {
+    ...challengeDb,
+    images: challengeDb.images.map(mapImage),
+    updates: challengeDb.updates.map(mapUpdate),
   };
 
   return <MyChallengeClient challenge={mappedChallenge} />;
