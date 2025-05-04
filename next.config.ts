@@ -1,13 +1,13 @@
-import type { NextConfig } from "next";
+/* import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+
   eslint: {
     ignoreDuringBuilds: true, // ⬅️  Build läuft trotz ESLint‑Fehler
   },
 
   images: {
-    /* domains: ["res.cloudinary.com"], */
+    
     remotePatterns: [
       {
         protocol: "https",
@@ -15,20 +15,10 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
-      /* {
-        protocol: "https",
-        hostname: "sapphire-obliged-puma-478.mypinata.cloud",
-        port: "",
-        pathname: "/files/**",
-      },
-      {
-        protocol: "https",
-        hostname: "gateway.pinata.cloud",
-        port: "",
-        pathname: "/ipfs/**",
-      }, */
+      
     ],
   },
 };
 
 export default nextConfig;
+ */
