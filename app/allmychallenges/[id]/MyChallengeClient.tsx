@@ -11,16 +11,19 @@ type Props = { challenge: Challenge };
 
 export default function MyChallengeClient({ challenge }: Props) {
   /* ------------------------------------------------------------------ */
-  /*  BASIS‑DATEN & STATE                                               */
+  /*  COVER‑BILD ermitteln (erstes isMain =true, ohne Sortierung)        */
   /* ------------------------------------------------------------------ */
-  const coverImg = challenge.images?.[0];
+  const coverImg = useMemo(() => {
+    const imgs = challenge.images ?? [];
+    return imgs.find((i) => i.isMain) ?? imgs[0]; // ✨ geändert: sort fällt weg
+  }, [challenge.images]);
+
+  /* ------------------------------------------------------------------ */
+  /*  TIMELINE‑STATE                                                    */
+  /* ------------------------------------------------------------------ */
   const updates = challenge.updates ?? [];
-
   const [activeIdx, setActiveIdx] = useState(updates.length - 1);
-
-  /** aktuell gewähltes Update */
   const activeUpd = useMemo(() => updates[activeIdx], [updates, activeIdx]);
-
   const images = activeUpd?.images ?? [];
 
   /* ------------------------------------------------------------------ */
@@ -42,6 +45,7 @@ export default function MyChallengeClient({ challenge }: Props) {
           </div>
         )}
 
+        {/* Titel, Status, Progress … (unverändert) */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold">{challenge.title}</h1>
