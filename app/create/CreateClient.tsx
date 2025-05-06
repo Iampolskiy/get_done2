@@ -61,7 +61,7 @@ export default function CreateClient() {
       onSubmit={handleSubmit}
       className="max-w-lg mx-auto p-6 bg-white shadow-md rounded space-y-4"
     >
-      <h2 className="text-2xl font-bold">Create New Challenge</h2>
+      <h2 className="text-2xl font-bold">Create New ChallengeB</h2>
 
       {/* Vorschau – jedes Klick löscht Bild */}
       <div className="flex flex-wrap gap-4">
