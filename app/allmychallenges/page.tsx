@@ -1,45 +1,57 @@
-// app/myChallengesPage.tsx
-
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import React from "react";
 import MyChallengesClient from "./MyChallengesClient";
 import Feedback from "@/components/Feedback";
+import type { Challenge } from "@/types/types";
 
-export default async function myChallengesPage() {
-  const userNow = await currentUser();
-  const userNowEmail = userNow?.emailAddresses?.[0]?.emailAddress;
+export default async function MyChallengesPage() {
+  /* -------- Auth --------------------------------------------- */
+  const me = await currentUser();
+  const email = me?.emailAddresses?.[0]?.emailAddress;
+  if (!me || !email)
+    return <p>Benutzer ist nicht authentifiziert oder E-Mail fehlt.</p>;
 
-  // Überprüfe, ob der Benutzer authentifiziert ist und eine E-Mail-Adresse hat
-  if (!userNow || !userNowEmail) {
-    return (
-      <div>
-        <p>Benutzer ist nicht authentifiziert oder E-Mail-Adresse fehlt.</p>
-      </div>
-    );
-  }
-
-  // Finde alle Challenges, bei denen der Autor die aktuelle E-Mail-Adresse hat
+  /* -------- Prisma-Query ------------------------------------- */
   const challengesRaw = await prisma.challenge.findMany({
-    where: {
-      author: {
-        email: userNowEmail,
-      },
-    },
+    where: { author: { email } },
     include: {
-      author: true, // Optional: Um zusätzliche Daten des Autors zu erhalten
+      author: true,
       images: true,
+      updates: { include: { images: true } },
     },
   });
-  console.log("Challenges:", challengesRaw);
-  const challenges = challengesRaw.map((challenge) => ({
-    ...challenge,
+
+  /* -------- Mapping auf Challenge-Typ ------------------------ */
+  const challenges: Challenge[] = challengesRaw.map((c) => ({
+    ...c,
+    /* Bild-Typ anpassen (isMain: null → false) */
+    images: c.images.map((img) => ({
+      ...img,
+      isMain: !!img.isMain,
+    })),
+
+    /* Updates mappen */
+    updates: (c.updates ?? []).map((u) => ({
+      id: u.id,
+      updateText: u.content ?? "",
+      date: u.createdAt.toISOString(),
+      createdAt: u.createdAt.toISOString(),
+      type: u.type,
+      challengeId: u.challengeId,
+      userId: u.authorId ?? 0,
+      images: u.images.map((img) => ({
+        ...img,
+        isMain: !!img.isMain,
+      })),
+    })),
   }));
 
+  /* -------- Render ------------------------------------------- */
   return (
     <>
       <Feedback />
-      <MyChallengesClient challenges={challenges} />;
+      <MyChallengesClient challenges={challenges} />
     </>
   );
 }
