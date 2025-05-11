@@ -81,7 +81,7 @@ export default function MyChallengesClient({
               Meine&nbsp;Ziele
             </h1>
             <p className="text-sm text-slate-300">
-              Überblick deiner laufenden Ziele
+              Überblick deiner laufenden Ziele!!!
             </p>
           </div>
 
