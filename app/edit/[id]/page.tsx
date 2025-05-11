@@ -1,40 +1,38 @@
+// app/edit/[id]/page.tsx
 "use server";
 
-import React from "react";
-import { Challenge } from "@/types/types";
-import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
-import EditClient from "./EditClient";
 import { currentUser } from "@clerk/nextjs/server";
+import prisma from "@/lib/prisma";
+import EditClient from "./EditClient";
+import { Challenge } from "@/types/types";
 
-export default async function editPage({ params }: { params: { id: string } }) {
-  const userNow = await currentUser();
-  const userNowEmail = userNow?.emailAddresses?.[0]?.emailAddress;
-  if (!userNow || !userNowEmail) {
+export default async function EditPage({ params }: { params: { id: string } }) {
+  /* ── Auth ─────────────────────────────────────────────── */
+  const user = await currentUser();
+  const email = user?.emailAddresses?.[0]?.emailAddress;
+  if (!user || !email) {
     return (
-      <div>
-        <p>Benutzer ist nicht authentifiziert oder E-Mail-Adresse fehlt.</p>
-      </div>
+      <p className="mx-auto mt-10 max-w-md rounded bg-red-100 p-6 text-center text-red-700">
+        Du bist nicht angemeldet / E-Mail fehlt.
+      </p>
     );
   }
-  const { id } = await params;
-  const numericId = parseInt(id, 10);
+
+  /* ── Challenge laden ──────────────────────────────────── */
+  const id = Number(params.id);
   const challenge = (await prisma.challenge.findUnique({
-    where: {
-      id: numericId,
-    },
-    include: {
-      author: true, // Lade auch die Autoren-Information
-      images: true, // Lade auch die Bilder
-    },
-  })) as unknown as Challenge;
+    where: { id },
+    include: { author: true, images: true },
+  })) as Challenge | null;
 
-  if (!challenge) {
-    return <div>Challenge not found</div>;
+  if (!challenge || challenge.author.email !== email) {
+    return (
+      <p className="mx-auto mt-10 max-w-md rounded bg-red-100 p-6 text-center text-red-700">
+        Challenge wurde nicht gefunden oder gehört dir nicht.
+      </p>
+    );
   }
-  /* const challengeWithImages = {
-    ...challenge,
-    images: challenge.images?.map((image) => image.url),
-  }; */
 
+  /* ── Client-Component ─────────────────────────────────── */
   return <EditClient challenge={challenge} />;
 }
