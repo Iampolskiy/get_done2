@@ -99,7 +99,7 @@ export default function MyChallengesClient({
             {challenges.map((c) => {
               const pct = Math.round(c.progress ?? 0);
               const updates = c.updates?.length ?? 0;
-              const img =
+              const img = //sdsd
                 c.images?.find((i) => i.isMain)?.url ??
                 `https://source.unsplash.com/random/800x600?sig=${c.id}`;
 
