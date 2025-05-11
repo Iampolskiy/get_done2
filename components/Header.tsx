@@ -3,36 +3,34 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
-import {
-  UserButton,
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  useClerk,
-} from "@clerk/nextjs"; // 🔧 Clerk importiert
+import { Menu, X } from "lucide-react";
+import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   return (
-    <header className="bg-gray-900 text-white">
+    <header className="fixed inset-x-0 top-0 z-50 bg-transparent backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-white">
           Get Done
         </Link>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Toggle */}
         <button
-          className="sm:hidden"
+          className="sm:hidden text-white"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          <Menu className="h-6 w-6" />
+          {mobileMenuOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
         </button>
 
-        {/* Desktop Menu */}
-        <nav className="hidden sm:flex space-x-6 items-center">
+        {/* Desktop Navigation */}
+        <nav className="hidden sm:flex items-center space-x-6">
           <NavLink href="/" label="Home" active={pathname === "/"} />
           <NavLink
             href="/create"
@@ -50,13 +48,12 @@ export default function Header() {
             active={pathname === "/challenges"}
           />
 
-          {/* 🔧 Clerk Integration */}
           <SignedIn>
-            <UserButton />
+            <UserButton afterSignOutUrl="/" />
           </SignedIn>
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="text-white bg-blue-600 px-4 py-2 rounded">
+              <button className="text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
                 Anmelden
               </button>
             </SignInButton>
@@ -64,9 +61,9 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menü */}
       {mobileMenuOpen && (
-        <div className="sm:hidden px-4 pb-4 space-y-2 bg-gray-800">
+        <div className="sm:hidden bg-black/50 backdrop-blur-md px-4 pb-4 space-y-2">
           <MobileLink href="/" label="Home" active={pathname === "/"} />
           <MobileLink
             href="/create"
@@ -84,14 +81,13 @@ export default function Header() {
             active={pathname === "/challenges"}
           />
 
-          {/* 🔧 Clerk Mobile Buttons */}
           <div className="pt-2">
             <SignedIn>
-              <UserButton />
+              <UserButton afterSignOutUrl="/" />
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
-                <button className="text-white bg-blue-600 px-4 py-2 rounded w-full">
+                <button className="w-full text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
                   Anmelden
                 </button>
               </SignInButton>
@@ -103,7 +99,6 @@ export default function Header() {
   );
 }
 
-// NavLink component (desktop)
 const NavLink = ({
   href,
   label,
@@ -115,15 +110,14 @@ const NavLink = ({
 }) => (
   <Link
     href={href}
-    className={`hover:text-blue-500 ${
-      active ? "text-blue-500 font-semibold" : ""
+    className={`text-white hover:text-blue-300 transition ${
+      active ? "text-blue-300 font-semibold" : ""
     }`}
   >
     {label}
   </Link>
 );
 
-// MobileLink component
 const MobileLink = ({
   href,
   label,

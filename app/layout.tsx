@@ -3,10 +3,10 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import {
   ClerkProvider,
-  SignInButton,
+  /*  SignInButton,
   SignedIn,
   SignedOut,
-  UserButton,
+  UserButton, */
 } from "@clerk/nextjs";
 export default function RootLayout({
   children,
@@ -17,15 +17,14 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="de">
         <body>
-          <Header>
-            <SignedOut>
-              <SignInButton />
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </Header>
-          <main className="min-h-screen">{children}</main>
+          <Header />
+          {/* <SignedOut>
+            <SignInButton />
+          </SignedOut>
+          <SignedIn>
+            <UserButton />
+          </SignedIn> */}
+          <main className=" pt-12 min-h-screen">{children}</main>
           <Footer />
         </body>
       </html>
