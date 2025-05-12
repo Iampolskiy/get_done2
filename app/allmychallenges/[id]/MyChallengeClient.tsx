@@ -1,34 +1,38 @@
 // app/allmychallenges/[id]/MyChallengeClient.tsx
 "use client";
 
+import { useState, useMemo } from "react";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useMemo } from "react";
 import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 
 type Props = { challenge: Challenge };
 
 export default function MyChallengeClient({ challenge }: Props) {
-  /* ------------------------------------------------------------------ */
-  /*  COVER‑BILD ermitteln (erstes isMain =true, ohne Sortierung)        */
-  /* ------------------------------------------------------------------ */
+  /* ------------------ COVER-IMAGE ------------------ */
   const coverImg = useMemo(() => {
-    const imgs = challenge.images ?? [];
-    return imgs.find((i) => i.isMain);
+    return (challenge.images ?? []).find((i) => i.isMain);
   }, [challenge.images]);
 
-  /* ------------------------------------------------------------------ */
-  /*  TIMELINE‑STATE                                                    */
-  /* ------------------------------------------------------------------ */
-  const updates = challenge.updates ?? [];
-  const [activeIdx, setActiveIdx] = useState(updates.length - 1);
-  const activeUpd = useMemo(() => updates[activeIdx], [updates, activeIdx]);
+  /* ------------------ UPDATES-MEMO ----------------- */
+  const updates = useMemo(() => {
+    return challenge.updates ?? [];
+  }, [challenge.updates]);
+
+  /* ------------------ ACTIVE-INDEX ---------------- */
+  const [activeIdx, setActiveIdx] = useState<number>(() => {
+    // Lazy-init: nur beim ersten Render berechnen
+    return updates.length > 0 ? updates.length - 1 : 0;
+  });
+
+  /* ------------------ ACTIVE-UPDATE ---------------- */
+  const activeUpd = useMemo(() => {
+    return updates[activeIdx];
+  }, [updates, activeIdx]);
+
   const images = activeUpd?.images ?? [];
 
-  /* ------------------------------------------------------------------ */
-  /*  RENDER                                                            */
-  /* ------------------------------------------------------------------ */
   return (
     <section className="bg-slate-50 min-h-screen px-4 md:px-8 py-10">
       {/* ---------- HEADER ------------------------------------------ */}
@@ -45,7 +49,7 @@ export default function MyChallengeClient({ challenge }: Props) {
           </div>
         )}
 
-        {/* Titel, Status, Progress … (unverändert) */}
+        {/* Titel, Status */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-3xl font-bold">{challenge.title}</h1>
@@ -64,6 +68,7 @@ export default function MyChallengeClient({ challenge }: Props) {
           </span>
         </div>
 
+        {/* Fortschritts-Balken */}
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-600"
@@ -71,7 +76,7 @@ export default function MyChallengeClient({ challenge }: Props) {
           />
         </div>
 
-        {/* CTA‑Buttons */}
+        {/* CTA-Buttons */}
         <div className="flex flex-wrap gap-3">
           <Link
             href={`/update/${challenge.id}`}
@@ -101,7 +106,6 @@ export default function MyChallengeClient({ challenge }: Props) {
       {updates.length > 0 && (
         <div className="max-w-3xl mx-auto mt-10 space-y-4">
           <h2 className="font-semibold text-lg">Timeline</h2>
-
           <div className="flex overflow-x-auto gap-3 pb-1">
             {updates.map((_, idx) => (
               <button
@@ -122,10 +126,10 @@ export default function MyChallengeClient({ challenge }: Props) {
         </div>
       )}
 
-      {/* ---------- AKTUELLES UPDATE ------------------------------- */}
+      {/* ---------- AKTUELLES UPDATE ------------------------------- */}
       {activeUpd && (
         <div className="max-w-3xl mx-auto mt-8 bg-white rounded-xl shadow p-4 md:p-6 space-y-6">
-          {/* Bilder‑Grid */}
+          {/* Bilder-Grid */}
           {images.length > 0 && (
             <div className="grid grid-cols-2 gap-4">
               {images.map((img) => (
@@ -142,7 +146,7 @@ export default function MyChallengeClient({ challenge }: Props) {
             </div>
           )}
 
-          {/* Datum & Text */}
+          {/* Datum & Text */}
           <div className="space-y-1">
             <time className="text-sm text-gray-500">
               {new Date(activeUpd.date).toLocaleDateString("de-DE", {

@@ -55,16 +55,15 @@ export default function MyChallengesClient({
   return (
     <section
       className="
-        
         bg-[url('/bg1.jpg')] bg-fixed bg-cover bg-center
-        px-4 text-gray-200
+        py-28 px-4 text-gray-200
       "
     >
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <header className="mb-12 flex flex-wrap items-center justify-between gap-4">
+        {/* Überschrift */}
+        <div className="mb-12 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1
+            <h2
               className="
                 text-4xl sm:text-5xl font-extrabold
                 bg-gradient-to-r from-teal-400 to-indigo-500
@@ -72,7 +71,7 @@ export default function MyChallengesClient({
               "
             >
               Meine Ziele
-            </h1>
+            </h2>
             <p className="text-sm text-slate-300">
               Überblick deiner laufenden Ziele
             </p>
@@ -87,7 +86,7 @@ export default function MyChallengesClient({
           >
             Neues Ziel
           </Link>
-        </header>
+        </div>
 
         {/* Grid */}
         {challenges.length ? (
@@ -109,12 +108,16 @@ export default function MyChallengesClient({
                     className="
                       relative flex h-[420px] flex-col overflow-hidden rounded-2xl
                       bg-white/6 backdrop-blur-md
-                      border border-transparent shadow-sm
+                      border border-white/20
                       transition
                       group-hover:border-cyan-400
                       group-hover:shadow-[0_0_20px_rgba(0,255,200,0.6)]
+                      group-active:border-cyan-500
+                      group-active:shadow-[0_0_30px_rgba(0,255,200,0.8)]
                       group-hover:-translate-y-1
+                      group-active:-translate-y-0
                       duration-300
+                      cursor-pointer
                     "
                   >
                     {/* Fortschritts-Ring */}
@@ -126,7 +129,7 @@ export default function MyChallengesClient({
                     <div className="relative h-56 w-full">
                       <Image
                         src={img}
-                        alt=""
+                        alt={c.title}
                         fill
                         unoptimized
                         className="object-cover opacity-85"
