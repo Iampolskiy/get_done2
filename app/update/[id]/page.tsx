@@ -1,8 +1,10 @@
+// app/allmychallenges/[id]/page.tsx
 "use server";
+
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import UpdateClient from "./UpdateClient";
-import type { Challenge, UpdateProgress } from "@/types/types";
+import type { Challenge } from "@/types/types";
 
 export default async function UpdatePage({
   params,
@@ -12,7 +14,7 @@ export default async function UpdatePage({
   const userNow = await currentUser();
   if (!userNow) return <p>Nicht eingeloggt</p>;
 
-  const { id } = await params;
+  const { id } = params;
   const numericId = parseInt(id, 10);
 
   const challengeRaw = await prisma.challenge.findUnique({
@@ -22,7 +24,7 @@ export default async function UpdatePage({
       images: true,
       updates: {
         include: {
-          images: true, // ✅ <-- WICHTIG: Bilder der Updates laden!
+          images: true, // Bilder der Updates laden
         },
       },
     },
@@ -30,18 +32,52 @@ export default async function UpdatePage({
 
   if (!challengeRaw) return <p>Challenge nicht gefunden</p>;
 
-  // Jetzt MAPPEN
+  // Mapping auf unser Challenge-Interface
   const challenge: Challenge = {
-    ...challengeRaw,
-    updates: challengeRaw.updates.map((update) => ({
-      id: update.id,
-      updateText: update.content ?? "",
-      date: update.createdAt.toISOString(),
-      createdAt: update.createdAt.toISOString(),
-      type: update.type,
-      challengeId: update.challengeId,
-      userId: update.authorId ?? 0,
-      images: update.images ?? [], // <-- Wichtig!
+    // Basis-Felder
+    id: challengeRaw.id,
+    title: challengeRaw.title,
+    category: challengeRaw.category,
+    difficulty: challengeRaw.difficulty,
+    description: challengeRaw.description,
+    duration: challengeRaw.duration,
+    completed: challengeRaw.completed,
+    progress: challengeRaw.progress,
+    age: challengeRaw.age,
+    gender: challengeRaw.gender,
+    created_at: challengeRaw.created_at,
+    updated_at: challengeRaw.updated_at,
+    edited_at: challengeRaw.edited_at,
+    city_address: challengeRaw.city_address,
+    goal: challengeRaw.goal,
+    author: {
+      id: challengeRaw.author.id,
+      email: challengeRaw.author.email ?? undefined,
+      clerkId: challengeRaw.author.clerkId ?? undefined,
+      name: challengeRaw.author.name ?? undefined,
+    },
+    authorId: challengeRaw.authorId,
+
+    // Alle Challenge-Bilder mit isMain → boolean casten
+    images: challengeRaw.images.map((img) => ({
+      ...img,
+      isMain: !!img.isMain,
+    })),
+
+    // Updates mappen
+    updates: challengeRaw.updates.map((u) => ({
+      id: u.id,
+      updateText: u.content ?? "",
+      date: u.createdAt.toISOString(),
+      createdAt: u.createdAt.toISOString(),
+      type: u.type,
+      challengeId: u.challengeId,
+      authorId: u.authorId ?? undefined,
+      userId: u.authorId ?? 0,
+      images: u.images.map((img) => ({
+        ...img,
+        isMain: !!img.isMain,
+      })),
     })),
   };
 
