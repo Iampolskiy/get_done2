@@ -31,7 +31,9 @@ export default async function DeleteUpdatePage({
 
   return (
     <>
-      <DeleteUpdateClient update={update} />
+      <DeleteUpdateClient
+        update={{ ...update, date: update.createdAt.toString() }}
+      />
     </>
   );
 }

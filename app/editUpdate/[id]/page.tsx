@@ -24,5 +24,9 @@ export default async function EditUpdatePage({
   if (!update) throw new Error("Update nicht gefunden");
   if (update.authorId !== user.id) throw new Error("Keine Berechtigung");
 
-  return <EditUpdateClient update={update} />;
+  return (
+    <EditUpdateClient
+      update={{ ...update, date: update.createdAt.toString() }}
+    />
+  );
 }
