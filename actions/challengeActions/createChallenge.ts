@@ -16,16 +16,27 @@ export async function createChallenge(
   images: UploadedImage[],
   formData: FormData
 ): Promise<void> {
-  console.log("DEBUG ‑ images im Server Action:", images); // <‑‑ hinzufügen
-  /* ---------- 1) Auth‑Check ---------------------------------- */
+  console.log("DEBUG ‑ images im Server Action:", images);
+
+  /* ---------- 1) Auth‑Check + User anlegen falls nötig ------- */
   const me = await currentUser();
   if (!me) throw new Error("Benutzer ist nicht authentifiziert");
 
   const email = me.emailAddresses?.[0]?.emailAddress;
   if (!email) throw new Error("Keine E‑Mail‑Adresse gefunden");
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("Benutzer nicht gefunden");
+  // ✅ Benutzer suchen oder anlegen
+  let user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email,
+        name: me.firstName ?? "Unbekannt",
+        clerkId: me.id,
+      },
+    });
+  }
 
   /* ---------- 2) Form‑Daten ---------------------------------- */
   const data = {
@@ -43,7 +54,6 @@ export async function createChallenge(
 
   /* ---------- 3) Transaktion --------------------------------- */
   await prisma.$transaction(async (tx) => {
-    // Challenge anlegen
     const newChallenge = await tx.challenge.create({
       data: {
         ...data,
@@ -51,14 +61,13 @@ export async function createChallenge(
       },
     });
 
-    // ✨ NEW — maximal 10 Titelbilder abspeichern
     const coverImages = images.slice(0, 10);
 
     if (coverImages.length) {
       await tx.image.createMany({
         data: coverImages.map(({ url, isMain }) => ({
           url,
-          isMain: isMain ?? true, // standardmäßig Titelbild
+          isMain: isMain ?? true,
           duration: 0,
           challengeId: newChallenge.id,
           userId: user.id,
