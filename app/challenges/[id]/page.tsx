@@ -32,6 +32,7 @@ export default async function ChallengePage({
  */
 
 import { Challenge } from "@/types/types";
+
 import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
 import ChallengeClient from "./ChallengeClient";
 
@@ -50,8 +51,9 @@ export default async function ChallengePage({
     include: {
       author: true, // Lade auch die Autoren-Information
       images: true,
+      updates: { include: { images: true } },
     },
   });
 
-  return <ChallengeClient challenge={challenge} />;
+  return <ChallengeClient challenge={challenge as Challenge} />;
 }
