@@ -22,7 +22,6 @@ export default function MyChallengeClient({ challenge }: Props) {
 
   /* ------------------ ACTIVE-INDEX ---------------- */
   const [activeIdx, setActiveIdx] = useState<number>(() => {
-    // Lazy-init: nur beim ersten Render berechnen
     return updates.length > 0 ? updates.length - 1 : 0;
   });
 
@@ -149,15 +148,23 @@ export default function MyChallengeClient({ challenge }: Props) {
           {/* Datum & Text */}
           <div className="space-y-1">
             <time className="text-sm text-gray-500">
-              {new Date(activeUpd.date).toLocaleDateString("de-DE", {
+              {new Date(activeUpd.createdAt).toLocaleDateString("de-DE", {
                 year: "numeric",
                 month: "2-digit",
                 day: "2-digit",
               })}
             </time>
-            <p className="text-gray-700 leading-relaxed">
-              {activeUpd.updateText}
-            </p>
+            <p className="text-gray-700 leading-relaxed">{activeUpd.content}</p>
+          </div>
+
+          {/* Bearbeiten-Button */}
+          <div className="pt-4">
+            <Link
+              href={`/editUpdate/${activeUpd.id}`}
+              className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium py-2 px-4 rounded transition"
+            >
+              Update bearbeiten
+            </Link>
           </div>
         </div>
       )}

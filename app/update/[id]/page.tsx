@@ -67,7 +67,7 @@ export default async function UpdatePage({
     // Updates mappen
     updates: challengeRaw.updates.map((u) => ({
       id: u.id,
-      updateText: u.content ?? "",
+      content: u.content ?? "",
       date: u.createdAt.toISOString(),
       createdAt: u.createdAt.toISOString(),
       type: u.type,

@@ -59,7 +59,7 @@ export interface Image {
   updateId?: number | null;
   userId: number | null;
 
-  isMain?: boolean;
+  isMain?: boolean | null;
 }
 
 // -------------- UPDATE --------------------------
@@ -68,8 +68,8 @@ export interface Update {
   challengeId: number;
   authorId?: number | null;
 
-  updateText: string; // gespeicherter Text
-  date: string; // Datum als ISO‑String
+  content: string | null; // gespeicherter Text
+  /* date: string; */ // Datum als ISO‑String
   createdAt: string | Date;
   type: "CREATED" | "UPDATED" | "DELETED";
 
