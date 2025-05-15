@@ -69,7 +69,7 @@ export interface Update {
   authorId?: number | null;
 
   content: string | null; // gespeicherter Text
-  /* date: string; */ // Datum als ISO‑String
+  date: string; // Datum als ISO‑String
   createdAt: string | Date;
   type: "CREATED" | "UPDATED" | "DELETED";
 

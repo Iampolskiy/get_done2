@@ -120,7 +120,7 @@ export default function UpdateClient({ challenge }: UpdateClientProps) {
                 <span className="text-sm text-gray-500">
                   {formattedDates[idx]}
                 </span>
-                <p className="text-gray-800 mt-2">{u.updateText}</p>
+                <p className="text-gray-800 mt-2">{u.content}</p>
               </div>
             </div>
           ))}

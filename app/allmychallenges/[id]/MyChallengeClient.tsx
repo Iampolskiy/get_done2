@@ -154,7 +154,9 @@ export default function MyChallengeClient({ challenge }: Props) {
                 day: "2-digit",
               })}
             </time>
-            <p className="text-gray-700 leading-relaxed">{activeUpd.content}</p>
+            <p className="text-gray-700 leading-relaxed">
+              {activeUpd.content ?? "Kein Update-Text vorhanden."}
+            </p>
           </div>
 
           {/* Bearbeiten-Button */}

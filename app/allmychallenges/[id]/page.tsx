@@ -71,11 +71,12 @@ export default async function ChallengesPage({
     id: u.id,
     challengeId: u.challengeId,
     authorId: u.authorId ?? null,
-    updateText: u.content ?? "",
-    date: u.createdAt.toISOString(),
-    createdAt: u.createdAt,
+    content: u.content ?? "",
+    /*     date: u.createdAt.toISOString(),
+     */ createdAt: u.createdAt,
     type: u.type,
     images: u.images.map(mapImage),
+    date: u.createdAt.toISOString(),
   });
 
   /* ---------- In Frontend‑Typ transformieren ----------------- */
