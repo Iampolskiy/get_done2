@@ -158,12 +158,19 @@ export default function MyChallengeClient({ challenge }: Props) {
           </div>
 
           {/* Bearbeiten-Button */}
-          <div className="pt-4">
+          <div className="pt-4 flex gap-3 flex-wrap">
             <Link
               href={`/editUpdate/${activeUpd.id}`}
               className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium py-2 px-4 rounded transition"
             >
               Update bearbeiten
+            </Link>
+
+            <Link
+              href={`/deleteUpdate/${activeUpd.id}`}
+              className="inline-block bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded transition"
+            >
+              Update löschen
             </Link>
           </div>
         </div>
