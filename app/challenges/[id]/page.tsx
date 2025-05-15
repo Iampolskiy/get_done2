@@ -1,59 +1,34 @@
-/* import React from "react";
 import { Challenge } from "@/types/types";
-import ChallengeClient from "./ChallengeClient";
-import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
-import { log } from "console";
-
-export default async function ChallengePage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { id } = await params;
-  const numericId = parseInt(id, 10);
-  const challenge = (await prisma.challenge.findUnique({
-    where: {
-      id: numericId,
-    },
-    include: {
-      author: true, // Lade auch die Autoren-Information
-      images: true,
-    },
-  })) as Challenge;
-
-  if (!challenge) {
-    return <div>Challenge not found</div>;
-  }
-
-  console.log(challenge);
-
-  return <ChallengeClient challenge={challenge} />;
-}
- */
-
-import { Challenge } from "@/types/types";
-
-import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
+import prisma from "@/lib/prisma"; // Prisma Client
 import ChallengeClient from "./ChallengeClient";
 
-export default async function ChallengePage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const { id } = /* await */ params;
-  const numericId = parseInt(id, 10);
-  // Direkt die Datenbank abfragen
+type PageProps = {
+  params: {
+    id: string;
+  };
+};
+
+export default async function ChallengePage({ params }: PageProps) {
+  const numericId = parseInt(params.id, 10);
+
   const challenge = await prisma.challenge.findUnique({
-    where: {
-      id: numericId,
-    },
+    where: { id: numericId },
     include: {
-      author: true, // Lade auch die Autoren-Information
+      author: true,
       images: true,
-      updates: { include: { images: true } },
+      updates: {
+        include: {
+          images: true,
+        },
+      },
     },
   });
+
+  if (!challenge) {
+    return (
+      <div className="p-4 text-center text-red-500">Challenge not found</div>
+    );
+  }
 
   return <ChallengeClient challenge={challenge as Challenge} />;
 }
