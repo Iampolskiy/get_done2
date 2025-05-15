@@ -1,20 +1,17 @@
 import { Challenge } from "@/types/types";
-import prisma from "@/lib/prisma"; // Importiere den Singleton Prisma Client
+import prisma from "@/lib/prisma";
 import ChallengesClient from "./ChallengesClient";
 
 export default async function ChallengesPage() {
-  // Direkt die Datenbank abfragen
-  const challenges = (
-    await prisma.challenge.findMany({
-      include: {
-        author: true, // Lade auch die Autoren-Information
-        images: true,
+  const challenges = await prisma.challenge.findMany({
+    include: {
+      author: true,
+      images: true,
+      updates: {
+        include: { images: true }, // optional, aber gut falls du es brauchst
       },
-    })
-  ).map((challenge) => ({
-    ...challenge,
-    images: challenge.images.map((image) => image.url), // Extrahiere nur die URLs
-  })) as Challenge[];
+    },
+  });
 
-  return <ChallengesClient challenges={challenges} />;
+  return <ChallengesClient challenges={challenges as Challenge[]} />;
 }

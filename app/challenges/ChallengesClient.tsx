@@ -34,7 +34,7 @@ export default function ChallengesClient({
                     {challenge.images.map((imageUrl, index) => (
                       <Image
                         key={index}
-                        src={imageUrl.toString()} // Cloudinary-URL
+                        src={imageUrl.url} // Cloudinary-URL
                         alt={`Image for ${challenge.title}`}
                         width={200}
                         height={200}
