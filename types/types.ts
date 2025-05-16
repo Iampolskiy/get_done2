@@ -27,9 +27,9 @@ export interface Challenge {
   progress?: number | null;
   age?: number | null;
   gender?: string | null;
-  created_at?: Date | null;
-  updated_at?: Date | null;
-  edited_at?: Date | null;
+  created_at?: string | Date | null;
+  updated_at?: string | Date | null;
+  edited_at?: string | Date | null;
   city_address?: string | null;
   goal?: string | null;
 
