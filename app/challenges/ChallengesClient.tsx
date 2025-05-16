@@ -1,10 +1,11 @@
+// file: app/challenges/ChallengesClient.tsx
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Sliders } from "lucide-react";
+import { ChevronDown, Sliders, Search, Camera } from "lucide-react";
 
 type ChallengesClientProps = {
   challenges: Challenge[];
@@ -14,23 +15,19 @@ export default function ChallengesClient({
   challenges,
 }: ChallengesClientProps) {
   const [query, setQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const [onlyWithImages, setOnlyWithImages] = useState(true);
-
   const [sortOpen, setSortOpen] = useState(false);
   const [sortKey, setSortKey] = useState<
     "progress" | "updates" | "category" | "date" | "random"
   >("progress");
-
-  // 1- vs. 2-Spalten-Modus
   const [viewCols, setViewCols] = useState<1 | 2>(1);
-
-  // Referenz zum Scroll-Container, um bei Sort-Wechsel nach oben zu scrollen
   const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [sortKey]);
 
-  // Suche + Filter
   const bySearch = useMemo(
     () =>
       challenges.filter((c) =>
@@ -38,11 +35,11 @@ export default function ChallengesClient({
       ),
     [challenges, query]
   );
+
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // Sortierung inkl. Datum & Zufall
   const sorted = useMemo(() => {
     const arr = [...filtered];
     switch (sortKey) {
@@ -69,53 +66,57 @@ export default function ChallengesClient({
     }
   }, [filtered, sortKey]);
 
-  // Card-Dimensionen
-  const cardHeight = "calc(100vh - 12rem)"; // fast volle Höhe
-  const cardWidth = viewCols === 1 ? "28vw" : "100%"; // 1-Spalte = 30vw, 2-Spalten = 100%
+  const gridCols =
+    viewCols === 1 ? "sm:grid-cols-1 justify-items-center" : "sm:grid-cols-2";
+  const gapClasses = viewCols === 2 ? "gap-6 sm:gap-4" : "gap-6";
+  const cardWidthClasses =
+    viewCols === 1
+      ? "w-full max-w-[96vw] sm:w-[30vw] min-w-[300px]"
+      : "w-full ";
+  const cardHeightClass = "h-[calc(100vh-12rem)]";
 
   return (
-    <div className="container mx-auto px-4 pt-4">
-      {/* Sticky Top Bar */}
-      <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 px-4 py-3 flex flex-wrap items-center gap-4">
-        <h1 className="text-2xl font-bold text-white flex-shrink-0">
-          Challenges
-        </h1>
-
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <input
-            type="text"
-            placeholder="Search..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-full bg-white/10 placeholder-white/50 text-white px-4 py-2 pl-10 focus:outline-none"
-          />
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70">
-            🔍
-          </span>
-        </div>
-
-        {/* Nur mit Bildern */}
+    <div className="w-full px-2 sm:px-4 pt-4">
+      <div
+        className={`
+          sticky top-0 z-20 backdrop-blur-md bg-black/40 justify-center
+          ${cardWidthClasses} mx-auto
+          py-3 flex flex-wrap items-center gap-4
+        `}
+      >
+        {/* Search Icon */}
         <button
-          onClick={() => setOnlyWithImages((v) => !v)}
-          className="flex items-center space-x-2 transition"
+          onClick={() => setShowSearch((v) => !v)}
+          className="text-white p-2 rounded-full hover:bg-white/10 transition"
         >
-          <span
-            className={`w-3 h-3 rounded-full block transition-colors ${
-              onlyWithImages ? "bg-teal-300" : "bg-white/30"
-            }`}
-          />
-          <span className="text-sm text-white">Nur mit Bildern</span>
+          <Search size={20} />
         </button>
+
+        {/* Show Search Input if visible */}
+        {showSearch && (
+          <div className="relative w-full sm:w-auto flex-1 min-w-[200px]">
+            <input
+              type="text"
+              placeholder="Search..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+              className="w-full rounded-full bg-white/10 placeholder-white/50 text-white px-4 py-2 pl-10 focus:outline-none"
+            />
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70">
+              🔍
+            </span>
+          </div>
+        )}
 
         {/* Sort Dropdown */}
         <div className="relative">
           <button
             onClick={() => setSortOpen((o) => !o)}
-            className="flex items-center space-x-1 text-white hover:text-teal-300 transition"
+            className="flex items-center space-x-1 text-white transition"
           >
             <Sliders size={20} />
-            <span className="text-sm">Sort: {sortKey}</span>
+            {/* <span className="text-sm">Sort: {sortKey}</span> */}
             <ChevronDown
               size={16}
               className={`${sortOpen ? "rotate-180" : ""} transition`}
@@ -132,8 +133,8 @@ export default function ChallengesClient({
                     setSortKey(key);
                     setSortOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-2 hover:bg-white/10 transition ${
-                    sortKey === key ? "bg-white/20" : ""
+                  className={`block w-full text-left px-4 py-2 transition ${
+                    sortKey === key ? "font-bold" : ""
                   }`}
                 >
                   {key === "random"
@@ -145,11 +146,25 @@ export default function ChallengesClient({
           )}
         </div>
 
+        {/* Nur mit Bildern Icon */}
+        <button
+          onClick={() => setOnlyWithImages((v) => !v)}
+          className="text-white p-2 rounded-full hover:bg-white/10 transition"
+          title="Nur mit Bildern"
+        >
+          <Camera
+            size={20}
+            className={`transition ${
+              onlyWithImages ? "text-teal-300" : "text-white/40"
+            }`}
+          />
+        </button>
+
         {/* View Toggle */}
-        <div className="flex items-center">
+        <div className="hidden sm:flex items-center">
           <button
             onClick={() => setViewCols(viewCols === 1 ? 2 : 1)}
-            className="flex items-center space-x-1 p-2 rounded hover:bg-white/10 transition"
+            className="flex items-center space-x-1 p-2 rounded transition"
           >
             {[1, 2].map((i) => (
               <span
@@ -163,16 +178,12 @@ export default function ChallengesClient({
         </div>
       </div>
 
-      {/* Grid: Immer 1 Spalte (< sm), ab sm ggf. 2 Spalten */}
+      {/* Grid */}
       <div
         ref={containerRef}
         className="mt-2 overflow-y-auto snap-y snap-mandatory max-h-[calc(100vh-6rem)]"
       >
-        <div
-          className={`grid gap-6 pb-8 ${
-            viewCols === 1 ? "grid-cols-1 justify-items-center" : "grid-cols-2"
-          }`}
-        >
+        <div className={`grid ${gapClasses} pb-8 grid-cols-1 ${gridCols}`}>
           {sorted.map((c) => {
             const pct = Math.round(c.progress ?? 0);
             const updates = c.updates?.length ?? 0;
@@ -184,16 +195,16 @@ export default function ChallengesClient({
               <Link
                 key={c.id}
                 href={`/allmychallenges/${c.id}`}
-                className="group snap-start"
+                className="snap-start"
               >
                 <div
-                  className="relative flex flex-col overflow-hidden rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 transition duration-300 cursor-pointer group-hover:border-teal-400 group-hover:shadow-lg group-hover:-translate-y-1 group-active:border-teal-500 group-active:shadow-xl"
-                  style={{
-                    width: cardWidth,
-                    height: cardHeight,
-                  }}
+                  className={`
+                    relative flex flex-col overflow-hidden
+                    rounded-2xl bg-white/10 backdrop-blur-md
+                    ${cardWidthClasses} ${cardHeightClass}
+                    border-transparent sm:border sm:border-white/20
+                  `}
                 >
-                  {/* Bild */}
                   <div className="relative h-72 w-full">
                     <Image
                       src={imgUrl}
@@ -204,7 +215,6 @@ export default function ChallengesClient({
                     />
                   </div>
 
-                  {/* Fortschritts-Kreis */}
                   <div className="absolute top-4 right-4 z-10">
                     <svg width={44} height={44} viewBox="0 0 44 44">
                       <circle
@@ -230,7 +240,6 @@ export default function ChallengesClient({
                     </svg>
                   </div>
 
-                  {/* Textbereich */}
                   <div className="flex-grow p-5 flex flex-col justify-between">
                     <div>
                       <h2 className="text-xl font-bold text-white line-clamp-2">
