@@ -1,4 +1,3 @@
-// file: app/challenges/ChallengesClient.tsx
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
@@ -6,6 +5,8 @@ import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, Sliders, Search, Camera } from "lucide-react";
+
+type SortKey = "progress" | "updates" | "category" | "date" | "random";
 
 type ChallengesClientProps = {
   challenges: Challenge[];
@@ -18,9 +19,7 @@ export default function ChallengesClient({
   const [showSearch, setShowSearch] = useState(false);
   const [onlyWithImages, setOnlyWithImages] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
-  const [sortKey, setSortKey] = useState<
-    "progress" | "updates" | "category" | "date" | "random"
-  >("progress");
+  const [sortKey, setSortKey] = useState<SortKey | null>("progress");
   const [viewCols, setViewCols] = useState<1 | 2>(1);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +27,7 @@ export default function ChallengesClient({
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [sortKey]);
 
+  // 🔍 Filter + Sortierung
   const bySearch = useMemo(
     () =>
       challenges.filter((c) =>
@@ -42,6 +42,8 @@ export default function ChallengesClient({
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
+    if (!sortKey) return arr;
+
     switch (sortKey) {
       case "progress":
         return arr.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
@@ -56,8 +58,8 @@ export default function ChallengesClient({
       case "date":
         return arr.sort(
           (a, b) =>
-            new Date(b.created_at?.toString() ?? "").getTime() -
-            new Date(a.created_at?.toString() ?? "").getTime()
+            new Date(b.created_at ?? "").getTime() -
+            new Date(a.created_at ?? "").getTime()
         );
       case "random":
         return arr.sort(() => 0.5 - Math.random());
@@ -66,33 +68,93 @@ export default function ChallengesClient({
     }
   }, [filtered, sortKey]);
 
+  // 📌 Grid-Spaltenlayout
   const gridCols =
-    viewCols === 1 ? "sm:grid-cols-1 justify-items-center" : "sm:grid-cols-2";
+    viewCols === 1
+      ? "grid-cols-1 justify-items-center" // ✅ Einspaltig
+      : "grid-cols-[repeat(auto-fit,minmax(360px,1fr))] justify-center"; // ✅ Zweispaltig
+
+  // 📌 Abstände zwischen Cards
   const gapClasses = viewCols === 2 ? "gap-6 sm:gap-4" : "gap-6";
+
+  // 📌 Card-Breite
   const cardWidthClasses =
     viewCols === 1
-      ? "w-full max-w-[96vw] sm:w-[30vw] min-w-[300px]"
-      : "w-full ";
+      ? "w-full max-w-[95vw] min-w-[320px] sm:w-[30vw] sm:min-w-[320px] mx-auto"
+      : "w-full max-w-[95vw] min-w-[320px] sm:max-w-[420px] mx-auto"; // ✅ Zweispaltig:
+
   const cardHeightClass = "h-[calc(100vh-12rem)]";
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4">
+      {/* 🔝 Sticky Topbar */}
       <div
-        className={`
-          sticky top-0 z-20 backdrop-blur-md bg-black/40 justify-center
-          ${cardWidthClasses} mx-auto
-          py-3 flex flex-wrap items-center gap-4
-        `}
+        className={`sticky top-0 z-20 backdrop-blur-md bg-black/40 justify-center ${cardWidthClasses} mx-auto py-3 flex flex-wrap items-center gap-4`}
       >
-        {/* Search Icon */}
-        <button
-          onClick={() => setShowSearch((v) => !v)}
-          className="text-white p-2 rounded-full hover:bg-white/10 transition"
-        >
-          <Search size={20} />
-        </button>
+        {/* 🔍 Icons */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowSearch((v) => !v)}
+            className="text-white p-2 rounded-full hover:bg-white/10 transition"
+            title="Suche"
+          >
+            <Search size={20} />
+          </button>
 
-        {/* Show Search Input if visible */}
+          <div className="relative">
+            <button
+              onClick={() => setSortOpen((o) => !o)}
+              className={`p-2 rounded-full hover:bg-white/10 transition flex items-center ${
+                sortKey ? "text-teal-300" : "text-white"
+              }`}
+              title="Sortieren"
+            >
+              <Sliders size={20} />
+              <ChevronDown
+                size={16}
+                className={`ml-1 ${sortOpen ? "rotate-180" : ""} transition`}
+              />
+            </button>
+
+            {sortOpen && (
+              <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30">
+                {(
+                  ["progress", "updates", "category", "date", "random"] as const
+                ).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setSortKey((current) => (current === key ? null : key));
+                      setSortOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 transition ${
+                      sortKey === key ? "font-bold text-teal-300" : ""
+                    }`}
+                  >
+                    {key === "random"
+                      ? "Zufällig"
+                      : key.charAt(0).toUpperCase() + key.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setOnlyWithImages((v) => !v)}
+            className="text-white p-2 rounded-full hover:bg-white/10 transition"
+            title="Nur mit Bildern"
+          >
+            <Camera
+              size={20}
+              className={`transition ${
+                onlyWithImages ? "text-teal-300" : "text-white/40"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* 🔍 Suchfeld */}
         {showSearch && (
           <div className="relative w-full sm:w-auto flex-1 min-w-[200px]">
             <input
@@ -109,59 +171,8 @@ export default function ChallengesClient({
           </div>
         )}
 
-        {/* Sort Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setSortOpen((o) => !o)}
-            className="flex items-center space-x-1 text-white transition"
-          >
-            <Sliders size={20} />
-            {/* <span className="text-sm">Sort: {sortKey}</span> */}
-            <ChevronDown
-              size={16}
-              className={`${sortOpen ? "rotate-180" : ""} transition`}
-            />
-          </button>
-          {sortOpen && (
-            <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden">
-              {(
-                ["progress", "updates", "category", "date", "random"] as const
-              ).map((key) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    setSortKey(key);
-                    setSortOpen(false);
-                  }}
-                  className={`block w-full text-left px-4 py-2 transition ${
-                    sortKey === key ? "font-bold" : ""
-                  }`}
-                >
-                  {key === "random"
-                    ? "Zufällig"
-                    : key.charAt(0).toUpperCase() + key.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Nur mit Bildern Icon */}
-        <button
-          onClick={() => setOnlyWithImages((v) => !v)}
-          className="text-white p-2 rounded-full hover:bg-white/10 transition"
-          title="Nur mit Bildern"
-        >
-          <Camera
-            size={20}
-            className={`transition ${
-              onlyWithImages ? "text-teal-300" : "text-white/40"
-            }`}
-          />
-        </button>
-
-        {/* View Toggle */}
-        <div className="hidden sm:flex items-center">
+        {/* 🔄 Spalten-Toggle */}
+        <div className="hidden sm:flex items-center ml-auto">
           <button
             onClick={() => setViewCols(viewCols === 1 ? 2 : 1)}
             className="flex items-center space-x-1 p-2 rounded transition"
@@ -178,12 +189,12 @@ export default function ChallengesClient({
         </div>
       </div>
 
-      {/* Grid */}
+      {/* 🧱 Card Grid */}
       <div
         ref={containerRef}
         className="mt-2 overflow-y-auto snap-y snap-mandatory max-h-[calc(100vh-6rem)]"
       >
-        <div className={`grid ${gapClasses} pb-8 grid-cols-1 ${gridCols}`}>
+        <div className={`grid ${gapClasses} pb-8 ${gridCols}`}>
           {sorted.map((c) => {
             const pct = Math.round(c.progress ?? 0);
             const updates = c.updates?.length ?? 0;
@@ -205,6 +216,7 @@ export default function ChallengesClient({
                     border-transparent sm:border sm:border-white/20
                   `}
                 >
+                  {/* 📸 Bild */}
                   <div className="relative h-72 w-full">
                     <Image
                       src={imgUrl}
@@ -215,6 +227,7 @@ export default function ChallengesClient({
                     />
                   </div>
 
+                  {/* 🔄 Fortschritts-Kreis */}
                   <div className="absolute top-4 right-4 z-10">
                     <svg width={44} height={44} viewBox="0 0 44 44">
                       <circle
@@ -240,6 +253,7 @@ export default function ChallengesClient({
                     </svg>
                   </div>
 
+                  {/* 📝 Text */}
                   <div className="flex-grow p-5 flex flex-col justify-between">
                     <div>
                       <h2 className="text-xl font-bold text-white line-clamp-2">
