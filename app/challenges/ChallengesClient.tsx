@@ -84,7 +84,7 @@ export default function ChallengesClient({
     "bg-white/10 backdrop-blur-md " +
     "border-transparent sm:border sm:border-white/20 " +
     "snap-start " +
-    "min-h-[82vh]";
+    "min-h-[82vh] max-w-[800px] mx-auto";
 
   const cardClassesMulti =
     "relative flex flex-col overflow-hidden rounded-2xl " +
