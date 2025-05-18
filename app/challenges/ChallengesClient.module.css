@@ -117,7 +117,7 @@
 /* ─── Single vs. Multi Column ───────────────────────────────── */
 .single {
   min-height: 82vh;
-  max-width: 800px;
+  max-width: 50vh;
   margin: 0 auto;
 }
 

@@ -29,7 +29,7 @@ export default function ChallengesClient({
   const [viewCols, setViewCols] = useState<1 | 2>(2);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Ref für Button + Dropdown
+  // Ref für Sort-Button + Dropdown
   const sortRef = useRef<HTMLDivElement>(null);
 
   // Scroll-to-top bei Sort-Änderung
@@ -66,7 +66,7 @@ export default function ChallengesClient({
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // ─────────── Multi-Sort mit Priorität ───────────
+  // ─────────── Multi-Sort mit Priorität durch Reihenfolge ───────────
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       for (const key of sortKeys) {
@@ -99,7 +99,7 @@ export default function ChallengesClient({
 
   const gridCols =
     viewCols === 1
-      ? "grid-cols-1 max-w-[800px] mx-auto"
+      ? " max-w-[780px] mx-auto"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
   const cardClassesSingle =
@@ -160,7 +160,7 @@ export default function ChallengesClient({
             )}
           </AnimatePresence>
 
-          {/* Sortieren (Button + Dropdown in sortRef) */}
+          {/* Sortieren */}
           <div ref={sortRef} className="relative">
             <button
               onClick={() => setSortOpen((o) => !o)}
@@ -214,7 +214,7 @@ export default function ChallengesClient({
           {/* Nur mit Bildern */}
           <button
             onClick={() => setOnlyWithImages((v) => !v)}
-            className="text-white p-2 rounded-full hover:bg-white/10 transition"
+            className="text-white p-2 rounded-full hover	bg-white/10 transition"
             title="Nur mit Bildern"
           >
             <Camera
@@ -276,28 +276,51 @@ export default function ChallengesClient({
                     unoptimized
                   />
                 </div>
-                <div className="absolute top-4 right-4 z-10">
-                  <svg width={44} height={44} viewBox="0 0 44 44">
+
+                {/* Stylischer Radial-Progress */}
+                <div className="absolute top-4 right-4 z-10 w-12 h-12">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    <defs>
+                      <linearGradient id="grad" x1="1" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#14B8A6" />
+                        <stop offset="100%" stopColor="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    {/* Hintergrundring */}
                     <circle
-                      cx="22"
-                      cy="22"
-                      r={18}
-                      strokeWidth={4}
-                      className="fill-none stroke-white/25"
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      strokeWidth="10"
+                      fill="none"
+                      className="stroke-white/20"
                     />
+                    {/* Fortschrittsring */}
                     <circle
-                      cx="22"
-                      cy="22"
-                      r={18}
-                      strokeWidth={4}
-                      strokeDasharray={2 * Math.PI * 18}
-                      strokeDashoffset={(2 * Math.PI * 18 * (100 - pct)) / 100}
-                      transform="rotate(-90 22 22)"
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      strokeWidth="10"
+                      fill="none"
+                      stroke="url(#grad)"
+                      strokeDasharray={2 * Math.PI * 45}
+                      strokeDashoffset={(2 * Math.PI * 45 * (100 - pct)) / 100}
+                      transform="rotate(-90 50 50)"
                       strokeLinecap="round"
-                      className="fill-none stroke-teal-400"
+                      className="transition-all duration-500"
                     />
+                    {/* Prozentzahl in der Mitte */}
+                    <text
+                      x="50"
+                      y="54"
+                      textAnchor="middle"
+                      className="text-xs font-semibold text-white"
+                    >
+                      {pct}%
+                    </text>
                   </svg>
                 </div>
+
                 <div className="flex-grow p-5 flex flex-col justify-between">
                   <h2 className="text-xl font-bold text-white line-clamp-2">
                     {c.title}
