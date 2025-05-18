@@ -19,13 +19,14 @@ export default function ChallengesClient({
   const [showSearch, setShowSearch] = useState(false);
   const [onlyWithImages, setOnlyWithImages] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey | null>("date");
+  // zuletzt geklicktes Kriterium ist erstes Element → höchste Priorität
+  const [sortKeys, setSortKeys] = useState<SortKey[]>(["date"]);
   const [viewCols, setViewCols] = useState<1 | 2>(2);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [sortKey]);
+  }, [sortKeys]);
 
   const bySearch = useMemo(
     () =>
@@ -39,68 +40,77 @@ export default function ChallengesClient({
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
+  // ─────────── Multi-Sort Comparator ────────────────────────────────
   const sorted = useMemo(() => {
     const arr = [...filtered];
-    if (!sortKey) return arr;
-
-    switch (sortKey) {
-      case "progress":
-        return arr.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
-      case "updates":
-        return arr.sort(
-          (a, b) => (b.updates?.length ?? 0) - (a.updates?.length ?? 0)
-        );
-      case "category":
-        return arr.sort((a, b) =>
-          (a.category ?? "").localeCompare(b.category ?? "")
-        );
-      case "date":
-        return arr.sort(
-          (a, b) =>
-            new Date(b.created_at ?? "").getTime() -
-            new Date(a.created_at ?? "").getTime()
-        );
-      case "random":
-        return arr.sort(() => 0.5 - Math.random());
-      default:
-        return arr;
-    }
-  }, [filtered, sortKey]);
+    arr.sort((a, b) => {
+      for (const key of sortKeys) {
+        let diff = 0;
+        switch (key) {
+          case "progress":
+            diff = (b.progress ?? 0) - (a.progress ?? 0);
+            break;
+          case "updates":
+            diff = (b.updates?.length ?? 0) - (a.updates?.length ?? 0);
+            break;
+          case "category":
+            diff = (a.category ?? "").localeCompare(b.category ?? "");
+            break;
+          case "date":
+            diff =
+              new Date(b.created_at ?? "").getTime() -
+              new Date(a.created_at ?? "").getTime();
+            break;
+          case "random":
+            diff = Math.random() < 0.5 ? -1 : 1;
+            break;
+        }
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKeys]);
+  // ────────────────────────────────────────────────────────────────
 
   const gridCols =
     viewCols === 1
       ? "grid-cols-1 max-w-[800px] mx-auto"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Architektur: zwei Variablen für Card-Klassen (Werte identisch, können später
-  // für Single- vs. Multi-Column differieren)
+  // ─── Card-Klassen für Single vs. Multi ───────────────────────────
   const cardClassesSingle =
     "relative flex flex-col overflow-hidden rounded-2xl " +
     "bg-white/10 backdrop-blur-md " +
     "border-transparent sm:border sm:border-white/20 " +
     "snap-start " +
-    "min-h-[82vh] ";
+    "min-h-[82vh]";
 
   const cardClassesMulti =
     "relative flex flex-col overflow-hidden rounded-2xl " +
     "bg-white/10 backdrop-blur-md " +
     "border-transparent sm:border sm:border-white/20 " +
     "snap-start";
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────
+
+  // Farbskala für Sort-Prioritäten: index 0 = hellstes, dann dunkler usw.
+  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
+      {/* Toolbar */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 py-3">
         <div className="mx-auto flex flex-wrap items-center justify-center gap-2 max-w-screen-2xl px-4">
+          {/* Such-Button */}
           <button
             onClick={() => setShowSearch((v) => !v)}
-            className="text-white p-2 rounded-full hover:bg-white/10 transition"
+            className={`p-2 rounded-full hover:bg-white/10 transition ${
+              query ? "text-teal-300" : "text-white"
+            }`}
             title="Suche"
           >
             <Search size={20} />
           </button>
-
           <AnimatePresence>
             {showSearch && (
               <motion.div
@@ -116,6 +126,12 @@ export default function ChallengesClient({
                   placeholder="Search..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      setShowSearch(false);
+                    }
+                  }}
                   autoFocus
                   className="w-full rounded-full bg-white/10 placeholder-white/50 text-white px-4 py-2 pl-10 focus:outline-none"
                 />
@@ -126,11 +142,12 @@ export default function ChallengesClient({
             )}
           </AnimatePresence>
 
+          {/* Sortieren: Multi-Select Dropdown */}
           <div className="relative">
             <button
               onClick={() => setSortOpen((o) => !o)}
               className={`p-2 rounded-full hover:bg-white/10 transition flex items-center ${
-                sortKey ? "text-teal-300" : "text-white"
+                sortKeys.length > 0 ? "text-teal-300" : "text-white"
               }`}
               title="Sortieren"
             >
@@ -140,31 +157,41 @@ export default function ChallengesClient({
                 className={`ml-1 ${sortOpen ? "rotate-180" : ""} transition`}
               />
             </button>
-
             {sortOpen && (
               <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30">
                 {(
                   ["progress", "updates", "category", "date", "random"] as const
-                ).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => {
-                      setSortKey((current) => (current === key ? null : key));
-                      setSortOpen(false);
-                    }}
-                    className={`block w-full text-left px-4 py-2 transition ${
-                      sortKey === key ? "font-bold text-teal-300" : ""
-                    }`}
-                  >
-                    {key === "random"
-                      ? "Zufällig"
-                      : key.charAt(0).toUpperCase() + key.slice(1)}
-                  </button>
-                ))}
+                ).map((key) => {
+                  const idx = sortKeys.indexOf(key);
+                  const isActive = idx !== -1;
+                  const colorClass = isActive
+                    ? priorityColors[Math.min(idx, priorityColors.length - 1)]
+                    : "text-white";
+                  return (
+                    <button
+                      key={key}
+                      onClick={() =>
+                        setSortKeys((current) =>
+                          current.includes(key)
+                            ? current.filter((k) => k !== key)
+                            : [key, ...current]
+                        )
+                      }
+                      className={`block w-full text-left px-4 py-2 transition ${colorClass} ${
+                        isActive ? "font-bold" : ""
+                      }`}
+                    >
+                      {key === "random"
+                        ? "Zufällig"
+                        : key.charAt(0).toUpperCase() + key.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
 
+          {/* Nur mit Bildern */}
           <button
             onClick={() => setOnlyWithImages((v) => !v)}
             className="text-white p-2 rounded-full hover:bg-white/10 transition"
@@ -178,6 +205,7 @@ export default function ChallengesClient({
             />
           </button>
 
+          {/* Spalten-Modus */}
           <div className="hidden sm:flex items-center">
             <button
               onClick={() => setViewCols(viewCols === 1 ? 2 : 1)}
@@ -196,6 +224,7 @@ export default function ChallengesClient({
         </div>
       </div>
 
+      {/* Challenges-Grid */}
       <div
         ref={containerRef}
         className="mt-2 overflow-y-auto snap-y snap-mandatory max-h-[calc(100vh-6rem)]"
@@ -209,7 +238,6 @@ export default function ChallengesClient({
             const imgUrl =
               c.images?.find((i) => i.isMain)?.url ||
               `https://source.unsplash.com/random/800x600?sig=${c.id}`;
-
             return (
               <div
                 key={c.id}
@@ -226,7 +254,6 @@ export default function ChallengesClient({
                     unoptimized
                   />
                 </div>
-
                 <div className="absolute top-4 right-4 z-10">
                   <svg width={44} height={44} viewBox="0 0 44 44">
                     <circle
@@ -249,7 +276,6 @@ export default function ChallengesClient({
                     />
                   </svg>
                 </div>
-
                 <div className="flex-grow p-5 flex flex-col justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-white line-clamp-2">
