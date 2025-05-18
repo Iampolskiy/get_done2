@@ -22,18 +22,37 @@ export default function ChallengesClient({
   const [sortOpen, setSortOpen] = useState(false);
 
   // ─── sortKeys & Farbskala für Prioritäten ───────────────────────────
-  // SortKeys: zuletzt geklicktes Kriterium steht vorne → höchste Priorität
   const [sortKeys, setSortKeys] = useState<SortKey[]>(["date"]);
-  // priorityColors[0] = hellstes, [1] = nächstdunkler, [2] = dunkelstes
   const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
   // ─────────────────────────────────────────────────────────────────────
 
   const [viewCols, setViewCols] = useState<1 | 2>(2);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Ref für Button + Dropdown
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-to-top bei Sort-Änderung
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [sortKeys]);
+
+  // Click-Away zum Schließen des Dropdowns **nur** bei Klick außerhalb
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        sortOpen &&
+        sortRef.current &&
+        !sortRef.current.contains(event.target as Node)
+      ) {
+        setSortOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [sortOpen]);
 
   const bySearch = useMemo(
     () =>
@@ -47,7 +66,7 @@ export default function ChallengesClient({
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // ─────────── Multi-Sort mit Priorität durch Reihenfolge ───────────
+  // ─────────── Multi-Sort mit Priorität ───────────
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       for (const key of sortKeys) {
@@ -87,21 +106,19 @@ export default function ChallengesClient({
     "relative flex flex-col overflow-hidden rounded-2xl " +
     "bg-white/10 backdrop-blur-md " +
     "border-transparent sm:border sm:border-white/20 " +
-    "snap-start " +
-    "min-h-[82vh]";
+    "snap-start min-h-[82vh]";
 
   const cardClassesMulti =
     "relative flex flex-col overflow-hidden rounded-2xl " +
     "bg-white/10 backdrop-blur-md " +
-    "border-transparent sm:border sm:border-white/20 " +
-    "snap-start";
+    "border-transparent sm:border sm:border-white/20 snap-start";
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
       {/* Toolbar */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 py-3">
         <div className="mx-auto flex flex-wrap items-center justify-center gap-2 max-w-screen-2xl px-4">
-          {/* Such-Button (leuchtet wenn query) */}
+          {/* Such-Button */}
           <button
             onClick={() => setShowSearch((v) => !v)}
             className={`p-2 rounded-full hover:bg-white/10 transition ${
@@ -143,8 +160,8 @@ export default function ChallengesClient({
             )}
           </AnimatePresence>
 
-          {/* Sortieren: Dropdown mit Farb-Priorität */}
-          <div className="relative">
+          {/* Sortieren (Button + Dropdown in sortRef) */}
+          <div ref={sortRef} className="relative">
             <button
               onClick={() => setSortOpen((o) => !o)}
               className={`p-2 rounded-full hover:bg-white/10 transition flex items-center ${
@@ -164,13 +181,11 @@ export default function ChallengesClient({
                 {(
                   ["progress", "updates", "category", "date", "random"] as const
                 ).map((key) => {
-                  // ─── Hier wird die Farbe je nach Priorität zugewiesen ───
                   const pos = sortKeys.indexOf(key);
                   const isActive = pos !== -1;
                   const colorClass = isActive
                     ? priorityColors[Math.min(pos, priorityColors.length - 1)]
                     : "text-white";
-                  // ────────────────────────────────────────────────────────
 
                   return (
                     <button
