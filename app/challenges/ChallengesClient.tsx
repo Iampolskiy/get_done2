@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import Link from "next/link";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import { ChevronDown, Sliders, Search, Camera } from "lucide-react";
@@ -19,7 +20,7 @@ export default function ChallengesClient({
   const [showSearch, setShowSearch] = useState(false);
   const [onlyWithImages, setOnlyWithImages] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
-  // zuletzt geklicktes Kriterium ist erstes Element → höchste Priorität
+  // sortKeys: zuletzt geklicktes Kriterium steht vorne
   const [sortKeys, setSortKeys] = useState<SortKey[]>(["date"]);
   const [viewCols, setViewCols] = useState<1 | 2>(2);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,7 +41,7 @@ export default function ChallengesClient({
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // ─────────── Multi-Sort Comparator ────────────────────────────────
+  // ─────────── Multi-Sort mit Priorität durch Reihenfolge ───────────
   const sorted = useMemo(() => {
     const arr = [...filtered];
     arr.sort((a, b) => {
@@ -78,7 +79,6 @@ export default function ChallengesClient({
       ? "grid-cols-1 max-w-[800px] mx-auto"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
-  // ─── Card-Klassen für Single vs. Multi ───────────────────────────
   const cardClassesSingle =
     "relative flex flex-col overflow-hidden rounded-2xl " +
     "bg-white/10 backdrop-blur-md " +
@@ -91,10 +91,6 @@ export default function ChallengesClient({
     "bg-white/10 backdrop-blur-md " +
     "border-transparent sm:border sm:border-white/20 " +
     "snap-start";
-  // ────────────────────────────────────────────────────────────────
-
-  // Farbskala für Sort-Prioritäten: index 0 = hellstes, dann dunkler usw.
-  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
@@ -111,6 +107,7 @@ export default function ChallengesClient({
           >
             <Search size={20} />
           </button>
+
           <AnimatePresence>
             {showSearch && (
               <motion.div
@@ -142,7 +139,7 @@ export default function ChallengesClient({
             )}
           </AnimatePresence>
 
-          {/* Sortieren: Multi-Select Dropdown */}
+          {/* Sortieren */}
           <div className="relative">
             <button
               onClick={() => setSortOpen((o) => !o)}
@@ -161,32 +158,27 @@ export default function ChallengesClient({
               <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30">
                 {(
                   ["progress", "updates", "category", "date", "random"] as const
-                ).map((key) => {
-                  const idx = sortKeys.indexOf(key);
-                  const isActive = idx !== -1;
-                  const colorClass = isActive
-                    ? priorityColors[Math.min(idx, priorityColors.length - 1)]
-                    : "text-white";
-                  return (
-                    <button
-                      key={key}
-                      onClick={() =>
-                        setSortKeys((current) =>
-                          current.includes(key)
-                            ? current.filter((k) => k !== key)
-                            : [key, ...current]
-                        )
-                      }
-                      className={`block w-full text-left px-4 py-2 transition ${colorClass} ${
-                        isActive ? "font-bold" : ""
-                      }`}
-                    >
-                      {key === "random"
-                        ? "Zufällig"
-                        : key.charAt(0).toUpperCase() + key.slice(1)}
-                    </button>
-                  );
-                })}
+                ).map((key) => (
+                  <button
+                    key={key}
+                    onClick={() =>
+                      setSortKeys((current) =>
+                        current.includes(key)
+                          ? current.filter((k) => k !== key)
+                          : [key, ...current]
+                      )
+                    }
+                    className={`block w-full text-left px-4 py-2 transition ${
+                      sortKeys.includes(key)
+                        ? "font-bold text-teal-300"
+                        : "text-white"
+                    }`}
+                  >
+                    {key === "random"
+                      ? "Zufällig"
+                      : key.charAt(0).toUpperCase() + key.slice(1)}
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -238,9 +230,11 @@ export default function ChallengesClient({
             const imgUrl =
               c.images?.find((i) => i.isMain)?.url ||
               `https://source.unsplash.com/random/800x600?sig=${c.id}`;
+
             return (
-              <div
+              <Link
                 key={c.id}
+                href={`/challenges/${c.id}`}
                 className={
                   viewCols === 1 ? cardClassesSingle : cardClassesMulti
                 }
@@ -254,6 +248,7 @@ export default function ChallengesClient({
                     unoptimized
                   />
                 </div>
+
                 <div className="absolute top-4 right-4 z-10">
                   <svg width={44} height={44} viewBox="0 0 44 44">
                     <circle
@@ -276,6 +271,7 @@ export default function ChallengesClient({
                     />
                   </svg>
                 </div>
+
                 <div className="flex-grow p-5 flex flex-col justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-white line-clamp-2">
@@ -299,7 +295,7 @@ export default function ChallengesClient({
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>

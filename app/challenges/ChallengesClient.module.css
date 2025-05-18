@@ -1,0 +1,126 @@
+/* ChallengesClient.module.css */
+
+/* ─── Google Font Import ganz oben ─────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
+
+/* ─── Card-Grundlayout ───────────────────────────────────────── */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform-origin: center bottom;
+  padding: 1rem; /* internes Padding */
+}
+
+/* Hover: 3D-Lift + Schatten */
+.card:hover {
+  transform: perspective(600px) translateY(-4px) rotateX(2deg) scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* Subtiler Farb-Glow */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle at top left,
+    rgba(16, 185, 129, 0.3),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Animierter Gradient-Rahmen */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.card::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(45deg, #10b981, #3b82f6, #ec4899);
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: -1;
+}
+.card:hover::after {
+  opacity: 1;
+}
+
+/* ─── Bild-Parallax ───────────────────────────────────────────── */
+.cardImage {
+  transition: transform 0.3s ease;
+}
+.card:hover .cardImage {
+  transform: scale(1.05) translateY(-0.5rem);
+}
+
+/* ─── Typografie & Abstände ──────────────────────────────────── */
+/* Überschrift */
+.cardTitle {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 1.875rem; /* ~ Tailwind text-2xl */
+  line-height: 1.2;
+  margin-top: 1.5rem; /* angepasst */
+  margin-bottom: 0.75rem; /* angepasst */
+  text-align: center; /* zentriert */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* max. 2 Zeilen */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: white;
+}
+
+/* Untertitel (Goal) */
+.cardSubtitle {
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+  font-size: 1rem; /* ~ Tailwind text-base */
+  line-height: 1.4;
+  margin: 0; /* bereits padding in .card */
+  flex-shrink: 0; /* nicht schrumpfen, clamp wirkt */
+  display: -webkit-box;
+  -webkit-line-clamp: 4; /* max. 3 Zeilen */
+  line-clamp: 4; /* Add this line for compatibility */
+  -webkit-box-orient: vertical;
+  box-orient: vertical; /* Add this line for compatibility */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Single vs. Multi Column ───────────────────────────────── */
+.single {
+  min-height: 82vh;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.multi {
+  width: 100%;
+}
