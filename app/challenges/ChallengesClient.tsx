@@ -19,8 +19,8 @@ export default function ChallengesClient({
   const [showSearch, setShowSearch] = useState(false);
   const [onlyWithImages, setOnlyWithImages] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
-  const [sortKey, setSortKey] = useState<SortKey | null>("progress");
-  const [viewCols, setViewCols] = useState<1 | 2>(1);
+  const [sortKey, setSortKey] = useState<SortKey | null>("date");
+  const [viewCols, setViewCols] = useState<1 | 2>(2);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,24 +69,30 @@ export default function ChallengesClient({
 
   const gridCols =
     viewCols === 1
-      ? "grid-cols-1 justify-items-center"
-      : "grid-cols-[repeat(auto-fit,minmax(380px,1fr))] justify-center mx-auto max-w-[1760px]";
+      ? "grid-cols-1 max-w-[800px] mx-auto"
+      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
-  const gapClasses = "gap-6";
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Architektur: zwei Variablen für Card-Klassen (Werte identisch, können später
+  // für Single- vs. Multi-Column differieren)
+  const cardClassesSingle =
+    "relative flex flex-col overflow-hidden rounded-2xl " +
+    "bg-white/10 backdrop-blur-md " +
+    "border-transparent sm:border sm:border-white/20 " +
+    "snap-start " +
+    "min-h-[82vh] ";
 
-  const cardWidthClasses =
-    viewCols === 1
-      ? "w-full max-w-[95vw] min-w-[300px] sm:min-w-[320px] sm:max-w-[440px] mx-auto"
-      : "w-full max-w-[95vw] min-w-[360px] sm:max-w-[480px] mx-auto";
-
-  const cardHeightClass = "h-[calc(100vh-12rem)]";
+  const cardClassesMulti =
+    "relative flex flex-col overflow-hidden rounded-2xl " +
+    "bg-white/10 backdrop-blur-md " +
+    "border-transparent sm:border sm:border-white/20 " +
+    "snap-start";
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 py-3">
-        <div
-          className={`mx-auto flex flex-wrap items-center justify-center gap-2 ${cardWidthClasses}`}
-        >
+        <div className="mx-auto flex flex-wrap items-center justify-center gap-2 max-w-screen-2xl px-4">
           <button
             onClick={() => setShowSearch((v) => !v)}
             className="text-white p-2 rounded-full hover:bg-white/10 transition"
@@ -194,7 +200,9 @@ export default function ChallengesClient({
         ref={containerRef}
         className="mt-2 overflow-y-auto snap-y snap-mandatory max-h-[calc(100vh-6rem)]"
       >
-        <div className={`grid ${gapClasses} pb-8 ${gridCols}`}>
+        <div
+          className={`grid ${gridCols} gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
+        >
           {sorted.map((c) => {
             const pct = Math.round(c.progress ?? 0);
             const updates = c.updates?.length ?? 0;
@@ -205,12 +213,9 @@ export default function ChallengesClient({
             return (
               <div
                 key={c.id}
-                className={`
-                  relative flex flex-col overflow-hidden
-                  rounded-2xl bg-white/10 backdrop-blur-md
-                  ${cardWidthClasses} ${cardHeightClass}
-                  border-transparent sm:border sm:border-white/20
-                `}
+                className={
+                  viewCols === 1 ? cardClassesSingle : cardClassesMulti
+                }
               >
                 <div className="relative h-72 w-full">
                   <Image
@@ -271,12 +276,6 @@ export default function ChallengesClient({
               </div>
             );
           })}
-
-          {sorted.length === 0 && (
-            <p className="col-span-full text-center text-white/50 py-10">
-              Keine Challenges gefunden.
-            </p>
-          )}
         </div>
       </div>
     </div>
