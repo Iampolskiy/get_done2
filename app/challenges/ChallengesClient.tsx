@@ -20,8 +20,14 @@ export default function ChallengesClient({
   const [showSearch, setShowSearch] = useState(false);
   const [onlyWithImages, setOnlyWithImages] = useState(true);
   const [sortOpen, setSortOpen] = useState(false);
-  // sortKeys: zuletzt geklicktes Kriterium steht vorne
+
+  // ─── sortKeys & Farbskala für Prioritäten ───────────────────────────
+  // SortKeys: zuletzt geklicktes Kriterium steht vorne → höchste Priorität
   const [sortKeys, setSortKeys] = useState<SortKey[]>(["date"]);
+  // priorityColors[0] = hellstes, [1] = nächstdunkler, [2] = dunkelstes
+  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
+  // ─────────────────────────────────────────────────────────────────────
+
   const [viewCols, setViewCols] = useState<1 | 2>(2);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -43,8 +49,7 @@ export default function ChallengesClient({
 
   // ─────────── Multi-Sort mit Priorität durch Reihenfolge ───────────
   const sorted = useMemo(() => {
-    const arr = [...filtered];
-    arr.sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       for (const key of sortKeys) {
         let diff = 0;
         switch (key) {
@@ -70,7 +75,6 @@ export default function ChallengesClient({
       }
       return 0;
     });
-    return arr;
   }, [filtered, sortKeys]);
   // ────────────────────────────────────────────────────────────────
 
@@ -84,7 +88,7 @@ export default function ChallengesClient({
     "bg-white/10 backdrop-blur-md " +
     "border-transparent sm:border sm:border-white/20 " +
     "snap-start " +
-    "min-h-[82vh] max-w-[800px] mx-auto";
+    "min-h-[82vh]";
 
   const cardClassesMulti =
     "relative flex flex-col overflow-hidden rounded-2xl " +
@@ -97,7 +101,7 @@ export default function ChallengesClient({
       {/* Toolbar */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 py-3">
         <div className="mx-auto flex flex-wrap items-center justify-center gap-2 max-w-screen-2xl px-4">
-          {/* Such-Button */}
+          {/* Such-Button (leuchtet wenn query) */}
           <button
             onClick={() => setShowSearch((v) => !v)}
             className={`p-2 rounded-full hover:bg-white/10 transition ${
@@ -139,7 +143,7 @@ export default function ChallengesClient({
             )}
           </AnimatePresence>
 
-          {/* Sortieren */}
+          {/* Sortieren: Dropdown mit Farb-Priorität */}
           <div className="relative">
             <button
               onClick={() => setSortOpen((o) => !o)}
@@ -154,31 +158,40 @@ export default function ChallengesClient({
                 className={`ml-1 ${sortOpen ? "rotate-180" : ""} transition`}
               />
             </button>
+
             {sortOpen && (
               <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30">
                 {(
                   ["progress", "updates", "category", "date", "random"] as const
-                ).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() =>
-                      setSortKeys((current) =>
-                        current.includes(key)
-                          ? current.filter((k) => k !== key)
-                          : [key, ...current]
-                      )
-                    }
-                    className={`block w-full text-left px-4 py-2 transition ${
-                      sortKeys.includes(key)
-                        ? "font-bold text-teal-300"
-                        : "text-white"
-                    }`}
-                  >
-                    {key === "random"
-                      ? "Zufällig"
-                      : key.charAt(0).toUpperCase() + key.slice(1)}
-                  </button>
-                ))}
+                ).map((key) => {
+                  // ─── Hier wird die Farbe je nach Priorität zugewiesen ───
+                  const pos = sortKeys.indexOf(key);
+                  const isActive = pos !== -1;
+                  const colorClass = isActive
+                    ? priorityColors[Math.min(pos, priorityColors.length - 1)]
+                    : "text-white";
+                  // ────────────────────────────────────────────────────────
+
+                  return (
+                    <button
+                      key={key}
+                      onClick={() =>
+                        setSortKeys((current) =>
+                          current.includes(key)
+                            ? current.filter((k) => k !== key)
+                            : [key, ...current]
+                        )
+                      }
+                      className={`block w-full text-left px-4 py-2 transition ${colorClass} ${
+                        isActive ? "font-bold" : ""
+                      }`}
+                    >
+                      {key === "random"
+                        ? "Zufällig"
+                        : key.charAt(0).toUpperCase() + key.slice(1)}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -248,7 +261,6 @@ export default function ChallengesClient({
                     unoptimized
                   />
                 </div>
-
                 <div className="absolute top-4 right-4 z-10">
                   <svg width={44} height={44} viewBox="0 0 44 44">
                     <circle
@@ -271,24 +283,19 @@ export default function ChallengesClient({
                     />
                   </svg>
                 </div>
-
                 <div className="flex-grow p-5 flex flex-col justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold text-white line-clamp-2">
-                      {c.title}
-                    </h2>
-                    <p className="mt-1 text-sm text-white/70 line-clamp-3">
-                      {c.goal || "Kein Zieltext hinterlegt."}
-                    </p>
-                  </div>
+                  <h2 className="text-xl font-bold text-white line-clamp-2">
+                    {c.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-white/70 line-clamp-3">
+                    {c.goal || "Kein Zieltext hinterlegt."}
+                  </p>
                   <div className="mt-2 text-sm text-white/60 space-y-1">
                     <div>Address: {c.city_address || "—"}</div>
                     <div>
                       Created:{" "}
                       {new Date(c.created_at || "").toLocaleDateString("de-DE")}
                     </div>
-                  </div>
-                  <div className="mt-4 text-sm text-white/60 space-y-1">
                     <div>Category: {c.category || "—"}</div>
                     <div>
                       {updates} {updates === 1 ? "Update" : "Updates"}
