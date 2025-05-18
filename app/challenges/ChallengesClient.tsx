@@ -6,7 +6,8 @@ import { Challenge } from "@/types/types";
 import Image from "next/image";
 import { ChevronDown, Sliders, Search, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+/* import styles from "./ChallengesClient.module.css";
+ */
 type SortKey = "progress" | "updates" | "category" | "date" | "random";
 
 type ChallengesClientProps = {
@@ -250,14 +251,12 @@ export default function ChallengesClient({
         className="mt-2 overflow-y-auto snap-y snap-mandatory max-h-[calc(100vh-6rem)]"
       >
         <div
-          className={`grid ${gridCols} gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
+          className={`grid ${gridCols}  gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
         >
           {sorted.map((c) => {
             const pct = Math.round(c.progress ?? 0);
             const updates = c.updates?.length ?? 0;
-            const imgUrl =
-              c.images?.find((i) => i.isMain)?.url ||
-              `https://source.unsplash.com/random/800x600?sig=${c.id}`;
+            const imgUrl = c.images?.find((i) => i.isMain)?.url || "Kein Bild";
 
             return (
               <Link
@@ -314,7 +313,7 @@ export default function ChallengesClient({
                       x="50"
                       y="54"
                       textAnchor="middle"
-                      className="text-xs font-semibold text-white"
+                      className="text-xl font-bold text-white"
                     >
                       {pct}%
                     </text>
