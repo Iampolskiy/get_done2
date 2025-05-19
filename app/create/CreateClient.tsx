@@ -78,14 +78,14 @@ export default function CreateClient() {
     <>
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mx-auto p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm space-y-10"
+        className="max-w-3xl mt-20 mx-auto p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm space-y-10"
       >
         {/* Überschrift */}
         <h2
-          className="text-4xl sm:text-5xl font-extrabold text-center mb-10
+          className="text-4xl pt-8 sm:text-5xl font-extrabold text-center mb-10
                        bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent"
         >
-          Neue Herausforderung erstellen
+          Neue Herausforderung
         </h2>
 
         {/* Bild-Vorschau */}
