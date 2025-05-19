@@ -24,7 +24,7 @@ export default function RootLayout({
           <SignedIn>
             <UserButton />
           </SignedIn> */}
-          <main className=" pt-12 min-h-screen">{children}</main>
+          <main className=" pt-16 min-h-screen">{children}</main>
           <Footer />
         </body>
       </html>

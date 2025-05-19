@@ -2,72 +2,83 @@
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Challenge } from "@/types/types";
 import Image from "next/image";
+import { Challenge } from "@/types/types";
 import { ChevronDown, Sliders, Search, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-/* import styles from "./ChallengesClient.module.css";
- */
+
 type SortKey = "progress" | "updates" | "category" | "date" | "random";
 
-type ChallengesClientProps = {
+interface ChallengesClientProps {
   challenges: Challenge[];
-};
+}
+
+// Helper: formatiert Datum+Uhrzeit stets in de-DE, verhindert Hydration-Fehler
+function formatGermanDateTime(iso?: string | Date | null): string {
+  if (!iso) return "—";
+  const d = iso instanceof Date ? iso : new Date(iso);
+  const date = d.toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const time = d.toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return `${date}, ${time}`;
+}
 
 export default function ChallengesClient({
   challenges,
 }: ChallengesClientProps) {
-  const [query, setQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [onlyWithImages, setOnlyWithImages] = useState(true);
-  const [sortOpen, setSortOpen] = useState(false);
-
-  // ─── sortKeys & Farbskala für Prioritäten ───────────────────────────
+  // Toolbar state
+  const [query, setQuery] = useState<string>("");
+  const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [onlyWithImages, setOnlyWithImages] = useState<boolean>(true);
+  const [sortOpen, setSortOpen] = useState<boolean>(false);
   const [sortKeys, setSortKeys] = useState<SortKey[]>(["date"]);
-  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
-  // ─────────────────────────────────────────────────────────────────────
-
   const [viewCols, setViewCols] = useState<1 | 2>(2);
+
+  // Refs & helpers
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Ref für Sort-Button + Dropdown
   const sortRef = useRef<HTMLDivElement>(null);
+  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
 
-  // Scroll-to-top bei Sort-Änderung
+  // Scroll to top when sort changes
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [sortKeys]);
 
-  // Click-Away zum Schließen des Dropdowns **nur** bei Klick außerhalb
+  // Close sort dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(e: MouseEvent) {
       if (
         sortOpen &&
         sortRef.current &&
-        !sortRef.current.contains(event.target as Node)
+        !sortRef.current.contains(e.target as Node)
       ) {
         setSortOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sortOpen]);
 
-  const bySearch = useMemo(
-    () =>
-      challenges.filter((c) =>
-        c.title.toLowerCase().includes(query.toLowerCase())
-      ),
-    [challenges, query]
-  );
+  // Filter by search
+  const bySearch = useMemo(() => {
+    return challenges.filter((c) =>
+      c.title.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [challenges, query]);
 
+  // Filter by image presence
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // ─────────── Multi-Sort mit Priorität durch Reihenfolge ───────────
+  // Multi-key sort
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       for (const key of sortKeys) {
@@ -96,30 +107,25 @@ export default function ChallengesClient({
       return 0;
     });
   }, [filtered, sortKeys]);
-  // ────────────────────────────────────────────────────────────────
 
-  const gridCols =
+  // Grid layout classes
+  const gridColsClass =
     viewCols === 1
-      ? " max-w-[780px] mx-auto"
+      ? "max-w-[780px] mx-auto grid-cols-1"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
-  const cardClassesSingle =
+  // Card base classes
+  const cardClasses =
     "relative flex flex-col overflow-hidden rounded-2xl " +
-    "bg-white/10 backdrop-blur-md " +
-    "border-transparent sm:border sm:border-white/20 " +
-    "snap-start min-h-[82vh]";
-
-  const cardClassesMulti =
-    "relative flex flex-col overflow-hidden rounded-2xl " +
-    "bg-white/10 backdrop-blur-md " +
-    "border-transparent sm:border sm:border-white/20 snap-start";
+    "bg-white/10 backdrop-blur-md border-transparent sm:border sm:border-white/20 " +
+    "snap-start shadow-sm hover:border-teal-300 hover:shadow-[0_0_20px_rgba(14,211,181,0.5)] transition";
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
       {/* Toolbar */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 py-3">
         <div className="mx-auto flex flex-wrap items-center justify-center gap-2 max-w-screen-2xl px-4">
-          {/* Such-Button */}
+          {/* Search Toggle */}
           <button
             onClick={() => setShowSearch((v) => !v)}
             className={`p-2 rounded-full hover:bg-white/10 transition ${
@@ -129,7 +135,6 @@ export default function ChallengesClient({
           >
             <Search size={20} />
           </button>
-
           <AnimatePresence>
             {showSearch && (
               <motion.div
@@ -161,7 +166,7 @@ export default function ChallengesClient({
             )}
           </AnimatePresence>
 
-          {/* Sortieren */}
+          {/* Sort Toggle */}
           <div ref={sortRef} className="relative">
             <button
               onClick={() => setSortOpen((o) => !o)}
@@ -173,21 +178,25 @@ export default function ChallengesClient({
               <Sliders size={20} />
               <ChevronDown
                 size={16}
-                className={`ml-1 ${sortOpen ? "rotate-180" : ""} transition`}
+                className={`ml-1 transition ${sortOpen ? "rotate-180" : ""}`}
               />
             </button>
-
             {sortOpen && (
               <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30">
                 {(
-                  ["progress", "updates", "category", "date", "random"] as const
+                  [
+                    "progress",
+                    "updates",
+                    "category",
+                    "date",
+                    "random",
+                  ] as SortKey[]
                 ).map((key) => {
                   const pos = sortKeys.indexOf(key);
                   const isActive = pos !== -1;
                   const colorClass = isActive
                     ? priorityColors[Math.min(pos, priorityColors.length - 1)]
                     : "text-white";
-
                   return (
                     <button
                       key={key}
@@ -212,10 +221,10 @@ export default function ChallengesClient({
             )}
           </div>
 
-          {/* Nur mit Bildern */}
+          {/* Only With Images */}
           <button
             onClick={() => setOnlyWithImages((v) => !v)}
-            className="text-white p-2 rounded-full hover	bg-white/10 transition"
+            className="text-white p-2 rounded-full hover:bg-white/10 transition"
             title="Nur mit Bildern"
           >
             <Camera
@@ -226,7 +235,7 @@ export default function ChallengesClient({
             />
           </button>
 
-          {/* Spalten-Modus */}
+          {/* View Mode Toggle */}
           <div className="hidden sm:flex items-center">
             <button
               onClick={() => setViewCols(viewCols === 1 ? 2 : 1)}
@@ -245,38 +254,42 @@ export default function ChallengesClient({
         </div>
       </div>
 
-      {/* Challenges-Grid */}
+      {/* Challenges Grid */}
       <div
         ref={containerRef}
         className="mt-2 overflow-y-auto snap-y snap-mandatory max-h-[calc(100vh-6rem)]"
       >
         <div
-          className={`grid ${gridCols}  gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
+          className={`grid ${gridColsClass} gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
         >
           {sorted.map((c) => {
-            const pct = Math.round(c.progress ?? 0);
             const updates = c.updates?.length ?? 0;
-            const imgUrl = c.images?.find((i) => i.isMain)?.url || "Kein Bild";
+            const imgUrl = c.images?.find((i) => i.isMain)?.url;
 
             return (
               <Link
                 key={c.id}
                 href={`/challenges/${c.id}`}
-                className={
-                  viewCols === 1 ? cardClassesSingle : cardClassesMulti
-                }
+                className={cardClasses}
               >
-                <div className="relative h-72 w-full">
-                  <Image
-                    src={imgUrl}
-                    alt={c.title}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
+                {/* Image or Placeholder */}
+                <div className="relative h-72 w-full bg-gray-800">
+                  {imgUrl ? (
+                    <Image
+                      src={imgUrl}
+                      alt={c.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white/50">
+                      Kein Bild
+                    </div>
+                  )}
                 </div>
 
-                {/* Stylischer Radial-Progress */}
+                {/* Progress Ring */}
                 <div className="absolute top-4 right-4 z-10 w-12 h-12">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
                     <defs>
@@ -285,7 +298,6 @@ export default function ChallengesClient({
                         <stop offset="100%" stopColor="#06B6D4" />
                       </linearGradient>
                     </defs>
-                    {/* Hintergrundring */}
                     <circle
                       cx="50"
                       cy="50"
@@ -294,7 +306,6 @@ export default function ChallengesClient({
                       fill="none"
                       className="stroke-white/20"
                     />
-                    {/* Fortschrittsring */}
                     <circle
                       cx="50"
                       cy="50"
@@ -303,36 +314,56 @@ export default function ChallengesClient({
                       fill="none"
                       stroke="url(#grad)"
                       strokeDasharray={2 * Math.PI * 45}
-                      strokeDashoffset={(2 * Math.PI * 45 * (100 - pct)) / 100}
+                      strokeDashoffset={
+                        (2 * Math.PI * 45 * (100 - (c.progress ?? 0))) / 100
+                      }
                       transform="rotate(-90 50 50)"
                       strokeLinecap="round"
                       className="transition-all duration-500"
                     />
-                    {/* Prozentzahl in der Mitte */}
                     <text
                       x="50"
                       y="54"
                       textAnchor="middle"
                       className="text-xl font-bold text-white"
                     >
-                      {pct}%
+                      {Math.round(c.progress ?? 0)}%
                     </text>
                   </svg>
                 </div>
 
+                {/* Content */}
                 <div className="flex-grow p-5 flex flex-col justify-between">
                   <h2 className="text-xl font-bold text-white line-clamp-2">
                     {c.title}
                   </h2>
+
+                  {/* USERRR */}
+                  {c.author && (
+                    <div className="mt-1 flex items-center space-x-2">
+                      <span className="text-sm text-white/70">
+                        {c.author.name}
+                      </span>
+                      <span className="text-sm text-white/70">
+                        {c.authorId}
+                      </span>
+                      <span className="text-sm text-white/70">
+                        {c.author.email}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="mt-2 text-sm text-white/60">
+                    Created: {formatGermanDateTime(c.created_at)}
+                  </div>
+                  <div className="mt-2 text-sm text-white/60">
+                    Dauer: {c.duration}
+                  </div>
                   <p className="mt-1 text-sm text-white/70 line-clamp-3">
                     {c.goal || "Kein Zieltext hinterlegt."}
                   </p>
                   <div className="mt-2 text-sm text-white/60 space-y-1">
                     <div>Address: {c.city_address || "—"}</div>
-                    <div>
-                      Created:{" "}
-                      {new Date(c.created_at || "").toLocaleDateString("de-DE")}
-                    </div>
                     <div>Category: {c.category || "—"}</div>
                     <div>
                       {updates} {updates === 1 ? "Update" : "Updates"}

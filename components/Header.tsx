@@ -12,7 +12,7 @@ export default function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-transparent backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4  h-full flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-white">
           Get Done
         </Link>

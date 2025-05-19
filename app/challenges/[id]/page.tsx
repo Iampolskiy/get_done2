@@ -9,7 +9,7 @@ type PageProps = {
 };
 
 export default async function ChallengePage({ params }: PageProps) {
-  const numericId = parseInt(params.id, 10);
+  const numericId = await parseInt(params.id, 10);
 
   const challenge = await prisma.challenge.findUnique({
     where: { id: numericId },
