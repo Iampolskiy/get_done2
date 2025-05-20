@@ -8,6 +8,7 @@ import { Info, File } from "lucide-react";
 export default function CreateClient() {
   const [images, setImages] = useState<{ url: string; isMain: boolean }[]>([]);
   const [isUploading, setUploading] = useState(false);
+  const [isSubmitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal-Flags
@@ -40,8 +41,8 @@ export default function CreateClient() {
   const removeImage = (idx: number) =>
     setImages((prev) => prev.filter((_, i) => i !== idx));
 
-  const handleUpload = async (files: FileList | null) => {
-    if (!files) return;
+  async function handleUpload(files: FileList | null) {
+    if (!files || isUploading) return;
     if (slotsLeft <= 0) {
       alert("Maximal 1 Coverbild erlaubt.");
       return;
@@ -64,10 +65,12 @@ export default function CreateClient() {
     setImages((prev) => [...prev, ...uploaded]);
     setUploading(false);
     fileInputRef.current!.value = "";
-  };
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isUploading || isSubmitting) return;
+    setSubmitting(true);
     const form = e.currentTarget as HTMLFormElement;
     if (!durationEnabled) {
       form.querySelector<HTMLInputElement>("#duration")!.value = "0";
@@ -77,15 +80,13 @@ export default function CreateClient() {
     }
     const fd = new FormData(form);
     await createChallenge(images, fd);
-  };
+    setSubmitting(false);
+  }
 
   return (
     <>
-      {/* Entfernt “Keine ausgewählt” im File-Input */}
       <style jsx global>{`
-        input[type="file"]::-webkit-file-upload-text {
-          display: none;
-        }
+        input[type="file"]::-webkit-file-upload-text,
         input[type="file"]::-moz-file-upload-text {
           display: none;
         }
@@ -105,7 +106,7 @@ export default function CreateClient() {
           {images.map((img, idx) => (
             <div
               key={idx}
-              onClick={() => removeImage(idx)}
+              onClick={() => !isUploading && !isSubmitting && removeImage(idx)}
               className="relative h-64 w-64 mx-auto rounded-lg overflow-hidden border-2 border-transparent hover:border-red-500 transition group cursor-pointer"
             >
               <Image
@@ -118,19 +119,15 @@ export default function CreateClient() {
           ))}
         </div>
 
-        {/* Cover-Upload mit deaktiviertem Button, wenn Bild vorhanden */}
+        {/* Cover-Upload */}
         <div className="sm:col-span-2 space-y-1">
           <div className="flex items-center">
             <button
               type="button"
-              disabled={isUploading || slotsLeft <= 0}
-              onClick={() => {
-                if (!isUploading && slotsLeft > 0) {
-                  fileInputRef.current?.click();
-                }
-              }}
+              disabled={isUploading || slotsLeft <= 0 || isSubmitting}
+              onClick={() => fileInputRef.current?.click()}
               className={`flex items-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-indigo-500 mr-2 transition-transform ${
-                isUploading || slotsLeft <= 0
+                isUploading || slotsLeft <= 0 || isSubmitting
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:brightness-125 hover:scale-105"
               }`}
@@ -147,7 +144,7 @@ export default function CreateClient() {
           <input
             ref={fileInputRef}
             type="file"
-            disabled={isUploading || slotsLeft <= 0}
+            disabled={isUploading || slotsLeft <= 0 || isSubmitting}
             className="hidden"
             onChange={(e) => handleUpload(e.currentTarget.files)}
             accept="image/*"
@@ -156,7 +153,7 @@ export default function CreateClient() {
 
         {/* Restliche Eingabefelder */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Name */}
+          {/* Titel */}
           <div className="sm:col-span-2 space-y-1">
             <div className="flex items-center">
               <label htmlFor="title" className="text-white mr-2 font-medium">
@@ -173,8 +170,9 @@ export default function CreateClient() {
               id="title"
               name="title"
               required
+              disabled={isUploading || isSubmitting}
               placeholder="z. B. 100 Tage ohne Zucker"
-              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
+              className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
             />
           </div>
 
@@ -194,8 +192,9 @@ export default function CreateClient() {
               id="goal"
               name="goal"
               rows={6}
+              disabled={isUploading || isSubmitting}
               placeholder="z. B. Ich möchte meine Fitness verbessern…"
-              className="w-full p-3 bg-white/5 border border-white/20 rounded-2xl focus:outline-none resize-vertical"
+              className="w-full p-3 bg-white/5 border border-white/20 rounded-2xl focus:outline-none resize-vertical disabled:opacity-50"
             />
           </div>
 
@@ -237,15 +236,17 @@ export default function CreateClient() {
                 type="text"
                 id="category"
                 name="category"
+                disabled={isUploading || isSubmitting}
                 placeholder="Eigene Kategorie eingeben…"
-                className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
+                className="w-full h-12  p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
               />
             ) : (
               <select
                 id="category"
                 name="category"
                 required
-                className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
+                disabled={isUploading || isSubmitting}
+                className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
               >
                 <option value="">Bitte wählen…</option>
                 {commonCategories.map((cat) => (
@@ -273,7 +274,8 @@ export default function CreateClient() {
               id="difficulty"
               name="difficulty"
               required
-              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
+              disabled={isUploading || isSubmitting}
+              className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
             >
               <option value="">Bitte wählen…</option>
               <option value="1">1 – sehr leicht</option>
@@ -303,8 +305,9 @@ export default function CreateClient() {
               type="text"
               id="city_address"
               name="city_address"
+              disabled={isUploading || isSubmitting}
               placeholder="z. B. Berlin"
-              className="w-full p-2 h-11 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
+              className="w-full  h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
             />
           </div>
 
@@ -346,43 +349,48 @@ export default function CreateClient() {
               id="duration"
               name="duration"
               min="1"
-              disabled={!durationEnabled}
+              disabled={!durationEnabled || isUploading || isSubmitting}
               placeholder={durationEnabled ? "z. B. 30" : "unendlich"}
-              className="w-full h-11 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
+              className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
             />
           </div>
         </div>
 
         {/* Absenden */}
         <button
-          disabled={isUploading}
+          disabled={isUploading || isSubmitting}
           type="submit"
           className="w-full py-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-semibold shadow-lg hover:brightness-110 transition disabled:opacity-50"
         >
-          {isUploading ? "Lädt hoch…" : "Herausforderung erstellen"}
+          {isSubmitting
+            ? "Wird erstellt…"
+            : isUploading
+            ? "Lädt hoch…"
+            : "Herausforderung erstellen"}
         </button>
       </form>
 
       {/* GLAS-MODALS */}
       {showNameInfo && (
-        <Modal title="Name" onClose={() => setShowNameInfo(false)}>
+        <Modal title="Titel" onClose={() => setShowNameInfo(false)}>
           Gib deinem Ziel einen prägnanten Titel – kurz und aussagekräftig.
         </Modal>
       )}
       {showCoverInfo && (
         <Modal title="Coverbild" onClose={() => setShowCoverInfo(false)}>
-          Lade ein Titelbild für dein Ziel hoch. Klick auf das Vorschaubild, um
-          es zu entfernen.
+          Lade ein einzelnes Bild hoch. Klicke auf die Vorschau, um es zu
+          entfernen.
         </Modal>
       )}
       {showDescInfo && (
         <Modal title="Beschreibung" onClose={() => setShowDescInfo(false)}>
-          Beschreibe dein Ziel in ein paar Sätzen – je klarer, desto besser.
+          Beschreibe dein Ziel in wenigen Sätzen – je klarer, desto leichter zu
+          starten.
         </Modal>
       )}
       {showCategoryInfo && (
         <Modal title="Kategorie" onClose={() => setShowCategoryInfo(false)}>
-          Wähle eine gängige Kategorie oder aktiviere «Eigene», um frei zu
+          Wähle aus den Vorschlägen oder aktiviere «Eigene», um frei zu
           definieren.
         </Modal>
       )}
@@ -398,20 +406,20 @@ export default function CreateClient() {
       )}
       {showCityInfo && (
         <Modal title="Stadt" onClose={() => setShowCityInfo(false)}>
-          Trage hier den Ort ein, an dem du deinen Fortschritt dokumentierst.
+          Trage hier den Ort ein, an dem du dein Ziel verfolgst.
         </Modal>
       )}
       {showDurationInfo && (
         <Modal title="Dauer" onClose={() => setShowDurationInfo(false)}>
-          Standardmäßig unbegrenzt. Aktiviere «Eigene», um eine Tagesanzahl
-          festzulegen.
+          Standardmäßig unbegrenzt. Aktiviere «Eigene», um eine Tagesanzahl zu
+          setzen.
         </Modal>
       )}
     </>
   );
 }
 
-// Wiederverwendbare Glass-Modal-Komponente
+// Wiederverwendbare Glas-Modal-Komponente
 function Modal({
   title,
   onClose,
@@ -431,7 +439,7 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-xl font-bold">{title}</h3>
-        <div className="text-sm ">{children}</div>
+        <div className="text-sm">{children}</div>
         <button
           onClick={onClose}
           className="mt-4 w-full py-2 bg-teal-400 bg-opacity-60 text-white rounded-lg hover:bg-opacity-80 transition"

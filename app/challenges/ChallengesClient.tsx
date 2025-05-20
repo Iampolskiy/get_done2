@@ -363,8 +363,8 @@ export default function ChallengesClient({
                     {c.goal || "Kein Zieltext hinterlegt."}
                   </p>
                   <div className="mt-2 text-sm text-white/60 space-y-1">
-                    <div>Address: {c.city_address || "—"}</div>
-                    <div>Category: {c.category || "—"}</div>
+                    <div>Address: {c.city_address || ""}</div>
+                    <div>Category: {c.category || ""}</div>
                     <div>
                       {updates} {updates === 1 ? "Update" : "Updates"}
                     </div>
