@@ -127,7 +127,7 @@ export default function CreateClient() {
                 Name
               </label>
               <Info
-                size={20}
+                size={16}
                 className="cursor-pointer text-white hover:text-teal-300"
                 onClick={() => setShowNameInfo(true)}
               />
@@ -144,7 +144,7 @@ export default function CreateClient() {
 
           {/* Cover-Upload */}
           <div className="sm:col-span-2 space-y-1">
-            <div className="flex  items-center">
+            <div className="flex items-center">
               <label className="text-white mr-2 font-medium">
                 {isUploading
                   ? "Lädt hoch…"
@@ -153,7 +153,7 @@ export default function CreateClient() {
                   : "Kein Platz"}
               </label>
               <Info
-                size={20}
+                size={16}
                 className="cursor-pointer text-white hover:text-teal-300"
                 onClick={() => setShowCoverInfo(true)}
               />
@@ -175,7 +175,7 @@ export default function CreateClient() {
                 Beschreibung
               </label>
               <Info
-                size={20}
+                size={16}
                 className="cursor-pointer text-white hover:text-teal-300"
                 onClick={() => setShowDescInfo(true)}
               />
@@ -192,35 +192,33 @@ export default function CreateClient() {
           {/* Kategorie */}
           <div className="sm:col-span-2 space-y-1">
             <div className="flex justify-between items-center">
-              <div className="flex  items-center">
+              <div className="flex items-center">
                 <label className="text-white mr-2 font-medium">Kategorie</label>
                 <Info
-                  size={20}
+                  size={16}
                   className="cursor-pointer text-white hover:text-teal-300"
                   onClick={() => setShowCategoryInfo(true)}
                 />
               </div>
               <div
                 onClick={() => setCustomCategory((c) => !c)}
-                className={`flex items-center mt-2 cursor-pointer select-none ${
+                className={`flex items-center cursor-pointer select-none ${
                   customCategory ? "text-teal-300" : "text-white"
                 }`}
               >
-                <div className="flex items-center">
-                  <span className="mr-2 text-sm">Eigene</span>
+                <span className="mr-2 text-sm">Eigene</span>
+                <div
+                  className={`w-10 h-6 rounded-full p-1 ${
+                    customCategory
+                      ? "bg-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.7)]"
+                      : "bg-white/20"
+                  }`}
+                >
                   <div
-                    className={`w-10 h-6 rounded-full p-1 ${
-                      customCategory
-                        ? "bg-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.7)]"
-                        : "bg-white/20"
+                    className={`bg-white w-4 h-4 rounded-full transform ${
+                      customCategory ? "translate-x-4" : ""
                     }`}
-                  >
-                    <div
-                      className={`bg-white w-4 h-4 rounded-full transform ${
-                        customCategory ? "translate-x-4" : ""
-                      }`}
-                    />
-                  </div>
+                  />
                 </div>
               </div>
             </div>
@@ -251,17 +249,16 @@ export default function CreateClient() {
 
           {/* Schwierigkeitsgrad */}
           <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <label className="text-white font-medium">
+            <div className="flex items-center">
+              <label className="text-white mr-2 font-medium">
                 Schwierigkeitsgrad
               </label>
               <Info
-                size={20}
+                size={16}
                 className="cursor-pointer text-white hover:text-teal-300"
                 onClick={() => setShowDifficultyInfo(true)}
               />
             </div>
-
             <select
               id="difficulty"
               name="difficulty"
@@ -279,12 +276,15 @@ export default function CreateClient() {
 
           {/* Stadt */}
           <div className="space-y-1">
-            <div className="flex justify-between items-center">
-              <label htmlFor="city_address" className="text-white font-medium">
+            <div className="flex items-center">
+              <label
+                htmlFor="city_address"
+                className="text-white mr-2 font-medium"
+              >
                 Stadt
               </label>
               <Info
-                size={20}
+                size={16}
                 className="cursor-pointer text-white hover:text-teal-300"
                 onClick={() => setShowCityInfo(true)}
               />
@@ -294,39 +294,41 @@ export default function CreateClient() {
               id="city_address"
               name="city_address"
               placeholder="z. B. Berlin"
-              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
+              className="w-full p-2 h-11 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
             />
           </div>
 
           {/* Dauer */}
           <div className="space-y-1">
             <div className="flex justify-between items-center">
-              <label className="text-white font-medium">Dauer</label>
-              <Info
-                size={20}
-                className="cursor-pointer text-white hover:text-teal-300"
-                onClick={() => setShowDurationInfo(true)}
-              />
-            </div>
-            <div
-              onClick={() => setDurationEnabled((d) => !d)}
-              className={`flex items-center mt-2 cursor-pointer select-none ${
-                durationEnabled ? "text-teal-300" : "text-white"
-              }`}
-            >
-              <span className="mr-2 text-sm">Eigene</span>
+              <div className="flex items-center">
+                <label className="text-white mr-2 font-medium">Dauer</label>
+                <Info
+                  size={16}
+                  className="cursor-pointer text-white hover:text-teal-300"
+                  onClick={() => setShowDurationInfo(true)}
+                />
+              </div>
               <div
-                className={`w-10 h-6 rounded-full p-1 ${
-                  durationEnabled
-                    ? "bg-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.7)]"
-                    : "bg-white/20"
+                onClick={() => setDurationEnabled((d) => !d)}
+                className={`flex items-center cursor-pointer select-none ${
+                  durationEnabled ? "text-teal-300" : "text-white"
                 }`}
               >
+                <span className="mr-2 text-sm">Eigene</span>
                 <div
-                  className={`bg-white w-4 h-4 rounded-full transform ${
-                    durationEnabled ? "translate-x-4" : ""
+                  className={`w-10 h-6 rounded-full p-1 ${
+                    durationEnabled
+                      ? "bg-teal-400 shadow-[0_0_10px_rgba(20,184,166,0.7)]"
+                      : "bg-white/20"
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full transform ${
+                      durationEnabled ? "translate-x-4" : ""
+                    }`}
+                  />
+                </div>
               </div>
             </div>
             <input
@@ -336,7 +338,7 @@ export default function CreateClient() {
               min="1"
               disabled={!durationEnabled}
               placeholder={durationEnabled ? "z. B. 30" : "unendlich"}
-              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
+              className="w-full h-11 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
             />
           </div>
         </div>
@@ -351,7 +353,7 @@ export default function CreateClient() {
         </button>
       </form>
 
-      {/*** GLAS-MODALS ***/}
+      {/* GLAS-MODALS */}
       {showNameInfo && (
         <Modal title="Name" onClose={() => setShowNameInfo(false)}>
           Gib deinem Ziel einen prägnanten Namen – kurz und aussagekräftig.
