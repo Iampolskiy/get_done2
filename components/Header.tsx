@@ -1,6 +1,7 @@
+// components/Header.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -8,11 +9,33 @@ import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
   const pathname = usePathname();
 
+  useEffect(() => {
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY > lastScrollY.current && currentY > 50) {
+        setHidden(true);
+      } else {
+        setHidden(false);
+      }
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-transparent backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4  h-full flex items-center justify-between">
+    <header
+      className={
+        "fixed inset-x-0 top-0 z-50 bg-transparent backdrop-blur-md transform transition-transform duration-300 ease-out " +
+        (hidden ? "-translate-y-full" : "translate-y-0")
+      }
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 h-full flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-white">
           Get Done
         </Link>
@@ -20,7 +43,7 @@ export default function Header() {
         {/* Mobile Toggle */}
         <button
           className="sm:hidden text-white"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onClick={() => setMobileMenuOpen((o) => !o)}
         >
           {mobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -34,7 +57,7 @@ export default function Header() {
           <NavLink href="/" label="Home" active={pathname === "/"} />
           <NavLink
             href="/create"
-            label="Create New"
+            label="Create"
             active={pathname === "/create"}
           />
           <NavLink
@@ -61,13 +84,13 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Mobile Menü */}
+      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="sm:hidden bg-black/50 backdrop-blur-md px-4 pb-4 space-y-2">
           <MobileLink href="/" label="Home" active={pathname === "/"} />
           <MobileLink
             href="/create"
-            label="Create New"
+            label="Create"
             active={pathname === "/create"}
           />
           <MobileLink

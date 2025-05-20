@@ -10,6 +10,7 @@ export default function CreateClient() {
   const [isUploading, setUploading] = useState(false);
   const [isSubmitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const durationRef = useRef<HTMLInputElement>(null);
 
   // Modal-Flags
   const [showNameInfo, setShowNameInfo] = useState(false);
@@ -81,6 +82,15 @@ export default function CreateClient() {
     const fd = new FormData(form);
     await createChallenge(images, fd);
     setSubmitting(false);
+  }
+
+  // Schaltet Dauer um und leert bei Abschalten
+  function toggleDuration() {
+    const next = !durationEnabled;
+    setDurationEnabled(next);
+    if (!next) {
+      durationRef.current!.value = "";
+    }
   }
 
   return (
@@ -236,9 +246,10 @@ export default function CreateClient() {
                 type="text"
                 id="category"
                 name="category"
+                required
                 disabled={isUploading || isSubmitting}
                 placeholder="Eigene Kategorie eingeben…"
-                className="w-full h-12  p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
+                className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
               />
             ) : (
               <select
@@ -307,7 +318,7 @@ export default function CreateClient() {
               name="city_address"
               disabled={isUploading || isSubmitting}
               placeholder="z. B. Berlin"
-              className="w-full  h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
+              className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
             />
           </div>
 
@@ -323,7 +334,7 @@ export default function CreateClient() {
                 />
               </div>
               <div
-                onClick={() => setDurationEnabled((d) => !d)}
+                onClick={toggleDuration}
                 className={`flex items-center cursor-pointer select-none ${
                   durationEnabled ? "text-teal-300" : "text-white"
                 }`}
@@ -345,6 +356,7 @@ export default function CreateClient() {
               </div>
             </div>
             <input
+              ref={durationRef}
               type="number"
               id="duration"
               name="duration"
