@@ -3,7 +3,7 @@
 import { createChallenge } from "@/actions/challengeActions/createChallenge";
 import Image from "next/image";
 import React, { useState, useRef } from "react";
-import { Info } from "lucide-react";
+import { Info, File } from "lucide-react";
 
 export default function CreateClient() {
   const [images, setImages] = useState<{ url: string; isMain: boolean }[]>([]);
@@ -81,7 +81,7 @@ export default function CreateClient() {
 
   return (
     <>
-      {/* Ausblenden “Keine ausgewählt” */}
+      {/* Entfernt “Keine ausgewählt” im File-Input */}
       <style jsx global>{`
         input[type="file"]::-webkit-file-upload-text {
           display: none;
@@ -93,10 +93,10 @@ export default function CreateClient() {
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mt-20 mx-auto  p-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm space-y-10"
+        className="max-w-3xl mt-20 mx-auto p-6 pt-20 mb-20 pb-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm space-y-10"
       >
         {/* Überschrift */}
-        <h2 className="text-4xl mt-8 sm:text-5xl font-extrabold text-center  bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent">
+        <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent">
           Neue Herausforderung erstellen
         </h2>
 
@@ -106,25 +106,61 @@ export default function CreateClient() {
             <div
               key={idx}
               onClick={() => removeImage(idx)}
-              className="relative h-32 w-32 rounded-lg overflow-hidden border-2 border-transparent hover:border-red-500 transition group cursor-pointer"
+              className="relative h-64 w-64 mx-auto rounded-lg overflow-hidden border-2 border-transparent hover:border-red-500 transition group cursor-pointer"
             >
               <Image
                 src={img.url}
                 alt={`Cover ${idx + 1}`}
                 fill
-                className="object-cover filter transition group-hover:grayscale"
+                className="object-cover p-6 filter transition group-hover:grayscale"
               />
             </div>
           ))}
         </div>
 
-        {/* Eingabe-Grid */}
+        {/* Cover-Upload mit deaktiviertem Button, wenn Bild vorhanden */}
+        <div className="sm:col-span-2 space-y-1">
+          <div className="flex items-center">
+            <button
+              type="button"
+              disabled={isUploading || slotsLeft <= 0}
+              onClick={() => {
+                if (!isUploading && slotsLeft > 0) {
+                  fileInputRef.current?.click();
+                }
+              }}
+              className={`flex items-center font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-indigo-500 mr-2 transition-transform ${
+                isUploading || slotsLeft <= 0
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:brightness-125 hover:scale-105"
+              }`}
+            >
+              <File size={20} className="mr-2 text-white" />
+              Bild auswählen
+            </button>
+            <Info
+              size={16}
+              className="cursor-pointer text-white ml-1 hover:text-teal-300"
+              onClick={() => setShowCoverInfo(true)}
+            />
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            disabled={isUploading || slotsLeft <= 0}
+            className="hidden"
+            onChange={(e) => handleUpload(e.currentTarget.files)}
+            accept="image/*"
+          />
+        </div>
+
+        {/* Restliche Eingabefelder */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Name */}
           <div className="sm:col-span-2 space-y-1">
             <div className="flex items-center">
               <label htmlFor="title" className="text-white mr-2 font-medium">
-                Name
+                Titel
               </label>
               <Info
                 size={16}
@@ -139,32 +175,6 @@ export default function CreateClient() {
               required
               placeholder="z. B. 100 Tage ohne Zucker"
               className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none"
-            />
-          </div>
-
-          {/* Cover-Upload */}
-          <div className="sm:col-span-2 space-y-1">
-            <div className="flex items-center">
-              <label className="text-white mr-2 font-medium">
-                {isUploading
-                  ? "Lädt hoch…"
-                  : slotsLeft > 0
-                  ? "Coverbild auswählen"
-                  : "Kein Platz"}
-              </label>
-              <Info
-                size={16}
-                className="cursor-pointer text-white hover:text-teal-300"
-                onClick={() => setShowCoverInfo(true)}
-              />
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              disabled={isUploading || slotsLeft <= 0}
-              className="w-full p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
-              onChange={(e) => handleUpload(e.currentTarget.files)}
-              accept="image/*"
             />
           </div>
 
@@ -356,13 +366,13 @@ export default function CreateClient() {
       {/* GLAS-MODALS */}
       {showNameInfo && (
         <Modal title="Name" onClose={() => setShowNameInfo(false)}>
-          Gib deinem Ziel einen prägnanten Namen – kurz und aussagekräftig.
+          Gib deinem Ziel einen prägnanten Titel – kurz und aussagekräftig.
         </Modal>
       )}
       {showCoverInfo && (
         <Modal title="Coverbild" onClose={() => setShowCoverInfo(false)}>
-          Lade ein einzelnes Bild hoch. Klick das Vorschaubild, um es zu
-          entfernen.
+          Lade ein Titelbild für dein Ziel hoch. Klick auf das Vorschaubild, um
+          es zu entfernen.
         </Modal>
       )}
       {showDescInfo && (
@@ -421,7 +431,7 @@ function Modal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-xl font-bold">{title}</h3>
-        <div className="text-sm">{children}</div>
+        <div className="text-sm ">{children}</div>
         <button
           onClick={onClose}
           className="mt-4 w-full py-2 bg-teal-400 bg-opacity-60 text-white rounded-lg hover:bg-opacity-80 transition"
