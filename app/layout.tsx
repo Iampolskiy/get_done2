@@ -1,13 +1,10 @@
+// app/layout.tsx
 import "./globals.css";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import {
-  ClerkProvider,
-  /*  SignInButton,
-  SignedIn,
-  SignedOut,
-  UserButton, */
-} from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
+import { FilterProvider } from "@/app/context/FilterContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -17,15 +14,11 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="de">
         <body>
-          <Header />
-          {/* <SignedOut>
-            <SignInButton />
-          </SignedOut>
-          <SignedIn>
-            <UserButton />
-          </SignedIn> */}
-          <main className=" pt-16 min-h-screen">{children}</main>
-          <Footer />
+          <FilterProvider>
+            <Header />
+            <main className="pt-16 min-h-screen">{children}</main>
+            <Footer />
+          </FilterProvider>
         </body>
       </html>
     </ClerkProvider>

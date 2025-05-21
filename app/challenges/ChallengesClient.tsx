@@ -1,19 +1,15 @@
+// app/challenges/ChallengesClient.tsx
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Challenge } from "@/types/types";
-import { ChevronDown, Sliders, Search, Camera } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useFilter } from "@/app/context/FilterContext";
 
-type SortKey = "progress" | "updates" | "category" | "date" | "random";
-
-interface ChallengesClientProps {
-  challenges: Challenge[];
-}
-
-// Helper: formatiert Datum+Uhrzeit stets in de-DE, verhindert Hydration-Fehler
+/**
+ * Helper: formatiert Datum+Uhrzeit stets in de-DE, verhindert Hydration-Fehler
+ */
 function formatGermanDateTime(iso?: string | Date | null): string {
   if (!iso) return "—";
   const d = iso instanceof Date ? iso : new Date(iso);
@@ -30,48 +26,31 @@ function formatGermanDateTime(iso?: string | Date | null): string {
   return `${date}, ${time}`;
 }
 
+interface ChallengesClientProps {
+  challenges: Challenge[];
+}
+
 export default function ChallengesClient({
   challenges,
 }: ChallengesClientProps) {
-  // Toolbar state
-  const [query, setQuery] = useState<string>("");
-  const [showSearch, setShowSearch] = useState<boolean>(false);
-  const [onlyWithImages, setOnlyWithImages] = useState<boolean>(true);
-  const [sortOpen, setSortOpen] = useState<boolean>(false);
-  const [sortKeys, setSortKeys] = useState<SortKey[]>(["date"]);
-  const [viewCols, setViewCols] = useState<1 | 2>(2);
+  // State jetzt aus FilterContext
+  const { search, sortKeys, onlyWithImages, viewCols } = useFilter();
 
-  // Refs & helpers
+  // Refs & Hilfen
   const containerRef = useRef<HTMLDivElement>(null);
-  const sortRef = useRef<HTMLDivElement>(null);
-  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
+  /* const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"]; */
 
   // Scroll to top when sort changes
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [sortKeys]);
 
-  // Close sort dropdown on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        sortOpen &&
-        sortRef.current &&
-        !sortRef.current.contains(e.target as Node)
-      ) {
-        setSortOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [sortOpen]);
-
   // Filter by search
   const bySearch = useMemo(() => {
     return challenges.filter((c) =>
-      c.title.toLowerCase().includes(query.toLowerCase())
+      c.title.toLowerCase().includes(search.toLowerCase())
     );
-  }, [challenges, query]);
+  }, [challenges, search]);
 
   // Filter by image presence
   const filtered = onlyWithImages
@@ -122,159 +101,24 @@ export default function ChallengesClient({
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
-      {/* Challenges Grid (ohne Snap-Classes) */}
-      <div ref={containerRef} className="mt-2 overflow-y-auto max-h]">
-        {/* Überschrift */}
+      <div ref={containerRef} className="mt-2 overflow-y-auto">
         <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
           Entdecke mehr Ziele
         </h2>
 
-        {/* Toolbar */}
-        <div className=" top-0 z-20 backdrop-blur-md bg-black/40 py-3">
-          <div className="mx-auto flex flex-wrap items-center justify-center gap-2 max-w-screen-2xl px-4">
-            {/* Search Toggle */}
-            <button
-              onClick={() => setShowSearch((v) => !v)}
-              className={`p-2 rounded-full hover:bg-white/10 transition ${
-                query ? "text-teal-300" : "text-white"
-              }`}
-              title="Suche"
-            >
-              <Search size={20} />
-            </button>
-            <AnimatePresence>
-              {showSearch && (
-                <motion.div
-                  key="search-input"
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 140, opacity: 1, marginLeft: 8 }}
-                  exit={{ width: 0, opacity: 0, marginLeft: 0 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  className="relative overflow-hidden"
-                >
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        setShowSearch(false);
-                      }
-                    }}
-                    autoFocus
-                    className="w-full rounded-full bg-white/10 placeholder-white/50 text-white px-4 py-2 pl-10 focus:outline-none"
-                  />
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70">
-                    <Search size={16} />
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Sort Toggle */}
-            <div ref={sortRef} className="relative">
-              <button
-                onClick={() => setSortOpen((o) => !o)}
-                className={`p-2 rounded-full hover:bg-white/10 transition flex items-center ${
-                  sortKeys.length > 0 ? "text-teal-300" : "text-white"
-                }`}
-                title="Sortieren"
-              >
-                <Sliders size={20} />
-                <ChevronDown
-                  size={16}
-                  className={`ml-1 transition ${sortOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {sortOpen && (
-                <div className="absolute right-0 mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30">
-                  {(
-                    [
-                      "progress",
-                      "updates",
-                      "category",
-                      "date",
-                      "random",
-                    ] as SortKey[]
-                  ).map((key) => {
-                    const pos = sortKeys.indexOf(key);
-                    const isActive = pos !== -1;
-                    const colorClass = isActive
-                      ? priorityColors[Math.min(pos, priorityColors.length - 1)]
-                      : "text-white";
-                    return (
-                      <button
-                        key={key}
-                        onClick={() =>
-                          setSortKeys((current) =>
-                            current.includes(key)
-                              ? current.filter((k) => k !== key)
-                              : [key, ...current]
-                          )
-                        }
-                        className={`block w-full text-left px-4 py-2 transition ${colorClass} ${
-                          isActive ? "font-bold" : ""
-                        }`}
-                      >
-                        {key === "random"
-                          ? "Zufällig"
-                          : key.charAt(0).toUpperCase() + key.slice(1)}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Only With Images */}
-            <button
-              onClick={() => setOnlyWithImages((v) => !v)}
-              className="text-white p-2 rounded-full hover:bg-white/10 transition"
-              title="Nur mit Bildern"
-            >
-              <Camera
-                size={20}
-                className={`transition ${
-                  onlyWithImages ? "text-teal-300" : "text-white/40"
-                }`}
-              />
-            </button>
-
-            {/* View Mode Toggle */}
-            <div className="hidden sm:flex items-center">
-              <button
-                onClick={() => setViewCols(viewCols === 1 ? 2 : 1)}
-                className="flex items-center space-x-1 p-2 rounded transition"
-              >
-                {[1, 2].map((i) => (
-                  <span
-                    key={i}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      i <= viewCols ? "bg-teal-300" : "bg-white/30"
-                    }`}
-                  />
-                ))}
-              </button>
-            </div>
-          </div>
-        </div>
-
+        {/* Grid mit gefilterten & sortierten Challenges */}
         <div
           className={`grid ${gridColsClass} gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
         >
           {sorted.map((c) => {
             const updates = c.updates?.length ?? 0;
             const imgUrl = c.images?.find((i) => i.isMain)?.url;
-
             return (
               <Link
                 key={c.id}
                 href={`/challenges/${c.id}`}
                 className={cardClasses}
               >
-                {/* Image or Placeholder */}
                 <div className="relative h-72 w-full bg-gray-800">
                   {imgUrl ? (
                     <Image
@@ -291,7 +135,6 @@ export default function ChallengesClient({
                   )}
                 </div>
 
-                {/* Progress Ring */}
                 <div className="absolute top-4 right-4 z-10 w-12 h-12">
                   <svg viewBox="0 0 100 100" className="w-full h-full">
                     <defs>
@@ -334,27 +177,17 @@ export default function ChallengesClient({
                   </svg>
                 </div>
 
-                {/* Content */}
                 <div className="flex-grow p-5 flex flex-col justify-between">
                   <h2 className="text-xl font-bold text-white line-clamp-2">
                     {c.title}
                   </h2>
-
-                  {/* USERRR */}
                   {c.author && (
                     <div className="mt-1 flex items-center space-x-2">
                       <span className="text-sm text-white/70">
                         {c.author.name}
                       </span>
-                      <span className="text-sm text-white/70">
-                        {c.authorId}
-                      </span>
-                      <span className="text-sm text-white/70">
-                        {c.author.email}
-                      </span>
                     </div>
                   )}
-
                   <div className="mt-2 text-sm text-white/60">
                     Created: {formatGermanDateTime(c.created_at)}
                   </div>
