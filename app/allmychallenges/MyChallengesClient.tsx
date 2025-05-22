@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Challenge } from "@/types/types";
 import { formatGermanDateTime } from "@/lib/date";
-/* import SearchSortFilterSplitBar from "@/components/SearchSortFilterSplitBar"; */
 import { useFilter } from "@/app/context/FilterContext";
 
 export default function MyChallengesClient({
@@ -13,28 +12,35 @@ export default function MyChallengesClient({
 }: {
   challenges: Challenge[];
 }) {
-  // Toolbar-States aus Context
-  const { search, sortKeys, onlyWithImages, viewCols } = useFilter();
+  // Toolbar-States aus Context inkl. Sortierung
+  const { search, sortKeys, sortDescending, onlyWithImages, viewCols } =
+    useFilter();
 
-  // Grid-container Ref
+  // Ref für Scroll-Container
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top on filter change
+  // Scroll to top on filter/sort change
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [search, onlyWithImages, sortKeys, viewCols]);
+  }, [search, onlyWithImages, sortKeys, sortDescending, viewCols]);
 
   // Filter by search & image presence
-  const bySearch = challenges.filter((c) =>
-    c.title.toLowerCase().includes(search.toLowerCase())
+  const bySearch = useMemo(
+    () =>
+      challenges.filter((c) =>
+        c.title.toLowerCase().includes(search.toLowerCase())
+      ),
+    [challenges, search]
   );
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // Multi-key sort
-  const sorted = [...filtered].sort((a, b) => {
-    for (const key of sortKeys) {
+  // Sortierung auf Basis der ersten gewählten Key und Richtung
+  const sorted = useMemo(() => {
+    if (sortKeys.length === 0) return filtered;
+    const key = sortKeys[0];
+    const arr = [...filtered].sort((a, b) => {
       let diff = 0;
       switch (key) {
         case "progress":
@@ -55,12 +61,12 @@ export default function MyChallengesClient({
           diff = Math.random() < 0.5 ? -1 : 1;
           break;
       }
-      if (diff !== 0) return diff;
-    }
-    return 0;
-  });
+      return diff !== 0 ? diff : 0;
+    });
+    return sortDescending ? arr : arr.reverse();
+  }, [filtered, sortKeys, sortDescending]);
 
-  // Layout Classes
+  // Grid-Klassen
   const gridColsClass =
     viewCols === 1
       ? "max-w-[780px] mx-auto grid-cols-1"
@@ -73,7 +79,7 @@ export default function MyChallengesClient({
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
-      <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
+      <h2 className="text-4xl sm:text-5xl font-extrabold text-center my-20 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
         Meine Ziele
       </h2>
 
@@ -92,7 +98,7 @@ export default function MyChallengesClient({
                 href={`/allmychallenges/${c.id}`}
                 className={cardClasses}
               >
-                {/* Image or placeholder */}
+                {/* Image */}
                 <div className="relative h-56 w-full bg-gray-800">
                   {imgUrl ? (
                     <Image

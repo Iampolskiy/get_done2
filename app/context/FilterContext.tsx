@@ -10,17 +10,19 @@ import {
 } from "react";
 
 // 1) Definiere, welche Werte du teilen willst:
-interface FilterState {
+export interface FilterState {
   search: string;
   sortKeys: string[];
+  sortDescending: boolean;
   onlyWithImages: boolean;
   viewCols: 1 | 2;
 }
 
 // 2) Definiere, wie man sie verändern kann:
-interface FilterActions {
+export interface FilterActions {
   setSearch: Dispatch<SetStateAction<string>>;
   setSortKeys: Dispatch<SetStateAction<string[]>>;
+  setSortDescending: Dispatch<SetStateAction<boolean>>;
   setOnlyWithImages: Dispatch<SetStateAction<boolean>>;
   setViewCols: Dispatch<SetStateAction<1 | 2>>;
 }
@@ -32,16 +34,11 @@ const FilterContext = createContext<(FilterState & FilterActions) | undefined>(
 
 // 4) Erstelle den Provider, der State verwaltet und weitergibt:
 export function FilterProvider({ children }: { children: ReactNode }) {
-  const [search, _setSearch] = useState<string>("");
-  const [sortKeys, _setSortKeys] = useState<string[]>(["date"]);
-  const [onlyWithImages, _setOnlyWithImages] = useState<boolean>(true);
-  const [viewCols, _setViewCols] = useState<1 | 2>(2);
-
-  const setSearch: Dispatch<SetStateAction<string>> = _setSearch;
-  const setSortKeys: Dispatch<SetStateAction<string[]>> = _setSortKeys;
-  const setOnlyWithImages: Dispatch<SetStateAction<boolean>> =
-    _setOnlyWithImages;
-  const setViewCols: Dispatch<SetStateAction<1 | 2>> = _setViewCols;
+  const [search, setSearch] = useState<string>("");
+  const [sortKeys, setSortKeys] = useState<string[]>(["date"]);
+  const [sortDescending, setSortDescending] = useState<boolean>(true);
+  const [onlyWithImages, setOnlyWithImages] = useState<boolean>(true);
+  const [viewCols, setViewCols] = useState<1 | 2>(2);
 
   return (
     <FilterContext.Provider
@@ -50,6 +47,8 @@ export function FilterProvider({ children }: { children: ReactNode }) {
         setSearch,
         sortKeys,
         setSortKeys,
+        sortDescending,
+        setSortDescending,
         onlyWithImages,
         setOnlyWithImages,
         viewCols,

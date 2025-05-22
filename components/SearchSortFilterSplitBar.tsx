@@ -6,6 +6,17 @@ import { Sliders, Camera, ChevronDown, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState, useEffect, useRef } from "react";
 
+// Definiere mögliche Sortier-Felder
+export type SortKey = "progress" | "updates" | "category" | "date" | "random";
+
+const sortFields: { key: SortKey; label: string }[] = [
+  { key: "progress", label: "Fortschritt" },
+  { key: "updates", label: "Updates" },
+  { key: "category", label: "Kategorie" },
+  { key: "date", label: "Datum" },
+  { key: "random", label: "Zufällig" },
+];
+
 export default function SearchSortFilterSplitBar() {
   const router = useRouter();
   const {
@@ -13,6 +24,8 @@ export default function SearchSortFilterSplitBar() {
     setSearch,
     sortKeys,
     setSortKeys,
+    sortDescending,
+    setSortDescending,
     onlyWithImages,
     setOnlyWithImages,
     viewCols,
@@ -20,37 +33,20 @@ export default function SearchSortFilterSplitBar() {
   } = useFilter();
 
   const [showSearch, setShowSearch] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-  const sortRef = useRef<HTMLDivElement>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const currentSort = sortKeys[0] as SortKey | undefined;
 
-  const sortOptions = [
-    "progress",
-    "updates",
-    "category",
-    "date",
-    "random",
-  ] as const;
-  const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
-
-  // Close sort dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
-        sortOpen &&
-        sortRef.current &&
-        !sortRef.current.contains(e.target as Node)
+        dropdownOpen &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
       ) {
-        setSortOpen(false);
+        setDropdownOpen(false);
       }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [sortOpen]);
-
-  // Close search input on outside click
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
       if (
         showSearch &&
         formRef.current &&
@@ -61,7 +57,17 @@ export default function SearchSortFilterSplitBar() {
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showSearch]);
+  }, [dropdownOpen, showSearch]);
+
+  function toggleSort(field: SortKey) {
+    if (currentSort === field) {
+      setSortDescending((prev) => !prev);
+    } else {
+      setSortKeys([field]);
+      setSortDescending(true);
+    }
+    setDropdownOpen(true);
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,18 +77,16 @@ export default function SearchSortFilterSplitBar() {
 
   return (
     <div className="relative flex items-center gap-2">
-      {/* Search Toggle */}
+      {/* Such-Icon */}
       <button
         onClick={() => setShowSearch((v) => !v)}
-        className={`p-2 rounded-full hover:bg-white/10 transition ${
+        className={`p-0 rounded-full hover:bg-white/10 transition ${
           search ? "text-teal-300" : "text-white"
         }`}
         title="Suche"
       >
         <Search size={20} />
       </button>
-
-      {/* Search Input: immer mittig als Overlay */}
       <AnimatePresence>
         {showSearch && (
           <motion.form
@@ -107,53 +111,48 @@ export default function SearchSortFilterSplitBar() {
         )}
       </AnimatePresence>
 
-      {/* Sort-Dropdown */}
-      <div className="relative" ref={sortRef}>
+      {/* Sortieren */}
+      <div className="relative" ref={dropdownRef}>
         <button
-          onClick={() => setSortOpen((o) => !o)}
-          className={`flex items-center p-2 rounded-full hover:bg-white/10 transition ${
-            sortKeys.length ? "text-teal-300" : "text-white"
-          }`}
+          onClick={() => setDropdownOpen((o) => !o)}
+          className="flex items-center p-2 rounded-full hover:bg-white/10 transition text-white"
           title="Sortieren"
         >
           <Sliders size={20} />
-          <ChevronDown
-            size={16}
-            className={`ml-1 transition ${sortOpen ? "rotate-180" : ""}`}
-          />
+          <span className="ml-2">
+            {currentSort
+              ? sortFields.find((f) => f.key === currentSort)?.label
+              : "Sortieren"}
+          </span>
         </button>
         <AnimatePresence>
-          {sortOpen && (
+          {dropdownOpen && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="absolute top-full mt-2 w-40 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30"
+              transition={{ duration: 0.2 }}
+              className="absolute top-full mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30"
             >
-              {sortOptions.map((key) => {
-                const pos = sortKeys.indexOf(key as string);
-                const active = pos !== -1;
-                const colorClass = active
-                  ? priorityColors[Math.min(pos, priorityColors.length - 1)]
-                  : "text-white";
+              {sortFields.map((field) => {
+                const active = currentSort === field.key;
                 return (
                   <button
-                    key={key}
-                    onClick={() =>
-                      setSortKeys((cur) =>
-                        cur.includes(key as string)
-                          ? cur.filter((k) => k !== key)
-                          : ([key as string, ...cur] as string[])
-                      )
-                    }
-                    className={`block w-full text-left px-4 py-2 hover:bg-white/10 transition ${colorClass} ${
-                      active ? "font-semibold" : ""
+                    key={field.key}
+                    onClick={() => toggleSort(field.key)}
+                    className={`flex items-center w-full text-left px-4 py-2 hover:bg-white/10 transition ${
+                      active ? "bg-white/10 font-semibold" : ""
                     }`}
                   >
-                    {key === "random"
-                      ? "Zufällig"
-                      : key.charAt(0).toUpperCase() + key.slice(1)}
+                    <span>{field.label}</span>
+                    {active && field.key !== "random" && (
+                      <ChevronDown
+                        size={16}
+                        className={`ml-auto transition-transform duration-200 ${
+                          sortDescending ? "rotate-0" : "-rotate-180"
+                        }`}
+                      />
+                    )}
                   </button>
                 );
               })}
@@ -162,7 +161,7 @@ export default function SearchSortFilterSplitBar() {
         </AnimatePresence>
       </div>
 
-      {/* Only with images */}
+      {/* Nur mit Bildern */}
       <button
         onClick={() => setOnlyWithImages((v) => !v)}
         className={`p-2 rounded-full hover:bg-white/10 transition ${
@@ -173,7 +172,7 @@ export default function SearchSortFilterSplitBar() {
         <Camera size={20} />
       </button>
 
-      {/* View mode */}
+      {/* Ansicht (Lämpchen) */}
       <button
         onClick={() => setViewCols((v) => (v === 2 ? 1 : 2))}
         className="flex items-center space-x-1 p-2 rounded-full hover:bg-white/10 transition"
@@ -182,7 +181,7 @@ export default function SearchSortFilterSplitBar() {
         {[1, 2].map((i) => (
           <span
             key={i}
-            className={`w-2 h-2 rounded-full ${
+            className={`w-2 h-2 rounded-full transition-colors ${
               i <= viewCols ? "bg-teal-300" : "bg-white/30"
             }`}
           />

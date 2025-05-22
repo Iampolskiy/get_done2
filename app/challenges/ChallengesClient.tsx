@@ -8,7 +8,7 @@ import { Challenge } from "@/types/types";
 import { useFilter } from "@/app/context/FilterContext";
 
 /**
- * Helper: formatiert Datum+Uhrzeit stets in de-DE, verhindert Hydration-Fehler
+ * Helper: Datum+Uhrzeit immer in de-DE formatieren
  */
 function formatGermanDateTime(iso?: string | Date | null): string {
   if (!iso) return "—";
@@ -33,79 +33,79 @@ interface ChallengesClientProps {
 export default function ChallengesClient({
   challenges,
 }: ChallengesClientProps) {
-  // State jetzt aus FilterContext
-  const { search, sortKeys, onlyWithImages, viewCols } = useFilter();
+  // State aus Context, inkl. Richtung
+  const { search, sortKeys, sortDescending, onlyWithImages, viewCols } =
+    useFilter();
 
-  // Refs & Hilfen
   const containerRef = useRef<HTMLDivElement>(null);
-  /* const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"]; */
 
-  // Scroll to top when sort changes
+  // Scroll to top, wenn sortKeys oder Richtung wechseln
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [sortKeys]);
+  }, [sortKeys, sortDescending]);
 
-  // Filter by search
-  const bySearch = useMemo(() => {
-    return challenges.filter((c) =>
-      c.title.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [challenges, search]);
+  // Suche-Filter
+  const bySearch = useMemo(
+    () =>
+      challenges.filter((c) =>
+        c.title.toLowerCase().includes(search.toLowerCase())
+      ),
+    [challenges, search]
+  );
 
-  // Filter by image presence
+  // Bilder-Filter
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // Multi-key sort
+  // Sortierung
   const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      for (const key of sortKeys) {
-        let diff = 0;
-        switch (key) {
-          case "progress":
-            diff = (b.progress ?? 0) - (a.progress ?? 0);
-            break;
-          case "updates":
-            diff = (b.updates?.length ?? 0) - (a.updates?.length ?? 0);
-            break;
-          case "category":
-            diff = (a.category ?? "").localeCompare(b.category ?? "");
-            break;
-          case "date":
-            diff =
-              new Date(b.created_at ?? "").getTime() -
-              new Date(a.created_at ?? "").getTime();
-            break;
-          case "random":
-            diff = Math.random() < 0.5 ? -1 : 1;
-            break;
-        }
-        if (diff !== 0) return diff;
+    if (sortKeys.length === 0) return filtered;
+    const key = sortKeys[0];
+    const sortedArray = [...filtered].sort((a, b) => {
+      let diff = 0;
+      switch (key) {
+        case "progress":
+          diff = (b.progress ?? 0) - (a.progress ?? 0);
+          break;
+        case "updates":
+          diff = (b.updates?.length ?? 0) - (a.updates?.length ?? 0);
+          break;
+        case "category":
+          diff = (a.category ?? "").localeCompare(b.category ?? "");
+          break;
+        case "date":
+          diff =
+            new Date(b.created_at ?? "").getTime() -
+            new Date(a.created_at ?? "").getTime();
+          break;
+        case "random":
+          diff = Math.random() < 0.5 ? -1 : 1;
+          break;
       }
-      return 0;
+      return diff;
     });
-  }, [filtered, sortKeys]);
+    // Richtungs-Handling: aufsteigend (false) oder absteigend (true)
+    return sortDescending ? sortedArray : sortedArray.reverse();
+  }, [filtered, sortKeys, sortDescending]);
 
-  // Grid layout classes
+  // Grid-Klassen
   const gridColsClass =
     viewCols === 1
       ? "max-w-[780px] mx-auto grid-cols-1"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
-  // Card base classes
   const cardClasses =
     "relative flex flex-col overflow-hidden rounded-2xl " +
     "bg-white/10 backdrop-blur-md border-transparent sm:border sm:border-white/20 " +
     "snap-start shadow-sm hover:border-teal-300 hover:shadow-[0_0_20px_rgba(14,211,181,0.5)] transition";
 
   return (
-    <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden bg-gradient-to-b from-black via-transparent to-black">
-      <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
+    <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
+      <h2 className="text-4xl sm:text-5xl font-extrabold text-center  my-20 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
         Entdecke mehr Ziele
       </h2>
 
-      {/* Grid mit gefilterten & sortierten Challenges */}
       <div
         className={`grid ${gridColsClass} gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
       >

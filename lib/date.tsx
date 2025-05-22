@@ -1,5 +1,4 @@
-// lib/date.ts
-export function formatGermanDateTime(iso?: string | Date | null) {
+export function formatGermanDateTime(iso?: string | Date | null): string {
   if (!iso) return "—";
   const d = iso instanceof Date ? iso : new Date(iso);
   const date = d.toLocaleDateString("de-DE", {
