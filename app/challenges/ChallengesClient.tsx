@@ -100,7 +100,7 @@ export default function ChallengesClient({
     "snap-start shadow-sm hover:border-teal-300 hover:shadow-[0_0_20px_rgba(14,211,181,0.5)] transition";
 
   return (
-    <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
+    <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden bg-gradient-to-b from-black via-transparent to-black">
       <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
         Entdecke mehr Ziele
       </h2>
