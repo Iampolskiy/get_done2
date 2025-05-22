@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react"; // useState & useEffect for NavLink/MobileLink
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import SearchSortFilterSplitBar from "@/components/SearchSortFilterSplitBar";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -23,16 +23,14 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Toolbar only on challenges routes
   const showToolbar =
     pathname === "/challenges" || pathname === "/allmychallenges";
 
   return (
     <header
-      className={
-        "fixed inset-x-0 top-0 z-50 bg-transparent backdrop-blur-md transform transition-transform duration-300 ease-out " +
-        (hidden ? "-translate-y-full" : "translate-y-0")
-      }
+      className={`fixed inset-x-0 top-0 z-50 bg-transparent backdrop-blur-md transform transition-transform duration-300 ease-out ${
+        hidden ? "-translate-y-full" : "translate-y-0"
+      }`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-white">
@@ -41,7 +39,6 @@ export default function Header() {
 
         {showToolbar && <SearchSortFilterSplitBar />}
 
-        {/* Mobile Toggle: visible below md */}
         <button
           className="md:hidden text-white"
           onClick={() => setMobileMenuOpen((o) => !o)}
@@ -54,11 +51,12 @@ export default function Header() {
           )}
         </button>
 
-        {/* Desktop Navigation: visible from md */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <NavLink href="/allmychallenges" label="My Challenges" />
-          <NavLink href="/challenges" label="Challenges" />
-          <NavLink href="/create" label="Create" />
+        <nav className="hidden md:flex items-center space-x-6 text-white">
+          <NavLink href="/">Home</NavLink>
+          <NavLink href="/create">Create</NavLink>
+          <NavLink href="/allmychallenges">My Challenges</NavLink>
+          <NavLink href="/challenges">Challenges</NavLink>
+
           <SignedIn>
             <UserButton afterSignOutUrl="/" />
           </SignedIn>
@@ -72,13 +70,12 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-black/50 backdrop-blur-md px-4 pb-4 space-y-2">
-          <MobileLink href="/" label="Home" />
-          <MobileLink href="/create" label="Create" />
-          <MobileLink href="/allmychallenges" label="My Challenges" />
-          <MobileLink href="/challenges" label="Challenges" />
+          <MobileLink href="/">Home</MobileLink>
+          <MobileLink href="/create">Create</MobileLink>
+          <MobileLink href="/allmychallenges">My Challenges</MobileLink>
+          <MobileLink href="/challenges">Challenges</MobileLink>
           <div className="pt-2">
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
@@ -97,41 +94,39 @@ export default function Header() {
   );
 }
 
-// NavLink & MobileLink determine active via usePathname
-const NavLink = ({ href, label }: { href: string; label: string }) => {
-  const path = usePathname();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const isActive = mounted && path === href;
+// Rein CSS-basiertes Active-Link-Highlight über aria-current
+const NavLink = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) => {
   return (
-    <Link
-      href={href}
-      className={`text-white hover:text-blue-300 transition ${
-        isActive ? "text-blue-300 font-semibold" : ""
-      }`}
-    >
-      {label}
+    <Link href={href} className="text-white hover:text-blue-300 transition">
+      {children}
     </Link>
   );
 };
 
-const MobileLink = ({ href, label }: { href: string; label: string }) => {
-  const path = usePathname();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  const isActive = mounted && path === href;
+const MobileLink = ({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) => {
   return (
     <Link
       href={href}
-      className={`block px-4 py-2 rounded ${
-        isActive ? "bg-blue-600 text-white" : "text-gray-100 hover:bg-gray-700"
-      }`}
+      aria-current={
+        typeof window !== "undefined" && window.location.pathname === href
+          ? "page"
+          : undefined
+      }
+      className="block px-4 py-2 rounded text-gray-100 hover:bg-gray-700"
     >
-      {label}
+      {children}
     </Link>
   );
 };

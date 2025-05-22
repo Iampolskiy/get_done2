@@ -73,15 +73,9 @@ export default function MyChallengesClient({
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
-      {/* Ausgelagerte Toolbar */}
-      <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 py-3">
-        <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
-          Meine Ziele
-        </h2>
-        {/* <div className="mx-auto max-w-screen-2xl px-4">
-          <SearchSortFilterSplitBar />
-        </div> */}
-      </div>
+      <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
+        Meine Ziele
+      </h2>
 
       {/* Challenges Grid */}
       <div

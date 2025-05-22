@@ -4,7 +4,7 @@ import { useFilter } from "@/app/context/FilterContext";
 import { useRouter } from "next/navigation";
 import { Sliders, Camera, ChevronDown, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function SearchSortFilterSplitBar() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function SearchSortFilterSplitBar() {
   const [showSearch, setShowSearch] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const sortOptions = [
     "progress",
@@ -32,7 +33,7 @@ export default function SearchSortFilterSplitBar() {
   ] as const;
   const priorityColors = ["text-teal-300", "text-teal-200", "text-teal-100"];
 
-  // Close dropdown when clicking outside
+  // Close sort dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -47,6 +48,21 @@ export default function SearchSortFilterSplitBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [sortOpen]);
 
+  // Close search input on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        showSearch &&
+        formRef.current &&
+        !formRef.current.contains(e.target as Node)
+      ) {
+        setShowSearch(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSearch]);
+
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setShowSearch(false);
@@ -54,7 +70,7 @@ export default function SearchSortFilterSplitBar() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="relative flex items-center gap-2">
       {/* Search Toggle */}
       <button
         onClick={() => setShowSearch((v) => !v)}
@@ -66,17 +82,18 @@ export default function SearchSortFilterSplitBar() {
         <Search size={20} />
       </button>
 
-      {/* Search Input (ohne zusätzliches Icon) */}
+      {/* Search Input: immer mittig als Overlay */}
       <AnimatePresence>
         {showSearch && (
           <motion.form
+            ref={formRef}
             key="search-input"
             onSubmit={onSubmit}
-            initial={false}
-            animate={{ width: 140, opacity: 1, marginLeft: 8 }}
-            exit={{ width: 0, opacity: 0, marginLeft: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="overflow-hidden"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 flex justify-center items-center z-50"
           >
             <input
               type="text"
@@ -84,7 +101,7 @@ export default function SearchSortFilterSplitBar() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Suche…"
               autoFocus
-              className="w-full px-4 py-2 rounded-full bg-white/10 placeholder-white/50 text-white focus:outline-none"
+              className="w-[80%] max-w-lg h-10 px-4 rounded-full border-2 border-teal-300 bg-black placeholder-teal-300 text-teal-300 focus:outline-none"
             />
           </motion.form>
         )}
@@ -108,9 +125,10 @@ export default function SearchSortFilterSplitBar() {
         <AnimatePresence>
           {sortOpen && (
             <motion.div
-              initial={false}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
               className="absolute top-full mt-2 w-40 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30"
             >
               {sortOptions.map((key) => {
@@ -126,7 +144,7 @@ export default function SearchSortFilterSplitBar() {
                       setSortKeys((cur) =>
                         cur.includes(key as string)
                           ? cur.filter((k) => k !== key)
-                          : [key as string, ...cur]
+                          : ([key as string, ...cur] as string[])
                       )
                     }
                     className={`block w-full text-left px-4 py-2 hover:bg-white/10 transition ${colorClass} ${
@@ -144,7 +162,7 @@ export default function SearchSortFilterSplitBar() {
         </AnimatePresence>
       </div>
 
-      {/* Nur mit Bildern Toggle */}
+      {/* Only with images */}
       <button
         onClick={() => setOnlyWithImages((v) => !v)}
         className={`p-2 rounded-full hover:bg-white/10 transition ${
@@ -155,7 +173,7 @@ export default function SearchSortFilterSplitBar() {
         <Camera size={20} />
       </button>
 
-      {/* Ansicht wechseln */}
+      {/* View mode */}
       <button
         onClick={() => setViewCols((v) => (v === 2 ? 1 : 2))}
         className="flex items-center space-x-1 p-2 rounded-full hover:bg-white/10 transition"

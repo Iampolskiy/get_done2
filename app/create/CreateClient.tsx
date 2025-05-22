@@ -104,7 +104,7 @@ export default function CreateClient() {
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-3xl mt-20 mx-auto p-6 pt-20 mb-20 pb-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm space-y-10"
+        className="max-w-3xl mt-10 mx-auto p-6 pt-20 mb-20 pb-10 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-sm space-y-10"
       >
         {/* Überschrift */}
         <h2 className="text-4xl sm:text-5xl font-extrabold text-center mb-10 bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent">
