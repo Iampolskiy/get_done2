@@ -13,5 +13,3 @@ export function formatGermanDateTime(iso?: string | Date | null): string {
   });
   return `${date}, ${time}`;
 }
-
-/* lll */
