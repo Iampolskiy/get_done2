@@ -1,50 +1,30 @@
-// app/challenges/ChallengesClient.tsx
 "use client";
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Challenge } from "@/types/types";
+import { formatGermanDateTime } from "@/lib/date";
 import { useFilter } from "@/app/context/FilterContext";
 
-/**
- * Helper: Datum+Uhrzeit immer in de-DE formatieren
- */
-function formatGermanDateTime(iso?: string | Date | null): string {
-  if (!iso) return "—";
-  const d = iso instanceof Date ? iso : new Date(iso);
-  const date = d.toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-  const time = d.toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  return `${date}, ${time}`;
-}
-
-interface ChallengesClientProps {
-  challenges: Challenge[];
-}
-
-export default function ChallengesClient({
+export default function MyChallengesClient({
   challenges,
-}: ChallengesClientProps) {
-  // State aus Context, inkl. Richtung
+}: {
+  challenges: Challenge[];
+}) {
+  // Toolbar-States aus Context inkl. Sortierung
   const { search, sortKeys, sortDescending, onlyWithImages, viewCols } =
     useFilter();
 
+  // Ref für Scroll-Container
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top, wenn sortKeys oder Richtung wechseln
+  // Scroll to top on filter/sort change
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [sortKeys, sortDescending]);
+  }, [search, onlyWithImages, sortKeys, sortDescending, viewCols]);
 
-  // Suche-Filter
+  // Filter by search & image presence
   const bySearch = useMemo(
     () =>
       challenges.filter((c) =>
@@ -52,17 +32,15 @@ export default function ChallengesClient({
       ),
     [challenges, search]
   );
-
-  // Bilder-Filter
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
 
-  // Sortierung
+  // Sortierung auf Basis der ersten gewählten Key und Richtung
   const sorted = useMemo(() => {
     if (sortKeys.length === 0) return filtered;
     const key = sortKeys[0];
-    const sortedArray = [...filtered].sort((a, b) => {
+    const arr = [...filtered].sort((a, b) => {
       let diff = 0;
       switch (key) {
         case "progress":
@@ -83,10 +61,9 @@ export default function ChallengesClient({
           diff = Math.random() < 0.5 ? -1 : 1;
           break;
       }
-      return diff;
+      return sortDescending ? diff : -diff;
     });
-    // Richtungs-Handling: aufsteigend (false) oder absteigend (true)
-    return sortDescending ? sortedArray : sortedArray.reverse();
+    return arr;
   }, [filtered, sortKeys, sortDescending]);
 
   // Grid-Klassen
@@ -102,111 +79,73 @@ export default function ChallengesClient({
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
-      <h2 className="text-4xl sm:text-5xl font-extrabold text-center  my-20 bg-gradient-to-r from-teal-400 to-indigo-100 bg-clip-text text-transparent">
-        Entdecke mehr Ziele
+      <h2
+        className="text-4xl sm:text-5xl font-extrabold text-center my-20
+                   bg-clip-text text-transparent
+                   bg-gradient-to-r from-teal-400 to-indigo-100"
+      >
+        Meine Ziele
       </h2>
 
+      {/* Challenges Grid */}
       <div
-        className={`grid ${gridColsClass} gap-6 px-4 sm:px-6 lg:px-8 max-w-screen-2xl mx-auto pb-10`}
+        ref={containerRef}
+        className={`grid gap-6 px-4 sm:px-6 lg:px-8 mx-auto pb-10 ${gridColsClass} max-w-screen-2xl`}
       >
-        {sorted.map((c) => {
-          const updates = c.updates?.length ?? 0;
-          const imgUrl = c.images?.find((i) => i.isMain)?.url;
-          return (
-            <Link
-              key={c.id}
-              href={`/challenges/${c.id}`}
-              className={cardClasses}
-            >
-              <div className="relative h-72 w-full bg-gray-800">
-                {imgUrl ? (
-                  <Image
-                    src={imgUrl}
-                    alt={c.title}
-                    fill
-                    className="object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-white/50">
-                    Kein Bild
-                  </div>
-                )}
-              </div>
+        {sorted.length > 0 ? (
+          sorted.map((c) => {
+            const updates = c.updates?.length ?? 0;
+            const imgUrl = c.images?.find((i) => i.isMain)?.url;
+            return (
+              <Link
+                key={c.id}
+                href={`/allmychallenges/${c.id}`}
+                className={cardClasses}
+                style={{ height: "20rem" }}
+              >
+                {/* Image */}
+                <div className="relative h-56 w-full bg-gray-800">
+                  {imgUrl ? (
+                    <Image
+                      src={imgUrl}
+                      alt={c.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-white/50">
+                      Kein Bild
+                    </div>
+                  )}
+                </div>
 
-              <div className="absolute top-4 right-4 z-10 w-12 h-12">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <defs>
-                    <linearGradient id="grad" x1="1" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#14B8A6" />
-                      <stop offset="100%" stopColor="#06B6D4" />
-                    </linearGradient>
-                  </defs>
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    strokeWidth="10"
-                    fill="none"
-                    className="stroke-white/20"
-                  />
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="45"
-                    strokeWidth="10"
-                    fill="none"
-                    stroke="url(#grad)"
-                    strokeDasharray={2 * Math.PI * 45}
-                    strokeDashoffset={
-                      (2 * Math.PI * 45 * (100 - (c.progress ?? 0))) / 100
-                    }
-                    transform="rotate(-90 50 50)"
-                    strokeLinecap="round"
-                    className="transition-all duration-500"
-                  />
-                  <text
-                    x="50"
-                    y="54"
-                    textAnchor="middle"
-                    className="text-xl font-bold text-white"
-                  >
-                    {Math.round(c.progress ?? 0)}%
-                  </text>
-                </svg>
-              </div>
-
-              <div className="flex-grow p-5 flex flex-col justify-between">
-                <h2 className="text-xl font-bold text-white line-clamp-2">
-                  {c.title}
-                </h2>
-                {c.author && (
-                  <div className="mt-1 flex items-center space-x-2">
-                    <span className="text-sm text-white/70">
-                      {c.author.name}
-                    </span>
+                {/* Content */}
+                <div className="flex-grow p-5 flex flex-col justify-between">
+                  <h3 className="text-lg font-bold text-white line-clamp-2">
+                    {c.title}
+                  </h3>
+                  <div className="mt-2 text-sm text-white/60">
+                    Erstellt: {formatGermanDateTime(c.created_at)}
                   </div>
-                )}
-                <div className="mt-2 text-sm text-white/60">
-                  Created: {formatGermanDateTime(c.created_at)}
-                </div>
-                <div className="mt-2 text-sm text-white/60">
-                  Dauer: {c.duration}
-                </div>
-                <p className="mt-1 text-sm text-white/70 line-clamp-3">
-                  {c.goal || "Kein Zieltext hinterlegt."}
-                </p>
-                <div className="mt-2 text-sm text-white/60 space-y-1">
-                  <div>Address: {c.city_address || ""}</div>
-                  <div>Category: {c.category || ""}</div>
-                  <div>
-                    {updates} {updates === 1 ? "Update" : "Updates"}
+                  <p className="mt-1 text-sm text-white/70 line-clamp-3">
+                    {c.goal || "Kein Zieltext hinterlegt."}
+                  </p>
+                  <div className="mt-3 text-sm text-white/60 space-y-1">
+                    <div>Kategorie: {c.category || "—"}</div>
+                    <div>
+                      {updates} {updates === 1 ? "Update" : "Updates"}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          );
-        })}
+              </Link>
+            );
+          })
+        ) : (
+          <p className="col-span-full text-center text-white/70 py-10">
+            Keine Ziele gefunden.
+          </p>
+        )}
       </div>
     </div>
   );
