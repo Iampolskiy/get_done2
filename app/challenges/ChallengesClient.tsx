@@ -123,7 +123,7 @@ export default function ChallengesClient({
                   </div>
 
                   {/* Text-Bereich (40%) */}
-                  <div className="h-[25%] bg-white px-5 py-3 justify-between flex flex-col ">
+                  <div className="h-[25%] bg-white px-3 py-3 justify-between flex flex-col ">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 line-clamp-2">
                         {c.title}
