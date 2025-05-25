@@ -7,24 +7,22 @@ import { Challenge } from "@/types/types";
 import { formatGermanDateTime } from "@/lib/date";
 import { useFilter } from "@/app/context/FilterContext";
 
-export default function MyChallengesClient({
+export default function ChallengesClient({
   challenges,
 }: {
   challenges: Challenge[];
 }) {
-  // Toolbar-States aus Context inkl. Sortierung
-  const { search, sortKeys, sortDescending, onlyWithImages, viewCols } =
+  // Filter- & Sort-States (inkl. viewCols) aus dem Context
+  const { search, onlyWithImages, sortKeys, sortDescending, viewCols } =
     useFilter();
 
-  // Ref für Scroll-Container
+  // Scroll-Reset bei Filter/Sort-Änderung
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to top on filter/sort change
   useEffect(() => {
     containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [search, onlyWithImages, sortKeys, sortDescending, viewCols]);
 
-  // Filter by search & image presence
+  // 1) Suche filtern
   const bySearch = useMemo(
     () =>
       challenges.filter((c) =>
@@ -32,15 +30,15 @@ export default function MyChallengesClient({
       ),
     [challenges, search]
   );
+  // 2) Optional nur mit Bildern
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
-
-  // Sortierung auf Basis der ersten gewählten Key und Richtung
+  // 3) Sortierung
   const sorted = useMemo(() => {
-    if (sortKeys.length === 0) return filtered;
+    if (!sortKeys.length) return filtered;
     const key = sortKeys[0];
-    const arr = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       let diff = 0;
       switch (key) {
         case "progress":
@@ -63,31 +61,34 @@ export default function MyChallengesClient({
       }
       return sortDescending ? diff : -diff;
     });
-    return arr;
   }, [filtered, sortKeys, sortDescending]);
 
-  // Grid-Klassen
+  // Grid-Spalten dynamisch je nach viewCols
   const gridColsClass =
     viewCols === 1
-      ? "max-w-[780px] mx-auto grid-cols-1"
+      ? "grid-cols-1"
       : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
-  const cardClasses =
-    "relative flex flex-col overflow-hidden rounded-2xl " +
+  // Card-Größe: im Einspalten-Modus max-w-md & feste Höhe, sonst 2:3-Aspect
+  const cardSizeClass =
+    viewCols === 1 ? "w-full max-w-md mx-auto h-[70vh]" : "w-full aspect-[2/3]";
+
+  // bestehende Card-Stile mit Hover aus MyChallengesClient
+  const cardBaseClasses =
     "bg-white/10 backdrop-blur-md border-transparent sm:border sm:border-white/20 " +
-    "snap-start shadow-sm hover:border-teal-300 hover:shadow-[0_0_20px_rgba(14,211,181,0.5)] transition";
+    "rounded-2xl overflow-hidden shadow-sm hover:border-teal-300 " +
+    "hover:shadow-[0_0_20px_rgba(14,211,181,0.5)] transition";
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
       <h2
-        className="text-4xl sm:text-5xl font-extrabold text-center my-20
-                   bg-clip-text text-transparent
-                   bg-gradient-to-r from-teal-400 to-indigo-100"
+        className="ext-4xl sm:text-5xl font-extrabold text-center my-20
+                     bg-clip-text text-transparent
+                     bg-gradient-to-r from-teal-400 to-indigo-100"
       >
-        Meine Ziele
+        Ziele
       </h2>
 
-      {/* Challenges Grid */}
       <div
         ref={containerRef}
         className={`grid gap-6 px-4 sm:px-6 lg:px-8 mx-auto pb-10 ${gridColsClass} max-w-screen-2xl`}
@@ -96,45 +97,47 @@ export default function MyChallengesClient({
           sorted.map((c) => {
             const updates = c.updates?.length ?? 0;
             const imgUrl = c.images?.find((i) => i.isMain)?.url;
+
             return (
               <Link
                 key={c.id}
                 href={`/allmychallenges/${c.id}`}
-                className={cardClasses}
-                style={{ height: "20rem" }}
+                className="block"
               >
-                {/* Image */}
-                <div className="relative h-56 w-full bg-gray-800">
-                  {imgUrl ? (
-                    <Image
-                      src={imgUrl}
-                      alt={c.title}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-white/50">
-                      Kein Bild
-                    </div>
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="flex-grow p-5 flex flex-col justify-between">
-                  <h3 className="text-lg font-bold text-white line-clamp-2">
-                    {c.title}
-                  </h3>
-                  <div className="mt-2 text-sm text-white/60">
-                    Erstellt: {formatGermanDateTime(c.created_at)}
+                <div className={`${cardSizeClass} ${cardBaseClasses}`}>
+                  {/* Bild-Bereich (60%) */}
+                  <div className="h-[60%] relative bg-gray-700">
+                    {imgUrl ? (
+                      <Image
+                        src={imgUrl}
+                        alt={c.title}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-gray-500">
+                        Kein Bild
+                      </div>
+                    )}
                   </div>
-                  <p className="mt-1 text-sm text-white/70 line-clamp-3">
-                    {c.goal || "Kein Zieltext hinterlegt."}
-                  </p>
-                  <div className="mt-3 text-sm text-white/60 space-y-1">
-                    <div>Kategorie: {c.category || "—"}</div>
-                    <div>
-                      {updates} {updates === 1 ? "Update" : "Updates"}
+
+                  {/* Text-Bereich (40%) */}
+                  <div className="h-[40%] bg-white p-5 flex flex-col justify-between">
+                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
+                      {c.title}
+                    </h3>
+                    <p className="text-xs text-gray-600">
+                      Erstellt: {formatGermanDateTime(c.created_at)}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-700 line-clamp-2">
+                      {c.goal || "Kein Zieltext hinterlegt."}
+                    </p>
+                    <div className="mt-2 flex justify-between text-xs text-gray-500">
+                      <span>
+                        {updates} {updates === 1 ? "Update" : "Updates"}
+                      </span>
+                      <span>{c.category || "—"}</span>
                     </div>
                   </div>
                 </div>
