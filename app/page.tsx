@@ -165,7 +165,18 @@ export default function HomePage() {
             className="inline-flex items-center px-12 py-5 bg-cyan-500 text-black font-bold rounded-full shadow-[0_0_50px_rgba(0,255,255,0.9)] hover:shadow-[0_0_80px_rgba(0,255,255,1)]"
             whileHover={{ scale: 1.2, rotate: [0, -5, 5, 0] }}
             whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400 }}
+            transition={{
+              // scale bleibt spring
+              scale: { type: "spring", stiffness: 400 },
+              // rotate mit tween/keyframes statt spring
+              rotate: {
+                type: "keyframes", // oder "tween"
+                values: [0, -5, 5, 0],
+                times: [0, 0.3, 0.6, 1], // optional, verteilt die Keyframes
+                duration: 0.6,
+                ease: "easeInOut",
+              },
+            }}
           >
             Jetzt Durchstarten 🚀
           </motion.button>

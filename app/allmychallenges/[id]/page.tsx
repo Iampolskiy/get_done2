@@ -37,7 +37,7 @@ export default async function ChallengesPage({
   }
 
   /* ---------- Challenge laden -------------------------------- */
-  const numericId = parseInt(params.id, 10);
+  const numericId = await parseInt(params.id, 10);
   const challengeDb = await prisma.challenge.findUnique({
     where: { id: numericId },
     include: {
@@ -73,7 +73,8 @@ export default async function ChallengesPage({
     authorId: u.authorId ?? null,
     content: u.content ?? "",
     /*     date: u.createdAt.toISOString(),
-     */ createdAt: u.createdAt,
+     */
+    createdAt: u.createdAt,
     type: u.type,
     images: u.images.map(mapImage),
     date: u.createdAt.toISOString(),

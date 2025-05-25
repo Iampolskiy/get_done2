@@ -1,7 +1,7 @@
 // app/allmychallenges/[id]/MyChallengeClient.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Challenge } from "@/types/types";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,113 +9,162 @@ import { deleteChallenge } from "@/actions/challengeActions/deleteChallenge";
 
 type Props = { challenge: Challenge };
 
-export default function MyChallengeClient({ challenge }: Props) {
-  /* ------------------ COVER-IMAGE ------------------ */
-  const coverImg = useMemo(() => {
-    return (challenge.images ?? []).find((i) => i.isMain);
-  }, [challenge.images]);
+// Dynamische Progress-Bar basierend auf created_at und duration
+function ProgressBar({
+  createdAt,
+  duration,
+}: {
+  createdAt: string | Date;
+  duration: number | null;
+}) {
+  const [percent, setPercent] = useState(0);
 
-  /* ------------------ UPDATES-MEMO ----------------- */
-  const updates = useMemo(() => {
-    return challenge.updates ?? [];
-  }, [challenge.updates]);
+  useEffect(() => {
+    const createdMs = new Date(createdAt).getTime();
+    const nowMs = Date.now();
+    const elapsedDays = (nowMs - createdMs) / (1000 * 60 * 60 * 24);
 
-  /* ------------------ ACTIVE-INDEX ---------------- */
-  const [activeIdx, setActiveIdx] = useState<number>(() => {
-    return updates.length > 0 ? updates.length - 1 : 0;
-  });
+    const totalDays = duration && duration > 0 ? duration : Infinity;
+    const ratio =
+      totalDays === Infinity
+        ? 1
+        : Math.min(1, Math.max(0, elapsedDays / totalDays));
 
-  /* ------------------ ACTIVE-UPDATE ---------------- */
-  const activeUpd = useMemo(() => {
-    return updates[activeIdx];
-  }, [updates, activeIdx]);
+    setPercent(ratio * 100);
+  }, [createdAt, duration]);
 
-  const images = activeUpd?.images ?? [];
+  const fillColor = duration && duration > 0 ? "bg-blue-600" : "bg-violet-600";
 
   return (
-    <section className="bg-slate-50 min-h-screen px-4 md:px-8 py-10">
-      {/* ---------- HEADER ------------------------------------------ */}
-      <header className="max-w-3xl mx-auto space-y-4">
+    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className={`h-full ${fillColor}`} style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
+
+export default function MyChallengeClient({ challenge }: Props) {
+  const coverImg = useMemo(
+    () => challenge.images?.find((i) => i.isMain),
+    [challenge.images]
+  );
+
+  const updates = useMemo(() => challenge.updates ?? [], [challenge.updates]);
+  const [activeIdx, setActiveIdx] = useState(updates.length - 1 || 0);
+  const activeUpd = updates[activeIdx];
+  const updImages = activeUpd?.images ?? [];
+
+  const isInfinite = !challenge.duration || challenge.duration <= 0;
+
+  return (
+    <section className="w-full px-4 py-12 bg-gray-900 min-h-screen text-white">
+      {/* ---------- HEADER ---------- */}
+      <header className="max-w-3xl mx-auto bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-sm">
         {coverImg && (
-          <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-sm">
+          <div className="relative w-full h-64">
             <Image
               src={coverImg.url}
               alt={challenge.title}
               fill
-              sizes="(max-width:768px) 100vw, 768px"
+              sizes="100vw"
               className="object-cover"
             />
           </div>
         )}
 
-        {/* Titel, Status */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">{challenge.title}</h1>
-            {challenge.goal && (
-              <p className="text-gray-600 mt-0.5">{challenge.goal}</p>
-            )}
-          </div>
+        <div className="p-6 space-y-4">
+          {/* Titel */}
+          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-indigo-100">
+            {challenge.title}
+          </h1>
+
+          {/* Zieltext */}
+          {challenge.goal && <p className="text-gray-300">{challenge.goal}</p>}
+
+          {/* Status */}
           <span
-            className={`inline-flex items-center h-8 px-3 rounded-full text-sm font-medium ${
+            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
               challenge.completed
-                ? "bg-green-100 text-green-700"
-                : "bg-blue-100 text-blue-700"
+                ? "bg-green-600 text-white"
+                : "bg-blue-600 text-white"
             }`}
           >
             {challenge.completed ? "Abgeschlossen" : "In Bearbeitung"}
           </span>
-        </div>
 
-        {/* Fortschritts-Balken */}
-        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-600"
-            style={{ width: `${challenge.progress ?? 0}%` }}
+          {/* Dynamische Progress-Bar */}
+          <ProgressBar
+            createdAt={challenge.created_at!}
+            duration={challenge.duration ?? null}
           />
-        </div>
 
-        {/* CTA-Buttons */}
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href={`/update/${challenge.id}`}
-            className="flex-1 min-w-[140px] bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-center transition"
-          >
-            Fortschritt eintragen
-          </Link>
-          <Link
-            href={`/edit/${challenge.id}`}
-            className="flex-1 min-w-[140px] bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-center transition"
-          >
-            Challenge bearbeiten
-          </Link>
-          <form action={deleteChallenge} className="flex-1 min-w-[140px]">
-            <input type="hidden" name="id" value={challenge.id} />
-            <button
-              type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition"
+          {/* Details (ohne numerische Prozent-Anzeige) */}
+          <div className="grid grid-cols-2 gap-4 text-sm text-gray-200">
+            <div>
+              <strong>Kategorie:</strong> {challenge.category ?? "–"}
+            </div>
+            <div>
+              <strong>Schwierigkeit:</strong> {challenge.difficulty ?? "–"}
+            </div>
+            <div>
+              <strong>Dauer:</strong>{" "}
+              {isInfinite ? "Unbegrenzt" : `${challenge.duration} Tage`}
+            </div>
+            <div>
+              <strong>Alter:</strong> {challenge.age ?? "–"}
+            </div>
+            <div>
+              <strong>Geschlecht:</strong> {challenge.gender ?? "–"}
+            </div>
+            <div className="col-span-2">
+              <strong>Ort:</strong> {challenge.city_address ?? "–"}
+            </div>
+            <div className="col-span-2">
+              <strong>Erstellt am:</strong>{" "}
+              {new Date(challenge.created_at!).toLocaleDateString("de-DE")}
+            </div>
+          </div>
+
+          {/* CTA-Buttons */}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href={`/update/${challenge.id}`}
+              className="flex-1 min-w-[140px] bg-teal-500 hover:bg-teal-600 text-white py-2 rounded-lg text-center transition"
             >
-              Challenge löschen
-            </button>
-          </form>
+              Fortschritt eintragen
+            </Link>
+            <Link
+              href={`/edit/${challenge.id}`}
+              className="flex-1 min-w-[140px] bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg text-center transition"
+            >
+              Challenge bearbeiten
+            </Link>
+            <form action={deleteChallenge} className="flex-1 min-w-[140px]">
+              <input type="hidden" name="id" value={challenge.id} />
+              <button
+                type="submit"
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition"
+              >
+                Challenge löschen
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
-      {/* ---------- TIMELINE --------------------------------------- */}
+      {/* ---------- TIMELINE ---------- */}
       {updates.length > 0 && (
-        <div className="max-w-3xl mx-auto mt-10 space-y-4">
-          <h2 className="font-semibold text-lg">Timeline</h2>
-          <div className="flex overflow-x-auto gap-3 pb-1">
+        <div className="max-w-3xl mx-auto mt-10">
+          <h2 className="text-lg font-semibold mb-2 text-gray-200">Timeline</h2>
+          <div className="flex overflow-x-auto gap-3 pb-2">
             {updates.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveIdx(idx)}
                 className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center
-                           text-sm font-medium transition border
-                           ${
+                           text-sm font-medium transition ${
                              idx === activeIdx
-                               ? "bg-blue-600 text-white border-blue-600 scale-105"
-                               : "bg-gray-200 text-gray-800 border-transparent hover:bg-gray-300"
+                               ? "bg-teal-400 text-white"
+                               : "bg-white/20 text-gray-200 hover:bg-white/30"
                            }`}
               >
                 {idx + 1}
@@ -125,55 +174,55 @@ export default function MyChallengeClient({ challenge }: Props) {
         </div>
       )}
 
-      {/* ---------- AKTUELLES UPDATE ------------------------------- */}
+      {/* ---------- AKTUELLES UPDATE ---------- */}
       {activeUpd && (
-        <div className="max-w-3xl mx-auto mt-8 bg-white rounded-xl shadow p-4 md:p-6 space-y-6">
-          {/* Bilder-Grid */}
-          {images.length > 0 && (
-            <div className="grid grid-cols-2 gap-4">
-              {images.map((img) => (
-                <div key={img.id} className="relative w-full aspect-[4/3]">
-                  <Image
-                    src={img.url}
-                    alt="Update Bild"
-                    fill
-                    sizes="(max-width:768px) 50vw, 200px"
-                    className="object-cover rounded-lg"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="max-w-3xl mx-auto mt-8 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-6 space-y-4">
+            {/* Bilder-Grid */}
+            {updImages.length > 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                {updImages.map((img) => (
+                  <div
+                    key={img.id}
+                    className="relative w-full aspect-[4/3] rounded-lg overflow-hidden"
+                  >
+                    <Image
+                      src={img.url}
+                      alt="Update Bild"
+                      fill
+                      sizes="50vw"
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {/* Datum & Text */}
-          <div className="space-y-1">
-            <time className="text-sm text-gray-500">
+            <time className="text-sm text-gray-400 block">
               {new Date(activeUpd.createdAt).toLocaleDateString("de-DE", {
                 year: "numeric",
                 month: "2-digit",
                 day: "2-digit",
               })}
             </time>
-            <p className="text-gray-700 leading-relaxed">
-              {activeUpd.content ?? "Kein Update-Text vorhanden."}
+            <p className="text-gray-200 leading-relaxed">
+              {activeUpd.content || "Kein Update-Text vorhanden."}
             </p>
-          </div>
 
-          {/* Bearbeiten-Button */}
-          <div className="pt-4 flex gap-3 flex-wrap">
-            <Link
-              href={`/editUpdate/${activeUpd.id}`}
-              className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium py-2 px-4 rounded transition"
-            >
-              Update bearbeiten
-            </Link>
-
-            <Link
-              href={`/deleteUpdate/${activeUpd.id}`}
-              className="inline-block bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded transition"
-            >
-              Update löschen
-            </Link>
+            <div className="flex flex-wrap gap-3 pt-4">
+              <Link
+                href={`/editUpdate/${activeUpd.id}`}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg transition"
+              >
+                Update bearbeiten
+              </Link>
+              <Link
+                href={`/deleteUpdate/${activeUpd.id}`}
+                className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition"
+              >
+                Update löschen
+              </Link>
+            </div>
           </div>
         </div>
       )}

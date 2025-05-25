@@ -52,18 +52,17 @@ model Image {
   duration    Int
   created_at  DateTime? @default(now())
   updated_at  DateTime? @updatedAt
-  isMain      Boolean?   @default(false)
+  isMain      Boolean?  @default(false)
 
   challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   challengeId Int
 
-  user        User?     @relation(fields: [userId], references: [id])
-  userId      Int?
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
 
-  update      Update?   @relation(fields: [updateId], references: [id], onDelete: Cascade) // ✅ richtiger Bezug
-  updateId    Int?      // Bild gehört zu EINEM Update
+  update   Update? @relation(fields: [updateId], references: [id], onDelete: Cascade) // ✅ richtiger Bezug
+  updateId Int? // Bild gehört zu EINEM Update
 }
-
 
 model Update {
   id          Int        @id @default(autoincrement())
@@ -74,9 +73,8 @@ model Update {
   content     String?
   createdAt   DateTime   @default(now())
   type        UpdateType
-  images      Image[]    // ✅ Ein Update kann mehrere Bilder haben
+  images      Image[] // ✅ Ein Update kann mehrere Bilder haben
 }
-
 
 enum UpdateType {
   CREATED

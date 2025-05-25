@@ -1,26 +1,48 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Challenge } from "@/types/types";
-/* import { formatGermanDateTime } from "@/lib/date"*/
+/* import { formatGermanDateTime } from "@/lib/date" */
 import { useFilter } from "@/app/context/FilterContext";
+
+interface ProgressBarProps {
+  createdAt: string | Date;
+  duration: number | null;
+}
+function ProgressBar({ createdAt, duration }: ProgressBarProps) {
+  const [percent, setPercent] = useState(0);
+
+  useEffect(() => {
+    const createdMs = new Date(createdAt).getTime();
+    const nowMs = Date.now();
+    const elapsedDays = (nowMs - createdMs) / (1000 * 60 * 60 * 24);
+    const totalDays = duration && duration > 0 ? duration : Infinity;
+    const ratio =
+      totalDays === Infinity
+        ? 1
+        : Math.min(1, Math.max(0, elapsedDays / totalDays));
+    setPercent(ratio * 100);
+  }, [createdAt, duration]);
+
+  const fillColor =
+    duration && duration > 0 ? "bg-yellow-400" : "bg-violet-600";
+
+  return (
+    <div className="h-2 w-full bg-gray-300">
+      <div className={`h-full ${fillColor}`} style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
 
 export default function ChallengesClient({
   challenges,
 }: {
   challenges: Challenge[];
 }) {
-  // Filter- & Sort-States (inkl. viewCols) aus dem Context
   const { search, onlyWithImages, sortKeys, sortDescending, viewCols } =
     useFilter();
-
-  // Scroll-Reset bei Filter/Sort-Änderung
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-  }, [search, onlyWithImages, sortKeys, sortDescending, viewCols]);
 
   // 1) Suche filtern
   const bySearch = useMemo(
@@ -30,10 +52,12 @@ export default function ChallengesClient({
       ),
     [challenges, search]
   );
+
   // 2) Optional nur mit Bildern
   const filtered = onlyWithImages
     ? bySearch.filter((c) => (c.images?.length ?? 0) > 0)
     : bySearch;
+
   // 3) Sortierung
   const sorted = useMemo(() => {
     if (!sortKeys.length) return filtered;
@@ -52,8 +76,8 @@ export default function ChallengesClient({
           break;
         case "date":
           diff =
-            new Date(b.created_at ?? "").getTime() -
-            new Date(a.created_at ?? "").getTime();
+            new Date(b.created_at!).getTime() -
+            new Date(a.created_at!).getTime();
           break;
         case "random":
           diff = Math.random() < 0.5 ? -1 : 1;
@@ -63,17 +87,17 @@ export default function ChallengesClient({
     });
   }, [filtered, sortKeys, sortDescending]);
 
-  // Grid-Spalten dynamisch je nach viewCols
+  // 4) Grid-Spalten dynamisch
   const gridColsClass =
     viewCols === 1
       ? "grid-cols-1"
-      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
+      : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
-  // Card-Größe: im Einspalten-Modus max-w-md & feste Höhe, sonst 2:3-Aspect
+  // 5) Card-Größe
   const cardSizeClass =
-    viewCols === 1 ? "w-full max-w-md mx-auto h-[70vh]" : "w-full aspect-[2/3]";
+    viewCols === 1 ? "w-full max-w-md mx-auto h-64" : "w-full aspect-[2/3]";
 
-  // bestehende Card-Stile mit Hover aus MyChallengesClient
+  // 6) Card-Basis-Stile
   const cardBaseClasses =
     "bg-white/10 backdrop-blur-md border-transparent sm:border sm:border-white/20 " +
     "rounded-2xl overflow-hidden shadow-sm hover:border-teal-300 " +
@@ -82,15 +106,14 @@ export default function ChallengesClient({
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
       <h2
-        className="ext-4xl sm:text-5xl font-extrabold text-center my-20
-                     bg-clip-text text-transparent
-                     bg-gradient-to-r from-teal-400 to-indigo-100"
+        className="text-4xl sm:text-5xl font-extrabold text-center my-20
+                   bg-clip-text text-transparent
+                   bg-gradient-to-r from-teal-400 to-indigo-100"
       >
         Ziele
       </h2>
 
       <div
-        ref={containerRef}
         className={`grid gap-6 px-4 sm:px-6 lg:px-8 mx-auto pb-10 ${gridColsClass} max-w-screen-2xl`}
       >
         {sorted.length > 0 ? (
@@ -105,7 +128,7 @@ export default function ChallengesClient({
                 className="block"
               >
                 <div className={`${cardSizeClass} ${cardBaseClasses}`}>
-                  {/* Bild-Bereich (60%) */}
+                  {/* Bild-Bereich */}
                   <div className="h-[75%] relative bg-gray-700">
                     {imgUrl ? (
                       <Image
@@ -122,17 +145,23 @@ export default function ChallengesClient({
                     )}
                   </div>
 
-                  {/* Text-Bereich (40%) */}
-                  <div className="h-[25%] bg-white px-3 py-3 justify-between flex flex-col ">
+                  {/* Fortschritts-Bar */}
+                  <ProgressBar
+                    createdAt={c.created_at!}
+                    duration={c.duration ?? null}
+                  />
+
+                  {/* Text-Bereich */}
+                  <div className="h-[23%] bg-white px-3 py-3 flex flex-col justify-between">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 line-clamp-2">
                         {c.title}
                       </h3>
-                      <p className="mt-1 text-s text-gray-800 line-clamp-2">
+                      <p className="mt-1 text-sm text-gray-800 line-clamp-2">
                         {c.goal || "Kein Zieltext hinterlegt."}
                       </p>
                     </div>
-                    <div className="mt-2 flex justify-between text-s text-gray-800">
+                    <div className="mt-2 flex justify-between text-sm text-gray-800">
                       <span>
                         {updates} {updates === 1 ? "Update" : "Updates"}
                       </span>
