@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Challenge } from "@/types/types";
-import { formatGermanDateTime } from "@/lib/date";
+/* import { formatGermanDateTime } from "@/lib/date"*/
 import { useFilter } from "@/app/context/FilterContext";
 
 export default function ChallengesClient({
@@ -106,7 +106,7 @@ export default function ChallengesClient({
               >
                 <div className={`${cardSizeClass} ${cardBaseClasses}`}>
                   {/* Bild-Bereich (60%) */}
-                  <div className="h-[60%] relative bg-gray-700">
+                  <div className="h-[75%] relative bg-gray-700">
                     {imgUrl ? (
                       <Image
                         src={imgUrl}
@@ -123,21 +123,20 @@ export default function ChallengesClient({
                   </div>
 
                   {/* Text-Bereich (40%) */}
-                  <div className="h-[40%] bg-white p-5 flex flex-col justify-between">
-                    <h3 className="text-lg font-bold text-gray-900 line-clamp-2">
-                      {c.title}
-                    </h3>
-                    <p className="text-xs text-gray-600">
-                      Erstellt: {formatGermanDateTime(c.created_at)}
-                    </p>
-                    <p className="mt-1 text-sm text-gray-700 line-clamp-2">
-                      {c.goal || "Kein Zieltext hinterlegt."}
-                    </p>
-                    <div className="mt-2 flex justify-between text-xs text-gray-500">
+                  <div className="h-[25%] bg-white px-5 py-3 justify-between flex flex-col ">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 line-clamp-2">
+                        {c.title}
+                      </h3>
+                      <p className="mt-1 text-s text-gray-800 line-clamp-2">
+                        {c.goal || "Kein Zieltext hinterlegt."}
+                      </p>
+                    </div>
+                    <div className="mt-2 flex justify-between text-s text-gray-800">
                       <span>
                         {updates} {updates === 1 ? "Update" : "Updates"}
                       </span>
-                      <span>{c.category || "—"}</span>
+                      <span className="text-gray-500">{c.category || "—"}</span>
                     </div>
                   </div>
                 </div>
