@@ -1,63 +1,176 @@
+// app/challenges/[id]/ChallengeClient.tsx
 "use client";
 
-import { Challenge } from "@/types/types";
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
+import { useKeenSlider } from "keen-slider/react";
+import "keen-slider/keen-slider.min.css";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Challenge, Update } from "@/types/types";
 
 type ChallengeClientProps = {
   challenge: Challenge;
 };
 
 export default function ChallengeClient({ challenge }: ChallengeClientProps) {
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const updateRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Nur currentIdx per Scroll bestimmen
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const st = el.scrollTop,
+        vh = el.clientHeight;
+      let idx = 0;
+      updateRefs.current.forEach((ref, i) => {
+        if (ref && ref.offsetTop <= st + vh / 2) idx = i;
+      });
+      setCurrentIdx(idx);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  const scrollTo = (i: number) =>
+    updateRefs.current[i]?.scrollIntoView({ behavior: "smooth" });
+
+  return (
+    <section className="relative h-[calc(100vh-4rem)] bg-gray-900 text-gray-100">
+      {/* Rechte Hover-Zone (aktiv, solange Timeline zu ist) */}
+      {!showTimeline && (
+        <div
+          className="absolute top-0 right-0 h-full w-12 z-20"
+          onMouseEnter={() => setShowTimeline(true)}
+        />
+      )}
+
+      {/* Timeline rechts (permanent in Hover-Zone & Timeline) */}
+      {showTimeline && (
+        <aside
+          className="absolute top-0 right-0 h-full w-20 flex flex-col items-center pt-16 z-40"
+          onMouseEnter={() => setShowTimeline(true)}
+          onMouseLeave={() => setShowTimeline(false)}
+        >
+          <div className="w-1 bg-gray-600 h-full rounded opacity-50" />
+          {challenge.updates.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => scrollTo(i)}
+              style={{
+                top: `${((i + 1) * 100) / (challenge.updates.length + 1)}%`,
+              }}
+              className={`
+                absolute right-1/2 translate-x-1/2
+                rounded-full w-10 h-10 flex items-center justify-center
+                text-sm font-semibold shadow cursor-pointer
+                transition-transform duration-200
+                ${
+                  i === currentIdx
+                    ? "bg-blue-500 text-white hover:bg-blue-600 hover:scale-110"
+                    : "bg-gray-800 text-gray-200 hover:bg-gray-700 hover:scale-110"
+                }
+              `}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </aside>
+      )}
+
+      {/* Scroll-Container (Scrollbar ausgeblendet) */}
+      <div ref={scrollRef} className="h-full overflow-y-auto hide-scrollbar">
+        {challenge.updates.length === 0 ? (
+          <div className="p-8 text-center text-gray-400">
+            Noch keine Updates vorhanden.
+          </div>
+        ) : (
+          challenge.updates.map((update, idx) => (
+            <div
+              key={update.id}
+              ref={(el) => {
+                updateRefs.current[idx] = el;
+              }}
+              className="h-[calc(100vh-4rem)] flex border-b border-gray-700"
+            >
+              <UpdateSlide update={update} />
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function UpdateSlide({ update }: { update: Update }) {
+  const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
+    slides: { perView: 1, spacing: 0 },
+    loop: false,
+    mode: "snap",
+  });
+
+  const images = update.images ?? [];
+  const multiple = images.length > 1;
+
   return (
     <>
-      <h2 className="text-2xl font-bold m-4 text-center">Challenge Details</h2>
-      <div className=" challengeCard border border-gray-300 rounded p-4 m-2 ">
-        <div className="font-bold text-xl mb-2 mt-4 font-family: 'Arial'">
-          {challenge?.title}
-        </div>
-
-        <div>
-          {challenge.images && challenge.images.length > 0 ? (
-            <div className="flex flex-wrap mt-4 ">
-              {challenge.images.map((imageUrl, index) => (
+      {/* Bild-Slider (links 2/3, overflow-hidden) */}
+      <div className="w-2/3 relative h-full overflow-hidden">
+        {images.length > 0 ? (
+          <div ref={sliderRef} className="keen-slider w-full h-full">
+            {images.map((img, i) => (
+              <div
+                key={i}
+                className="keen-slider__slide relative w-full h-full"
+              >
                 <Image
-                  key={index}
-                  src={imageUrl.url} // Cloudinary-URL
-                  alt={`Image for ${challenge.title}`}
-                  width={200}
-                  height={200}
-                  className="m-2 rounded"
+                  src={img.url}
+                  alt={`Update-Bild ${i + 1}`}
+                  fill
+                  className="object-cover"
                 />
-              ))}
-            </div>
-          ) : (
-            <p>Keine Bilder verfügbar</p>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-400">
+            kein Bild
+          </div>
+        )}
 
-        <div>ID: {challenge?.id}</div>
-        <div>Title: {challenge?.title}</div>
-        <div>Category: {challenge?.category}</div>
-        <div>Desrciption: {challenge?.description}</div>
-        <div>Goal: {challenge?.goal}</div>
-        <div>Progress:</div>
-        <div className="w-80 bg-gray-200 rounded h-4 hover:bg-gray-300">
-          <div
-            className="bg-blue-500 h-4 rounded hover:bg-blue-600"
-            style={{
-              width: `${challenge.progress?.toString()}%`,
-            }}
-          ></div>
-        </div>
-        <div>AuthorId: {challenge.author?.name}</div>
-        <div>City_adress: {challenge.city_address}</div>
-        <div>Gender: {challenge.gender}</div>
-        <div>Age: {challenge.age}</div>
-        <div>Duration: {challenge.duration}</div>
-        <div>Difficulty: {challenge.difficulty}</div>
-        <div>Updated_at: {challenge.updated_at?.toLocaleString()}</div>
-        <div>Created_at: {challenge.created_at?.toLocaleString()}</div>
+        {/* Pfeile unter dem Slider */}
+        {multiple && (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 z-10">
+            <button
+              onClick={() => instanceRef.current?.prev()}
+              className="p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={() => instanceRef.current?.next()}
+              className="p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Trennlinie */}
+      <div className="w-px bg-gray-600 opacity-50" />
+
+      {/* Text-Bereich (rechts 1/3) */}
+      <div className="w-1/3 p-6 overflow-auto">
+        <p className="whitespace-pre-wrap text-gray-200">
+          {update.content ?? "Kein Text"}
+        </p>
       </div>
     </>
   );

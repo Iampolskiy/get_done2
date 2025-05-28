@@ -1,6 +1,9 @@
+@import "react-calendar/dist/Calendar.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* --- react-calendar Basis-Styles ---------------------------- */
 
 :root {
   --background: #ffffff;
@@ -18,4 +21,13 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* hide-scrollbar */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE und Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }

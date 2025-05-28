@@ -1,4 +1,4 @@
-// -------------- BASIS‑INTERFACES ----------------
+// -------------- BASIS-INTERFACES ----------------
 export interface Challenges {
   challenge: Challenge[];
 }
@@ -43,7 +43,7 @@ export interface Challenge {
   authorId: number;
 
   images?: Image[]; // alle Bilder (Haupt + Update)
-  updates: Update[]; // Update‑Einträge
+  updates: Update[]; // Update-Einträge
 }
 
 // -------------- IMAGE ---------------------------
@@ -51,6 +51,7 @@ export interface Image {
   id: number;
   url: string;
   description?: string | null;
+  imageText?: string | null; // 🔄 NEU – freie Bildbeschreibung
   duration: number;
   created_at?: Date | null;
   updated_at?: Date | null;
@@ -69,14 +70,14 @@ export interface Update {
   authorId?: number | null;
 
   content: string | null; // gespeicherter Text
-  date: string; // Datum als ISO‑String
+  date: string; // Datum als ISO-String
   createdAt: string | Date;
   type: "CREATED" | "UPDATED" | "DELETED";
 
   images?: Image[];
 }
 
-// -------------- CLIENT‑PROP ---------------------
+// -------------- CLIENT-PROP ---------------------
 export interface ChallengeClientProps {
   challenge: Challenge;
 }

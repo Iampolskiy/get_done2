@@ -122,11 +122,7 @@ export default function ChallengesClient({
             const imgUrl = c.images?.find((i) => i.isMain)?.url;
 
             return (
-              <Link
-                key={c.id}
-                href={`/allmychallenges/${c.id}`}
-                className="block"
-              >
+              <Link key={c.id} href={`/challenges/${c.id}`} className="block">
                 <div className={`${cardSizeClass} ${cardBaseClasses}`}>
                   {/* Bild-Bereich */}
                   <div className="h-[75%] relative bg-gray-700">
