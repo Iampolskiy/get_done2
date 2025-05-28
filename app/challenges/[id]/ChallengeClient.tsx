@@ -5,6 +5,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
+import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Challenge, Update } from "@/types/types";
 
@@ -19,7 +20,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Nur currentIdx per Scroll bestimmen
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -33,9 +33,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
       setCurrentIdx(idx);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-    };
+    return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
   const scrollTo = (i: number) =>
@@ -43,7 +41,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 
   return (
     <section className="relative h-[calc(100vh-4rem)] bg-gray-900 text-gray-100">
-      {/* Rechte Hover-Zone (aktiv, solange Timeline zu ist) */}
+      {/* Rechte Hover-Zone für Timeline */}
       {!showTimeline && (
         <div
           className="absolute top-0 right-0 h-full w-12 z-20"
@@ -51,7 +49,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         />
       )}
 
-      {/* Timeline rechts (permanent in Hover-Zone & Timeline) */}
+      {/* Timeline rechts */}
       {showTimeline && (
         <aside
           className="absolute top-0 right-0 h-full w-20 flex flex-col items-center pt-16 z-40"
@@ -67,7 +65,9 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
                 top: `${((i + 1) * 100) / (challenge.updates.length + 1)}%`,
               }}
               className={`
-                absolute right-1/2 translate-x-1/2
+                absolute 
+                left-1/2              /* statt right-1/2 */
+                -translate-x-1/2      /* zentriert den Kreis auf der Linie */
                 rounded-full w-10 h-10 flex items-center justify-center
                 text-sm font-semibold shadow cursor-pointer
                 transition-transform duration-200
@@ -84,7 +84,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         </aside>
       )}
 
-      {/* Scroll-Container (Scrollbar ausgeblendet) */}
+      {/* Scrollbarer Bereich mit allen Updates */}
       <div ref={scrollRef} className="h-full overflow-y-auto hide-scrollbar">
         {challenge.updates.length === 0 ? (
           <div className="p-8 text-center text-gray-400">
@@ -120,33 +120,34 @@ function UpdateSlide({ update }: { update: Update }) {
 
   return (
     <>
-      {/* Bild-Slider (links 2/3, overflow-hidden) */}
-      <div className="w-2/3 relative h-full overflow-hidden">
+      {/* Bild-Slider (links 2/3 Breite, overflow-hidden) */}
+      <motion.div
+        ref={sliderRef}
+        className="w-2/3 relative h-full overflow-hidden"
+        initial={{ x: -100, opacity: 0 }}
+        whileInView={{ x: 0, opacity: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ type: "spring", stiffness: 200, damping: 30 }}
+      >
         {images.length > 0 ? (
-          <div ref={sliderRef} className="keen-slider w-full h-full">
-            {images.map((img, i) => (
-              <div
-                key={i}
-                className="keen-slider__slide relative w-full h-full"
-              >
-                <Image
-                  src={img.url}
-                  alt={`Update-Bild ${i + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
+          images.map((img, i) => (
+            <div key={i} className="keen-slider__slide relative w-full h-full">
+              <Image
+                src={img.url}
+                alt={`Update-Bild ${i + 1}`}
+                fill
+                className="object-cover"
+              />
+            </div>
+          ))
         ) : (
           <div className="flex items-center justify-center h-full text-gray-400">
             kein Bild
           </div>
         )}
 
-        {/* Pfeile unter dem Slider */}
         {multiple && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 z-10">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4 z-10">
             <button
               onClick={() => instanceRef.current?.prev()}
               className="p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
@@ -161,17 +162,23 @@ function UpdateSlide({ update }: { update: Update }) {
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Trennlinie */}
       <div className="w-px bg-gray-600 opacity-50" />
 
-      {/* Text-Bereich (rechts 1/3) */}
-      <div className="w-1/3 p-6 overflow-auto">
+      {/* Text-Bereich (rechts 1/3 Breite) */}
+      <motion.div
+        className="w-1/3 p-6 overflow-auto"
+        initial={{ x: 100, opacity: 0 }}
+        whileInView={{ x: 0, opacity: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ type: "spring", stiffness: 200, damping: 30 }}
+      >
         <p className="whitespace-pre-wrap text-gray-200">
           {update.content ?? "Kein Text"}
         </p>
-      </div>
+      </motion.div>
     </>
   );
 }
