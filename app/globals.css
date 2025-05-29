@@ -23,11 +23,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* hide-scrollbar */
+/* globals.css */
 .hide-scrollbar {
-  -ms-overflow-style: none; /* IE und Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
