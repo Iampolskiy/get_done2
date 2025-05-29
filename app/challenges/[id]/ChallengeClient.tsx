@@ -128,15 +128,11 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
             <button
               key={i}
               onClick={() => scrollTo(i)}
-              className={`
-                flex-none rounded-full w-8 h-8 flex items-center justify-center
-                text-xs font-semibold shadow transition-transform duration-200
-                ${
-                  i === currentIdx
-                    ? "bg-blue-500 text-white hover:bg-blue-600 hover:scale-110"
-                    : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
-                }
-              `}
+              className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
+                i === currentIdx
+                  ? "bg-blue-500 text-white hover:bg-blue-600 hover:scale-110"
+                  : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
+              }`}
             >
               {i + 1}
             </button>
@@ -160,7 +156,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 }
 
 function UpdateSlide({ update }: { update: Update }) {
-  // KeenSlider initialisieren
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     slides: { perView: 1, spacing: 0 },
     loop: false,
@@ -171,12 +166,39 @@ function UpdateSlide({ update }: { update: Update }) {
   const multiple = images.length > 1;
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
+  // State für vertikale Aufteilung (Prozent des UpdateTexts oben)
+  const [topPct, setTopPct] = useState(66);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
   // Slide-Change-Event für imageText
   useEffect(() => {
     instanceRef.current?.on("slideChanged", (s) => {
       setCurrentImageIdx(s.track.details.rel);
     });
   }, [instanceRef]);
+
+  // Mousemove / Mouseup global für Drag
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const relY = e.clientY - rect.top;
+      let pct = (relY / rect.height) * 100;
+      if (pct < 10) pct = 10;
+      if (pct > 90) pct = 90;
+      setTopPct(pct);
+    };
+    const onMouseUp = () => {
+      dragging.current = false;
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
 
   const imageDuration = 1; // 1 Sekunde
   const textDuration = 1.2; // 1.2 Sekunden
@@ -240,11 +262,15 @@ function UpdateSlide({ update }: { update: Update }) {
       {/* ─── Mittellinie ───────────────────────────────────────────────── */}
       <div className="w-px bg-gray-600 opacity-50" />
 
-      {/* ─── Right: Text-Bereich ───────────────────────────────────────── */}
-      <div className="w-1/3 flex flex-col">
+      {/* ─── Right: Text-Bereich mit draggable Splitter ──────────────── */}
+      <div
+        ref={containerRef}
+        className="w-1/3 flex flex-col h-full select-none"
+      >
         {/* Update-Text oben */}
         <motion.div
-          className="flex-1 p-6 overflow-auto"
+          className="overflow-auto px-6"
+          style={{ height: `${topPct}%` }}
           initial={{ x: 100, opacity: 0 }}
           whileInView={{ x: 0, opacity: 1 }}
           viewport={{ once: true, amount: 0.5 }}
@@ -255,14 +281,23 @@ function UpdateSlide({ update }: { update: Update }) {
             damping: 30,
           }}
         >
-          <p className="whitespace-pre-wrap text-gray-200">
+          <p className="whitespace-pre-wrap text-lg text-gray-200">
             {update.content ?? "Kein Text"}
           </p>
         </motion.div>
 
-        {/* ImageText unten */}
+        {/* Draggable Splitter */}
+        <div
+          onMouseDown={() => {
+            dragging.current = true;
+          }}
+          className="h-1 bg-gray-600 cursor-row-resize"
+        />
+
+        {/* Image-Text unten */}
         <motion.div
-          className="h-1/3 px-6 pb-4 overflow-auto border-t border-gray-700"
+          className="overflow-auto px-6"
+          style={{ height: `${100 - topPct}%` }}
           initial={{ x: 100, opacity: 0 }}
           whileInView={{ x: 0, opacity: 1 }}
           viewport={{ once: true, amount: 0.5 }}
