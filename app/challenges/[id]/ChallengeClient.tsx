@@ -25,8 +25,8 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => {
-      const st = el.scrollTop;
-      const vh = el.clientHeight;
+      const st = el.scrollTop,
+        vh = el.clientHeight;
       let idx = 0;
       updateRefs.current.forEach((ref, i) => {
         if (ref && ref.offsetTop <= st + vh / 2) idx = i;
@@ -113,7 +113,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 
       {/* ─── Control Area unten ─────────────────────────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-gray-800 flex items-center justify-center space-x-6 z-50">
-        {/* Prev-Pfeil */}
         <button
           onClick={goPrev}
           disabled={currentIdx === 0}
@@ -124,7 +123,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
           <ChevronLeft size={24} />
         </button>
 
-        {/* Timeline horizontal */}
         <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar px-4">
           {challenge.updates.map((_, i) => (
             <button
@@ -145,7 +143,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
           ))}
         </div>
 
-        {/* Next-Pfeil */}
         <button
           onClick={goNext}
           disabled={currentIdx === challenge.updates.length - 1}
@@ -172,14 +169,21 @@ function UpdateSlide({ update }: { update: Update }) {
 
   const images = update.images ?? [];
   const multiple = images.length > 1;
+  const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
-  // Feste Animationsdauern
+  // Slide-Change-Event für imageText
+  useEffect(() => {
+    instanceRef.current?.on("slideChanged", (s) => {
+      setCurrentImageIdx(s.track.details.rel);
+    });
+  }, [instanceRef]);
+
   const imageDuration = 1; // 1 Sekunde
   const textDuration = 1.2; // 1.2 Sekunden
 
   return (
     <>
-      {/* Bild-Slider mit From-Left-Animation */}
+      {/* ─── Left: Bild-Slider ─────────────────────────────────────────── */}
       <motion.div
         className="w-2/3 relative h-full overflow-hidden"
         initial={{ x: -100, opacity: 0 }}
@@ -233,26 +237,47 @@ function UpdateSlide({ update }: { update: Update }) {
         )}
       </motion.div>
 
-      {/* Trennlinie */}
+      {/* ─── Mittellinie ───────────────────────────────────────────────── */}
       <div className="w-px bg-gray-600 opacity-50" />
 
-      {/* Text-Bereich mit From-Right-Animation */}
-      <motion.div
-        className="w-1/3 p-6 overflow-auto"
-        initial={{ x: 100, opacity: 0 }}
-        whileInView={{ x: 0, opacity: 1 }}
-        viewport={{ once: true, amount: 0.5 }}
-        transition={{
-          duration: textDuration,
-          type: "spring",
-          stiffness: 200,
-          damping: 30,
-        }}
-      >
-        <p className="whitespace-pre-wrap text-gray-200">
-          {update.content ?? "Kein Text"}
-        </p>
-      </motion.div>
+      {/* ─── Right: Text-Bereich ───────────────────────────────────────── */}
+      <div className="w-1/3 flex flex-col">
+        {/* Update-Text oben */}
+        <motion.div
+          className="flex-1 p-6 overflow-auto"
+          initial={{ x: 100, opacity: 0 }}
+          whileInView={{ x: 0, opacity: 1 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{
+            duration: textDuration,
+            type: "spring",
+            stiffness: 200,
+            damping: 30,
+          }}
+        >
+          <p className="whitespace-pre-wrap text-gray-200">
+            {update.content ?? "Kein Text"}
+          </p>
+        </motion.div>
+
+        {/* ImageText unten */}
+        <motion.div
+          className="h-1/3 px-6 pb-4 overflow-auto border-t border-gray-700"
+          initial={{ x: 100, opacity: 0 }}
+          whileInView={{ x: 0, opacity: 1 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{
+            duration: textDuration,
+            type: "spring",
+            stiffness: 200,
+            damping: 30,
+          }}
+        >
+          <p className="whitespace-pre-wrap text-gray-200">
+            {images[currentImageIdx]?.imageText ?? "Keine Bildbeschreibung"}
+          </p>
+        </motion.div>
+      </div>
     </>
   );
 }

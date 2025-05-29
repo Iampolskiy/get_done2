@@ -1,3 +1,4 @@
+// components/Header.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -16,13 +17,17 @@ export default function Header() {
   useEffect(() => {
     const onScroll = () => {
       const currentY = window.scrollY;
-      setHidden(currentY > lastScrollY.current && currentY > 50);
+      // Wenn wir weiter nach unten scrollen und bereits über 50px, ausblenden:
+      const shouldHide = currentY > lastScrollY.current && currentY > 50;
+      setHidden(shouldHide);
       lastScrollY.current = currentY;
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Nur auf diesen Routen die Filter-Leiste einblenden:
   const showToolbar =
     pathname === "/challenges" || pathname === "/allmychallenges";
 
@@ -94,28 +99,28 @@ export default function Header() {
   );
 }
 
-// Rein CSS-basiertes Active-Link-Highlight über aria-current
-const NavLink = ({
+// Helfer-Komponente für Nav-Links
+function NavLink({
   href,
   children,
 }: {
   href: string;
   children: React.ReactNode;
-}) => {
+}) {
   return (
     <Link href={href} className="text-white hover:text-blue-300 transition">
       {children}
     </Link>
   );
-};
+}
 
-const MobileLink = ({
+function MobileLink({
   href,
   children,
 }: {
   href: string;
   children: React.ReactNode;
-}) => {
+}) {
   return (
     <Link
       href={href}
@@ -129,4 +134,4 @@ const MobileLink = ({
       {children}
     </Link>
   );
-};
+}

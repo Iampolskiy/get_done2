@@ -45,6 +45,7 @@ export async function editUpdate(
       await tx.image.createMany({
         data: images.map((url) => ({
           url,
+
           updateId,
           challengeId: update.challengeId, // aus vorhandenem Update übernommen
           userId: user.id,
