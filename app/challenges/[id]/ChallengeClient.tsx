@@ -9,6 +9,30 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { Challenge, Update } from "@/types/types";
 
+// Deterministische Datumsformatierung (Deutsch):
+function formatDate(dateInput: string | Date | undefined): string {
+  if (!dateInput) return "";
+  const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+  const day = date.getDate();
+  const monthNames = [
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
+  ];
+  const month = monthNames[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day}. ${month} ${year}`;
+}
+
 type ChallengeClientProps = {
   challenge: Challenge;
 };
@@ -16,7 +40,7 @@ type ChallengeClientProps = {
 export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   const [currentIdx, setCurrentIdx] = useState(0);
 
-  // Modal state: type can be "image" or "text"
+  // Modal-State: "image" oder "text"
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"image" | "text" | null>(null);
   const [modalContent, setModalContent] = useState<string>("");
@@ -24,19 +48,15 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Prevent background scroll when modal is open
+  // Hintergrund-Scrollen verhindern, wenn Modal offen
   useEffect(() => {
-    if (modalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = modalOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [modalOpen]);
 
-  // Calculate currentIdx on scroll
+  // currentIdx beim Scroll berechnen
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -65,7 +85,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     if (currentIdx < challenge.updates.length - 1) scrollTo(currentIdx + 1);
   };
 
-  // Modal functions
+  // Modal-Funktionen
   const openImageModal = (url: string) => {
     setModalType("image");
     setModalContent(url);
@@ -84,18 +104,15 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 
   return (
     <div className="h-screen overflow-hidden bg-gray-900">
-      {/* Invisible strip at top to forward wheel events */}
+      {/* Unsichtbare Zone oben, um Mausrad-Scroll weiterzuleiten */}
       <div
         className="fixed top-0 left-0 right-0 h-2 z-40"
         onWheel={(e) => {
-          scrollRef.current?.scrollBy({
-            top: e.deltaY,
-            behavior: "auto",
-          });
+          scrollRef.current?.scrollBy({ top: e.deltaY, behavior: "auto" });
         }}
       />
 
-      {/* Modal overlay */}
+      {/* Modal-Overlay */}
       {modalOpen && modalType === "image" && (
         <div
           className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
@@ -122,13 +139,13 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         </div>
       )}
 
-      {/* Scrollable area */}
+      {/* Scrollbarer Bereich */}
       <div
         ref={scrollRef}
-        className="absolute top-0 bottom-0 left-0 right-0 overflow-y-auto hide-scrollbar"
+        className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
       >
         {challenge.updates.length === 0 ? (
-          <div className="flex items-center justify-center h-full p-4 text-gray-400">
+          <div className="flex items-center justify-center h-full p-8 text-gray-400">
             Noch keine Updates vorhanden.
           </div>
         ) : (
@@ -140,9 +157,10 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               }}
               className="h-full flex items-center justify-center"
             >
-              <div className="w-full h-full p-16 flex items-center justify-center">
+              <div className="w-full h-full p-4 flex items-center justify-center">
                 <UpdateSlide
                   update={update}
+                  index={idx}
                   openImageModal={openImageModal}
                   openTextModal={openTextModal}
                 />
@@ -152,7 +170,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         )}
       </div>
 
-      {/* Bottom controls */}
+      {/* Bottom Controls */}
       <div className="fixed bottom-0 left-0 right-0 h-12 bg-gray-800 flex items-center justify-center space-x-6 z-50">
         <button
           onClick={goPrev}
@@ -202,12 +220,14 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 
 type UpdateSlideProps = {
   update: Update;
+  index: number;
   openImageModal: (url: string) => void;
   openTextModal: (text: string) => void;
 };
 
 function UpdateSlide({
   update,
+  index,
   openImageModal,
   openTextModal,
 }: UpdateSlideProps) {
@@ -221,14 +241,14 @@ function UpdateSlide({
   const multiple = images.length > 1;
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
-  // Track current slide index
+  // Wenn Folie wechselt, Index merken
   useEffect(() => {
     instanceRef.current?.on("slideChanged", (s) => {
       setCurrentImageIdx(s.track.details.rel);
     });
   }, [instanceRef]);
 
-  // Drag-splitter state
+  // Drag-Splitter für vertikale Aufteilung
   const [topPct, setTopPct] = useState(60);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -325,15 +345,19 @@ function UpdateSlide({
         ref={containerRef}
         className="w-1/3 flex flex-col h-full select-none"
       >
-        {/* ─── Update-Text (oben) */}
-        <div className="relative group px-6 pt-6">
-          <h2 className="text-2xl font-semibold text-orange-500">
-            Recent Update
-          </h2>
-          <div className="h-px bg-orange-500 opacity-80 my-2" />
+        {/* ─── Header: Update-Nummer + Datum + Fullscreen-Button ─────────── */}
+        <div className="relative group px-6 pt-6 flex items-baseline justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold text-orange-500">
+              Update #{index + 1}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {formatDate(update.createdAt)}
+            </p>
+          </div>
           <button
             onClick={() => openTextModal(update.content || "Kein Text")}
-            className="absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-1 hidden group-hover:flex items-center justify-center transition"
+            className="invisible group-hover:visible bg-white bg-opacity-70 rounded-full p-1 hover:bg-opacity-90 transition"
           >
             <Maximize2 size={18} />
           </button>
@@ -364,19 +388,21 @@ function UpdateSlide({
           className="h-1 bg-gray-700 cursor-row-resize"
         />
 
-        {/* ─── Bildbeschreibung (unten) */}
-        <div className="relative group px-6 pt-4">
-          <div className="h-px bg-gray-600 opacity-50 mb-2" />
-          <h3 className="text-xl font-semibold text-gray-300">
-            Bildbeschreibung:
-          </h3>
+        {/* ─── Bildbeschreibung Header + Fullscreen-Button ──────────────── */}
+        <div className="relative group px-6 pt-4 flex items-baseline justify-between">
+          <div className="flex-grow">
+            <div className="h-px bg-gray-600 opacity-50 mb-2" />
+            <h3 className="text-xl font-semibold text-gray-300">
+              Bildbeschreibung:
+            </h3>
+          </div>
           <button
             onClick={() =>
               openTextModal(
                 images[currentImageIdx]?.imageText || "Keine Bildbeschreibung"
               )
             }
-            className="absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-1 hidden group-hover:flex items-center justify-center transition"
+            className="invisible group-hover:visible bg-white bg-opacity-70 rounded-full p-1 hover:bg-opacity-90 transition"
           >
             <Maximize2 size={18} />
           </button>
