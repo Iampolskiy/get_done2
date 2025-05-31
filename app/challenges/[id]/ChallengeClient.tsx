@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { Challenge, Update } from "@/types/types";
 
 type ChallengeClientProps = {
@@ -14,13 +14,29 @@ type ChallengeClientProps = {
 };
 
 export default function ChallengeClient({ challenge }: ChallengeClientProps) {
-  const [showTimeline, setShowTimeline] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
+
+  // Modal state: type can be "image" or "text"
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"image" | "text" | null>(null);
+  const [modalContent, setModalContent] = useState<string>("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // ─── Berechnung currentIdx beim Scroll ───────────────────────────────
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (modalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalOpen]);
+
+  // Calculate currentIdx on scroll
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -49,60 +65,70 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     if (currentIdx < challenge.updates.length - 1) scrollTo(currentIdx + 1);
   };
 
+  // Modal functions
+  const openImageModal = (url: string) => {
+    setModalType("image");
+    setModalContent(url);
+    setModalOpen(true);
+  };
+  const openTextModal = (text: string) => {
+    setModalType("text");
+    setModalContent(text);
+    setModalOpen(true);
+  };
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalType(null);
+    setModalContent("");
+  };
+
   return (
     <div className="h-screen overflow-hidden bg-gray-900">
-      {/* ─── UNSICHTBARE ZONE AM BILDSCHRIMRAND OBEN (2px), um Timeline einzublenden ── */}
+      {/* Invisible strip at top to forward wheel events */}
       <div
         className="fixed top-0 left-0 right-0 h-2 z-40"
-        onMouseEnter={() => setShowTimeline(true)}
         onWheel={(e) => {
-          scrollRef.current?.scrollBy({ top: e.deltaY, behavior: "auto" });
+          scrollRef.current?.scrollBy({
+            top: e.deltaY,
+            behavior: "auto",
+          });
         }}
       />
 
-      {/* ─── Scrollbarer Bereich: unter globalem Header (4rem = top-16) und über Bottom Controls (3rem = bottom-12) ─── */}
+      {/* Modal overlay */}
+      {modalOpen && modalType === "image" && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
+          onClick={closeModal}
+        >
+          <div className="relative w-[90vw] h-[90vh]">
+            <Image
+              src={modalContent}
+              alt="Vollbild"
+              fill
+              className="object-contain"
+            />
+          </div>
+        </div>
+      )}
+      {modalOpen && modalType === "text" && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
+          onClick={closeModal}
+        >
+          <div className="relative w-[80vw] h-[80vh] bg-white rounded-lg overflow-auto p-6">
+            <p className="whitespace-pre-wrap text-gray-800">{modalContent}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Scrollable area */}
       <div
         ref={scrollRef}
-        className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
+        className="absolute top-0 bottom-0 left-0 right-0 overflow-y-auto hide-scrollbar"
       >
-        {/* ─── Timeline (sichtbar, wenn showTimeline) ─────────────────────── */}
-        {showTimeline && (
-          <aside
-            className="absolute top-0 right-0 h-full w-16 flex flex-col items-center pt-16 z-30"
-            onMouseEnter={() => setShowTimeline(true)}
-            onMouseLeave={() => setShowTimeline(false)}
-            onWheel={(e) => {
-              scrollRef.current?.scrollBy({ top: e.deltaY, behavior: "auto" });
-            }}
-          >
-            <div className="w-1 bg-gray-600 h-full rounded opacity-50" />
-            {challenge.updates.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => scrollTo(i)}
-                style={{
-                  top: `${((i + 1) * 100) / (challenge.updates.length + 1)}%`,
-                }}
-                className={`
-                  absolute left-1/2 -translate-x-1/2
-                  w-10 h-10 rounded-full flex items-center justify-center
-                  text-sm font-semibold shadow-lg cursor-pointer
-                  transition-transform duration-200
-                  ${
-                    i === currentIdx
-                      ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
-                      : "bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-110"
-                  }
-                `}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </aside>
-        )}
-
         {challenge.updates.length === 0 ? (
-          <div className="flex items-center justify-center h-full p-8 text-gray-400">
+          <div className="flex items-center justify-center h-full p-4 text-gray-400">
             Noch keine Updates vorhanden.
           </div>
         ) : (
@@ -112,40 +138,28 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               ref={(el) => {
                 updateRefs.current[idx] = el;
               }}
-              className="
-                h-full       /* Füllt die gesamte Höhe des Scrollcontainers */
-                flex
-                items-center
-                justify-center
-                border-b
-                border-gray-700
-                last:border-b-0
-              "
+              className="h-full flex items-center justify-center"
             >
-              {/* ─── Jedes Update als Card, die die volle Slide‐Größe hat ─── */}
-              <div className="w-full h-full p-4 flex items-center justify-center">
-                <UpdateSlide update={update} />
+              <div className="w-full h-full p-16 flex items-center justify-center">
+                <UpdateSlide
+                  update={update}
+                  openImageModal={openImageModal}
+                  openTextModal={openTextModal}
+                />
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* ─── Control Area unten: Prev/Next + Pagination Buttons ─────────── */}
+      {/* Bottom controls */}
       <div className="fixed bottom-0 left-0 right-0 h-12 bg-gray-800 flex items-center justify-center space-x-6 z-50">
         <button
           onClick={goPrev}
           disabled={currentIdx === 0}
-          className={`
-            p-2
-            rounded-full
-            transition
-            ${
-              currentIdx === 0
-                ? "text-gray-600"
-                : "text-white hover:bg-gray-700"
-            }
-          `}
+          className={`p-2 rounded-full transition ${
+            currentIdx === 0 ? "text-gray-600" : "text-white hover:bg-gray-700"
+          }`}
         >
           <ChevronLeft size={24} />
         </button>
@@ -155,25 +169,11 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
             <button
               key={i}
               onClick={() => scrollTo(i)}
-              className={`
-                flex-none
-                rounded-full
-                w-8
-                h-8
-                flex
-                items-center
-                justify-center
-                text-xs
-                font-semibold
-                shadow
-                transition-transform
-                duration-200
-                ${
-                  i === currentIdx
-                    ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
-                    : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
-                }
-              `}
+              className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
+                i === currentIdx
+                  ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
+                  : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
+              }`}
             >
               {i + 1}
             </button>
@@ -183,16 +183,11 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         <button
           onClick={goNext}
           disabled={currentIdx === challenge.updates.length - 1}
-          className={`
-            p-2
-            rounded-full
-            transition
-            ${
-              currentIdx === challenge.updates.length - 1
-                ? "text-gray-600"
-                : "text-white hover:bg-gray-700"
-            }
-          `}
+          className={`p-2 rounded-full transition ${
+            currentIdx === challenge.updates.length - 1
+              ? "text-gray-600"
+              : "text-white hover:bg-gray-700"
+          }`}
         >
           <ChevronRight size={24} />
         </button>
@@ -205,7 +200,17 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 // ─────────────────────────── Funktion: UpdateSlide ───────────────────────────
 // ──────────────────────────────────────────────────────────────────────────────
 
-function UpdateSlide({ update }: { update: Update }) {
+type UpdateSlideProps = {
+  update: Update;
+  openImageModal: (url: string) => void;
+  openTextModal: (text: string) => void;
+};
+
+function UpdateSlide({
+  update,
+  openImageModal,
+  openTextModal,
+}: UpdateSlideProps) {
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     slides: { perView: 1, spacing: 0 },
     loop: false,
@@ -216,14 +221,14 @@ function UpdateSlide({ update }: { update: Update }) {
   const multiple = images.length > 1;
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
-  // Wenn sich der Slide ändert, merken wir uns den Index
+  // Track current slide index
   useEffect(() => {
     instanceRef.current?.on("slideChanged", (s) => {
       setCurrentImageIdx(s.track.details.rel);
     });
   }, [instanceRef]);
 
-  // ─── Drag & Drop Splitter für vertikale Aufteilung ───────────────────
+  // Drag-splitter state
   const [topPct, setTopPct] = useState(60);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -249,12 +254,12 @@ function UpdateSlide({ update }: { update: Update }) {
     };
   }, []);
 
-  const imageDuration = 1; // Dauer der Bild‐Transition
-  const textDuration = 1.2; // Dauer der Text‐Transition
+  const imageDuration = 1;
+  const textDuration = 1.2;
 
   return (
     <div className="bg-gray-800 rounded-2xl shadow-lg w-full h-full overflow-hidden flex">
-      {/* ─── Left: Bild‐Slider (2/3 der Card‐Breite) ─────────────────────── */}
+      {/* ─── Linke Hälfte: Bild-Slider (2/3 Breite) ─────────────────────── */}
       <motion.div
         className="w-2/3 relative h-full overflow-hidden"
         initial={{ x: -100, opacity: 0 }}
@@ -267,12 +272,12 @@ function UpdateSlide({ update }: { update: Update }) {
           damping: 30,
         }}
       >
-        {images.length > 0 ? (
-          <div ref={sliderRef} className="keen-slider w-full h-full">
-            {images.map((img, i) => (
+        <div ref={sliderRef} className="keen-slider w-full h-full">
+          {images.length > 0 ? (
+            images.map((img, i) => (
               <div
                 key={i}
-                className="keen-slider__slide relative w-full h-full"
+                className="keen-slider__slide relative w-full h-full group"
               >
                 <Image
                   src={img.url}
@@ -280,16 +285,20 @@ function UpdateSlide({ update }: { update: Update }) {
                   fill
                   className="object-cover"
                 />
+                <button
+                  onClick={() => openImageModal(img.url)}
+                  className="absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-2 hidden group-hover:flex items-center justify-center transition"
+                >
+                  <Maximize2 size={20} />
+                </button>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            kein Bild
-          </div>
-        )}
-
-        {/* ─── Pfeile unter dem Slider (nur bei mehreren Bildern) ───────── */}
+            ))
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400">
+              kein Bild
+            </div>
+          )}
+        </div>
         {multiple && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-10">
             <button
@@ -311,22 +320,26 @@ function UpdateSlide({ update }: { update: Update }) {
       {/* ─── Mittellinie zwischen Bild & Text ───────────────────────────── */}
       <div className="w-px bg-gray-600 opacity-50" />
 
-      {/* ─── Right: Textbereich mit draggable Splitter (1/3 der Card) ───── */}
+      {/* ─── Rechte Hälfte: Textbereich mit draggable Splitter (1/3 Breite) ── */}
       <div
         ref={containerRef}
         className="w-1/3 flex flex-col h-full select-none"
       >
-        {/* ─── Überschrift & Akzentlinie ──────────────────────────────── */}
-        <div className="px-6 pt-6">
+        {/* ─── Update-Text (oben) */}
+        <div className="relative group px-6 pt-6">
           <h2 className="text-2xl font-semibold text-orange-500">
             Recent Update
           </h2>
           <div className="h-px bg-orange-500 opacity-80 my-2" />
+          <button
+            onClick={() => openTextModal(update.content || "Kein Text")}
+            className="absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-1 hidden group-hover:flex items-center justify-center transition"
+          >
+            <Maximize2 size={18} />
+          </button>
         </div>
-
-        {/* ─── Update‐Text oben (Höhe = topPct%) ───────────────────────── */}
         <motion.div
-          className="overflow-auto px-6"
+          className="overflow-auto px-6 break-words"
           style={{ height: `${topPct}%` }}
           initial={{ x: 100, opacity: 0 }}
           whileInView={{ x: 0, opacity: 1 }}
@@ -343,7 +356,7 @@ function UpdateSlide({ update }: { update: Update }) {
           </p>
         </motion.div>
 
-        {/* ─── Draggable Splitter (horizontale Linie) ──────────────────── */}
+        {/* ─── Draggable Splitter ─────────────────────────────────────────── */}
         <div
           onMouseDown={() => {
             dragging.current = true;
@@ -351,17 +364,25 @@ function UpdateSlide({ update }: { update: Update }) {
           className="h-1 bg-gray-700 cursor-row-resize"
         />
 
-        {/* ─── Zwischenlinie + „Image Text“ Überschrift ────────────────── */}
-        <div className="px-6 pt-4">
+        {/* ─── Bildbeschreibung (unten) */}
+        <div className="relative group px-6 pt-4">
           <div className="h-px bg-gray-600 opacity-50 mb-2" />
           <h3 className="text-xl font-semibold text-gray-300">
             Bildbeschreibung:
           </h3>
+          <button
+            onClick={() =>
+              openTextModal(
+                images[currentImageIdx]?.imageText || "Keine Bildbeschreibung"
+              )
+            }
+            className="absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-1 hidden group-hover:flex items-center justify-center transition"
+          >
+            <Maximize2 size={18} />
+          </button>
         </div>
-
-        {/* ─── Image‐Text unten (Höhe = 100-topPct%) ────────────────────── */}
         <motion.div
-          className="overflow-auto px-6"
+          className="overflow-auto px-6 break-words"
           style={{ height: `${100 - topPct}%` }}
           initial={{ x: 100, opacity: 0 }}
           whileInView={{ x: 0, opacity: 1 }}
