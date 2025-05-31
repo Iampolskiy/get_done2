@@ -9,7 +9,7 @@ export const revalidate = 0; // :contentReference[oaicite:0]{index=0}
 // 2) Optional: Komplett aus dem Cache aussteigen, keine Ausnahme.
 //    (Nutze das, wenn wirklich *nichts* im Cache sein darf,
 //     z. B. für hochdynamische oder sicherheitskritische Pages.)
-export const dynamic = "force-dynamic"; // :contentReference[oaicite:1]{index=1}
+/* export const dynamic = "force-dynamic";  */ // :contentReference[oaicite:1]{index=1}
 
 import "./globals.css";
 import Header from "../components/Header";
@@ -28,7 +28,7 @@ export default function RootLayout({
         <body>
           <FilterProvider>
             <Header />
-            <main className=" min-h-screen">{children}</main>
+            <main className="pt-16 min-h-screen">{children}</main>
             <Footer />
           </FilterProvider>
         </body>

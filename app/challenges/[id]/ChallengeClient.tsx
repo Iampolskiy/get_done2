@@ -20,19 +20,21 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // currentIdx per Scroll berechnen
+  // ─── Berechnung currentIdx beim Scroll ───────────────────────────────
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+
     const onScroll = () => {
-      const st = el.scrollTop,
-        vh = el.clientHeight;
+      const st = el.scrollTop;
+      const vh = el.clientHeight;
       let idx = 0;
       updateRefs.current.forEach((ref, i) => {
         if (ref && ref.offsetTop <= st + vh / 2) idx = i;
       });
       setCurrentIdx(idx);
     };
+
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
@@ -49,18 +51,18 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 
   return (
     <section className="relative h-[calc(100vh-4rem)] bg-gray-900 text-gray-100">
-      {/* Rechte Hover-Zone für Timeline */}
+      {/* ─── Unsichtbare Zone rechts, um Timeline einzublenden ─────────── */}
       {!showTimeline && (
         <div
-          className="absolute top-0 right-0 h-full w-12 z-20"
+          className="absolute top-0 right-0 h-full w-8 z-20"
           onMouseEnter={() => setShowTimeline(true)}
         />
       )}
 
-      {/* Timeline rechts */}
+      {/* ─── Timeline‐Buttons (sichtbar, wenn showTimeline) ─────────────── */}
       {showTimeline && (
         <aside
-          className="absolute top-0 right-0 h-full w-20 flex flex-col items-center pt-16 z-40"
+          className="absolute top-0 right-0 h-full w-16 flex flex-col items-center pt-16 z-30"
           onMouseEnter={() => setShowTimeline(true)}
           onMouseLeave={() => setShowTimeline(false)}
         >
@@ -74,13 +76,13 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               }}
               className={`
                 absolute left-1/2 -translate-x-1/2
-                rounded-full w-10 h-10 flex items-center justify-center
-                text-sm font-semibold shadow cursor-pointer
+                w-10 h-10 rounded-full flex items-center justify-center
+                text-sm font-semibold shadow-lg cursor-pointer
                 transition-transform duration-200
                 ${
                   i === currentIdx
-                    ? "bg-blue-500 text-white hover:bg-blue-600 hover:scale-110"
-                    : "bg-gray-800 text-gray-200 hover:bg-gray-700 hover:scale-110"
+                    ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
+                    : "bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-110"
                 }
               `}
             >
@@ -90,10 +92,10 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         </aside>
       )}
 
-      {/* Scrollbarer Bereich mit allen Updates */}
+      {/* ─── Scrollbarer Bereich mit jedem Update in voller Slide‐Höhe ───── */}
       <div ref={scrollRef} className="h-full overflow-y-auto hide-scrollbar">
         {challenge.updates.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
+          <div className="flex items-center justify-center h-full p-8 text-gray-400">
             Noch keine Updates vorhanden.
           </div>
         ) : (
@@ -103,15 +105,18 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               ref={(el) => {
                 updateRefs.current[idx] = el;
               }}
-              className="h-[calc(100vh-4rem)] flex border-b border-gray-700"
+              className="h-[calc(100vh-4rem)] flex items-center justify-center border-b border-gray-700 last:border-b-0"
             >
-              <UpdateSlide update={update} />
+              {/* ─── Jedes Update als Card, die die volle Slide‐Größe hat ─── */}
+              <div className="w-full h-full p-4 flex items-center justify-center">
+                <UpdateSlide update={update} />
+              </div>
             </div>
           ))
         )}
       </div>
 
-      {/* ─── Control Area unten ─────────────────────────────────────────── */}
+      {/* ─── Control Area unten: Prev/Next + Pagination Buttons ─────────── */}
       <div className="fixed bottom-0 left-0 right-0 h-16 bg-gray-800 flex items-center justify-center space-x-6 z-50">
         <button
           onClick={goPrev}
@@ -130,7 +135,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               onClick={() => scrollTo(i)}
               className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
                 i === currentIdx
-                  ? "bg-blue-500 text-white hover:bg-blue-600 hover:scale-110"
+                  ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
                   : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
               }`}
             >
@@ -155,6 +160,10 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   );
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────── Funktion: UpdateSlide ───────────────────────────
+// ──────────────────────────────────────────────────────────────────────────────
+
 function UpdateSlide({ update }: { update: Update }) {
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     slides: { perView: 1, spacing: 0 },
@@ -166,19 +175,18 @@ function UpdateSlide({ update }: { update: Update }) {
   const multiple = images.length > 1;
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
-  // State für vertikale Aufteilung (Prozent des UpdateTexts oben)
-  const [topPct, setTopPct] = useState(66);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const dragging = useRef(false);
-
-  // Slide-Change-Event für imageText
+  // Wenn sich der Slide ändert, merken wir uns den Index
   useEffect(() => {
     instanceRef.current?.on("slideChanged", (s) => {
       setCurrentImageIdx(s.track.details.rel);
     });
   }, [instanceRef]);
 
-  // Mousemove / Mouseup global für Drag
+  // ─── Drag & Drop Splitter für vertikale Aufteilung ───────────────────
+  const [topPct, setTopPct] = useState(60);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!dragging.current || !containerRef.current) return;
@@ -200,12 +208,12 @@ function UpdateSlide({ update }: { update: Update }) {
     };
   }, []);
 
-  const imageDuration = 1; // 1 Sekunde
-  const textDuration = 1.2; // 1.2 Sekunden
+  const imageDuration = 1; // Dauer der Bild‐Transition
+  const textDuration = 1.2; // Dauer der Text‐Transition
 
   return (
-    <>
-      {/* ─── Left: Bild-Slider ─────────────────────────────────────────── */}
+    <div className="bg-gray-800 rounded-2xl shadow-lg w-full h-full overflow-hidden flex">
+      {/* ─── Left: Bild‐Slider (2/3 der Card‐Breite) ─────────────────────── */}
       <motion.div
         className="w-2/3 relative h-full overflow-hidden"
         initial={{ x: -100, opacity: 0 }}
@@ -240,9 +248,9 @@ function UpdateSlide({ update }: { update: Update }) {
           </div>
         )}
 
-        {/* Pfeile unter dem Slider */}
+        {/* ─── Pfeile unter dem Slider (nur bei mehreren Bildern) ───────── */}
         {multiple && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-4 z-10">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-10">
             <button
               onClick={() => instanceRef.current?.prev()}
               className="p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
@@ -259,15 +267,23 @@ function UpdateSlide({ update }: { update: Update }) {
         )}
       </motion.div>
 
-      {/* ─── Mittellinie ───────────────────────────────────────────────── */}
+      {/* ─── Mittellinie zwischen Bild & Text ───────────────────────────── */}
       <div className="w-px bg-gray-600 opacity-50" />
 
-      {/* ─── Right: Text-Bereich mit draggable Splitter ──────────────── */}
+      {/* ─── Right: Textbereich mit draggable Splitter (1/3 der Card) ───── */}
       <div
         ref={containerRef}
         className="w-1/3 flex flex-col h-full select-none"
       >
-        {/* Update-Text oben */}
+        {/* ─── Überschrift & Akzentlinie ──────────────────────────────── */}
+        <div className="px-6 pt-6">
+          <h2 className="text-2xl font-semibold text-orange-500">
+            Recent Update
+          </h2>
+          <div className="h-px bg-orange-500 opacity-80 my-2" />
+        </div>
+
+        {/* ─── Update‐Text oben (Höhe = topPct%) ───────────────────────── */}
         <motion.div
           className="overflow-auto px-6"
           style={{ height: `${topPct}%` }}
@@ -286,15 +302,21 @@ function UpdateSlide({ update }: { update: Update }) {
           </p>
         </motion.div>
 
-        {/* Draggable Splitter */}
+        {/* ─── Draggable Splitter (horizontale Linie) ──────────────────── */}
         <div
           onMouseDown={() => {
             dragging.current = true;
           }}
-          className="h-1 bg-gray-600 cursor-row-resize"
+          className="h-1 bg-gray-700 cursor-row-resize"
         />
 
-        {/* Image-Text unten */}
+        {/* ─── Zwischenlinie + „Image Text“ Überschrift ────────────────── */}
+        <div className="px-6 pt-4">
+          <div className="h-px bg-gray-600 opacity-50 mb-2" />
+          <h3 className="text-xl font-semibold text-gray-300">Image Text</h3>
+        </div>
+
+        {/* ─── Image‐Text unten (Höhe = 100-topPct%) ────────────────────── */}
         <motion.div
           className="overflow-auto px-6"
           style={{ height: `${100 - topPct}%` }}
@@ -313,6 +335,6 @@ function UpdateSlide({ update }: { update: Update }) {
           </p>
         </motion.div>
       </div>
-    </>
+    </div>
   );
 }
