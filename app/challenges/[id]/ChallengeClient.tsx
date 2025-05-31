@@ -6,7 +6,13 @@ import Image from "next/image";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  MessageCircle,
+  ThumbsUp,
+} from "lucide-react";
 import { Challenge, Update } from "@/types/types";
 
 // Deterministische Datumsformatierung (Deutsch):
@@ -102,6 +108,19 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     setModalContent("");
   };
 
+  // Professionelle Sliding-Window-Pagination (max. 8 Seiten)
+  const total = challenge.updates.length;
+  const currentPage = currentIdx + 1; // 1-based
+  let startPage = Math.max(1, currentPage - 3);
+  if (startPage + 7 > total) {
+    startPage = Math.max(1, total - 7);
+  }
+  const endPage = Math.min(total, startPage + 7);
+  const pages: number[] = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+
   return (
     <div className="h-screen overflow-hidden bg-gray-900">
       {/* Unsichtbare Zone oben, um Mausrad-Scroll weiterzuleiten */}
@@ -139,7 +158,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         </div>
       )}
 
-      {/* Scrollbarer Bereich */}
+      {/* Scrollbarer Bereich: endet bei bottom-12 */}
       <div
         ref={scrollRef}
         className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
@@ -170,8 +189,8 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         )}
       </div>
 
-      {/* Bottom Controls */}
-      <div className="fixed bottom-0 left-0 right-0 h-12 bg-gray-800 flex items-center justify-center space-x-6 z-50">
+      {/* Bottom Controls mit professioneller Pagination */}
+      <div className="fixed bottom-2 left-0 right-0 h-12 bg-gray-800 flex items-center justify-center space-x-4 z-50 px-4">
         <button
           onClick={goPrev}
           disabled={currentIdx === 0}
@@ -182,18 +201,18 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
           <ChevronLeft size={24} />
         </button>
 
-        <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar px-4">
-          {challenge.updates.map((_, i) => (
+        <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
+          {pages.map((p) => (
             <button
-              key={i}
-              onClick={() => scrollTo(i)}
+              key={p}
+              onClick={() => scrollTo(p - 1)}
               className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
-                i === currentIdx
+                p - 1 === currentIdx
                   ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
                   : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
               }`}
             >
-              {i + 1}
+              {p}
             </button>
           ))}
         </div>
@@ -241,7 +260,7 @@ function UpdateSlide({
   const multiple = images.length > 1;
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
 
-  // Wenn Folie wechselt, Index merken
+  // Wenn Folie wechselt, aktualisiere Index
   useEffect(() => {
     instanceRef.current?.on("slideChanged", (s) => {
       setCurrentImageIdx(s.track.details.rel);
@@ -281,7 +300,7 @@ function UpdateSlide({
     <div className="bg-gray-800 rounded-2xl shadow-lg w-full h-full overflow-hidden flex">
       {/* ─── Linke Hälfte: Bild-Slider (2/3 Breite) ─────────────────────── */}
       <motion.div
-        className="w-2/3 relative h-full overflow-hidden"
+        className="w-2/3 relative h-full overflow-hidden group"
         initial={{ x: -100, opacity: 0 }}
         whileInView={{ x: 0, opacity: 1 }}
         viewport={{ once: true, amount: 0.5 }}
@@ -292,12 +311,12 @@ function UpdateSlide({
           damping: 30,
         }}
       >
-        <div ref={sliderRef} className="keen-slider w-full h-full">
+        <div ref={sliderRef} className="keen-slider w-full h-full relative">
           {images.length > 0 ? (
             images.map((img, i) => (
               <div
                 key={i}
-                className="keen-slider__slide relative w-full h-full group"
+                className="keen-slider__slide relative w-full h-full"
               >
                 <Image
                   src={img.url}
@@ -305,12 +324,6 @@ function UpdateSlide({
                   fill
                   className="object-cover"
                 />
-                <button
-                  onClick={() => openImageModal(img.url)}
-                  className="absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-2 hidden group-hover:flex items-center justify-center transition"
-                >
-                  <Maximize2 size={20} />
-                </button>
               </div>
             ))
           ) : (
@@ -318,23 +331,32 @@ function UpdateSlide({
               kein Bild
             </div>
           )}
+
+          {/* Große Pfeile nur bei Hover */}
+          {multiple && (
+            <>
+              <button
+                onClick={() => instanceRef.current?.prev()}
+                className="hidden group-hover:flex absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full p-3 text-white transition"
+              >
+                <ChevronLeft size={30} />
+              </button>
+              <button
+                onClick={() => instanceRef.current?.next()}
+                className="hidden group-hover:flex absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full p-3 text-white transition"
+              >
+                <ChevronRight size={30} />
+              </button>
+              {/* Fullscreen-Button oben rechts nur bei Hover */}
+              <button
+                onClick={() => openImageModal(images[currentImageIdx]?.url)}
+                className="invisible group-hover:visible absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-2 hover:bg-opacity-90 transition"
+              >
+                <Maximize2 size={20} />
+              </button>
+            </>
+          )}
         </div>
-        {multiple && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-10">
-            <button
-              onClick={() => instanceRef.current?.prev()}
-              className="p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={() => instanceRef.current?.next()}
-              className="p-2 bg-black/50 rounded-full text-white hover:bg-black/70"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        )}
       </motion.div>
 
       {/* ─── Mittellinie zwischen Bild & Text ───────────────────────────── */}
@@ -343,15 +365,15 @@ function UpdateSlide({
       {/* ─── Rechte Hälfte: Textbereich mit draggable Splitter (1/3 Breite) ── */}
       <div
         ref={containerRef}
-        className="w-1/3 flex flex-col h-full select-none"
+        className="w-1/3 flex flex-col h-full select-none relative"
       >
-        {/* ─── Header: Update-Nummer + Datum + Fullscreen-Button ─────────── */}
-        <div className="relative group px-6 pt-6 flex items-baseline justify-between">
+        {/* ─── Header: Update-Nummer + Datum + Fullscreen ───────────────── */}
+        <div className="group px-6 pt-6 flex items-baseline justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-orange-500">
               Update #{index + 1}
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="mt-1 text-sm text-gray-400">
               {formatDate(update.createdAt)}
             </p>
           </div>
@@ -362,8 +384,10 @@ function UpdateSlide({
             <Maximize2 size={18} />
           </button>
         </div>
+
+        {/* Update-Text mit Buttons unten rechts */}
         <motion.div
-          className="overflow-auto px-6 break-words"
+          className="relative overflow-auto px-6 break-words"
           style={{ height: `${topPct}%` }}
           initial={{ x: 100, opacity: 0 }}
           whileInView={{ x: 0, opacity: 1 }}
@@ -375,9 +399,19 @@ function UpdateSlide({
             damping: 30,
           }}
         >
-          <p className="whitespace-pre-wrap text-lg text-gray-200">
+          <p className="mt-3 whitespace-pre-wrap text-lg text-gray-200">
             {update.content ?? "Kein Text"}
           </p>
+
+          {/* Nun dezentere, aber wirkungsvolle Buttons unten rechts */}
+          <div className="absolute bottom-2 right-2 flex space-x-2">
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+              <ThumbsUp size={20} className="text-red-400" />
+            </button>
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+              <MessageCircle size={20} className="text-blue-400" />
+            </button>
+          </div>
         </motion.div>
 
         {/* ─── Draggable Splitter ─────────────────────────────────────────── */}
@@ -388,14 +422,11 @@ function UpdateSlide({
           className="h-1 bg-gray-700 cursor-row-resize"
         />
 
-        {/* ─── Bildbeschreibung Header + Fullscreen-Button ──────────────── */}
-        <div className="relative group px-6 pt-4 flex items-baseline justify-between">
-          <div className="flex-grow">
-            <div className="h-px bg-gray-600 opacity-50 mb-2" />
-            <h3 className="text-xl font-semibold text-gray-300">
-              Bildbeschreibung:
-            </h3>
-          </div>
+        {/* ─── Bildbeschreibung Header + Fullscreen ──────────────────────── */}
+        <div className="group px-6 pt-4 flex items-baseline justify-between">
+          <h3 className="text-xl font-semibold text-gray-300">
+            Bildbeschreibung:
+          </h3>
           <button
             onClick={() =>
               openTextModal(
@@ -407,8 +438,10 @@ function UpdateSlide({
             <Maximize2 size={18} />
           </button>
         </div>
+
+        {/* Bildbeschreibung-Text mit Buttons unten rechts */}
         <motion.div
-          className="overflow-auto px-6 break-words"
+          className="relative overflow-auto px-6 break-words"
           style={{ height: `${100 - topPct}%` }}
           initial={{ x: 100, opacity: 0 }}
           whileInView={{ x: 0, opacity: 1 }}
@@ -420,9 +453,19 @@ function UpdateSlide({
             damping: 30,
           }}
         >
-          <p className="whitespace-pre-wrap text-gray-200">
+          <p className="mt-3 whitespace-pre-wrap text-gray-200">
             {images[currentImageIdx]?.imageText ?? "Keine Bildbeschreibung"}
           </p>
+
+          {/* Nun dezentere, aber wirkungsvolle Buttons unten rechts */}
+          <div className="absolute bottom-2 right-2 flex space-x-2">
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+              <ThumbsUp size={20} className="text-red-400" />
+            </button>
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+              <MessageCircle size={20} className="text-blue-400" />
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>
