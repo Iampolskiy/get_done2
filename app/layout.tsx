@@ -28,7 +28,7 @@ export default function RootLayout({
         <body>
           <FilterProvider>
             <Header />
-            <main className="pt-16 min-h-screen">{children}</main>
+            <main className=" gb-gray-900 min-h-screen">{children}</main>
             <Footer />
           </FilterProvider>
         </body>

@@ -50,50 +50,57 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   };
 
   return (
-    <section className="relative h-[calc(100vh-4rem)] bg-gray-900 text-gray-100">
-      {/* ─── Unsichtbare Zone rechts, um Timeline einzublenden ─────────── */}
-      {!showTimeline && (
-        <div
-          className="absolute top-0 right-0 h-full w-8 z-20"
-          onMouseEnter={() => setShowTimeline(true)}
-        />
-      )}
+    <div className="h-screen overflow-hidden bg-gray-900">
+      {/* ─── UNSICHTBARE ZONE AM BILDSCHRIMRAND OBEN (2px), um Timeline einzublenden ── */}
+      <div
+        className="fixed top-0 left-0 right-0 h-2 z-40"
+        onMouseEnter={() => setShowTimeline(true)}
+        onWheel={(e) => {
+          scrollRef.current?.scrollBy({ top: e.deltaY, behavior: "auto" });
+        }}
+      />
 
-      {/* ─── Timeline‐Buttons (sichtbar, wenn showTimeline) ─────────────── */}
-      {showTimeline && (
-        <aside
-          className="absolute top-0 right-0 h-full w-16 flex flex-col items-center pt-16 z-30"
-          onMouseEnter={() => setShowTimeline(true)}
-          onMouseLeave={() => setShowTimeline(false)}
-        >
-          <div className="w-1 bg-gray-600 h-full rounded opacity-50" />
-          {challenge.updates.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollTo(i)}
-              style={{
-                top: `${((i + 1) * 100) / (challenge.updates.length + 1)}%`,
-              }}
-              className={`
-                absolute left-1/2 -translate-x-1/2
-                w-10 h-10 rounded-full flex items-center justify-center
-                text-sm font-semibold shadow-lg cursor-pointer
-                transition-transform duration-200
-                ${
-                  i === currentIdx
-                    ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
-                    : "bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-110"
-                }
-              `}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </aside>
-      )}
+      {/* ─── Scrollbarer Bereich: unter globalem Header (4rem = top-16) und über Bottom Controls (3rem = bottom-12) ─── */}
+      <div
+        ref={scrollRef}
+        className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
+      >
+        {/* ─── Timeline (sichtbar, wenn showTimeline) ─────────────────────── */}
+        {showTimeline && (
+          <aside
+            className="absolute top-0 right-0 h-full w-16 flex flex-col items-center pt-16 z-30"
+            onMouseEnter={() => setShowTimeline(true)}
+            onMouseLeave={() => setShowTimeline(false)}
+            onWheel={(e) => {
+              scrollRef.current?.scrollBy({ top: e.deltaY, behavior: "auto" });
+            }}
+          >
+            <div className="w-1 bg-gray-600 h-full rounded opacity-50" />
+            {challenge.updates.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => scrollTo(i)}
+                style={{
+                  top: `${((i + 1) * 100) / (challenge.updates.length + 1)}%`,
+                }}
+                className={`
+                  absolute left-1/2 -translate-x-1/2
+                  w-10 h-10 rounded-full flex items-center justify-center
+                  text-sm font-semibold shadow-lg cursor-pointer
+                  transition-transform duration-200
+                  ${
+                    i === currentIdx
+                      ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
+                      : "bg-gray-700 text-gray-200 hover:bg-gray-600 hover:scale-110"
+                  }
+                `}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </aside>
+        )}
 
-      {/* ─── Scrollbarer Bereich mit jedem Update in voller Slide‐Höhe ───── */}
-      <div ref={scrollRef} className="h-full overflow-y-auto hide-scrollbar">
         {challenge.updates.length === 0 ? (
           <div className="flex items-center justify-center h-full p-8 text-gray-400">
             Noch keine Updates vorhanden.
@@ -105,7 +112,15 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               ref={(el) => {
                 updateRefs.current[idx] = el;
               }}
-              className="h-[calc(100vh-4rem)] flex items-center justify-center border-b border-gray-700 last:border-b-0"
+              className="
+                h-full       /* Füllt die gesamte Höhe des Scrollcontainers */
+                flex
+                items-center
+                justify-center
+                border-b
+                border-gray-700
+                last:border-b-0
+              "
             >
               {/* ─── Jedes Update als Card, die die volle Slide‐Größe hat ─── */}
               <div className="w-full h-full p-4 flex items-center justify-center">
@@ -117,13 +132,20 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
       </div>
 
       {/* ─── Control Area unten: Prev/Next + Pagination Buttons ─────────── */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 bg-gray-800 flex items-center justify-center space-x-6 z-50">
+      <div className="fixed bottom-0 left-0 right-0 h-12 bg-gray-800 flex items-center justify-center space-x-6 z-50">
         <button
           onClick={goPrev}
           disabled={currentIdx === 0}
-          className={`p-2 rounded-full transition ${
-            currentIdx === 0 ? "text-gray-600" : "text-white hover:bg-gray-700"
-          }`}
+          className={`
+            p-2
+            rounded-full
+            transition
+            ${
+              currentIdx === 0
+                ? "text-gray-600"
+                : "text-white hover:bg-gray-700"
+            }
+          `}
         >
           <ChevronLeft size={24} />
         </button>
@@ -133,11 +155,25 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
             <button
               key={i}
               onClick={() => scrollTo(i)}
-              className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
-                i === currentIdx
-                  ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
-                  : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
-              }`}
+              className={`
+                flex-none
+                rounded-full
+                w-8
+                h-8
+                flex
+                items-center
+                justify-center
+                text-xs
+                font-semibold
+                shadow
+                transition-transform
+                duration-200
+                ${
+                  i === currentIdx
+                    ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
+                    : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
+                }
+              `}
             >
               {i + 1}
             </button>
@@ -147,16 +183,21 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         <button
           onClick={goNext}
           disabled={currentIdx === challenge.updates.length - 1}
-          className={`p-2 rounded-full transition ${
-            currentIdx === challenge.updates.length - 1
-              ? "text-gray-600"
-              : "text-white hover:bg-gray-700"
-          }`}
+          className={`
+            p-2
+            rounded-full
+            transition
+            ${
+              currentIdx === challenge.updates.length - 1
+                ? "text-gray-600"
+                : "text-white hover:bg-gray-700"
+            }
+          `}
         >
           <ChevronRight size={24} />
         </button>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -313,7 +354,9 @@ function UpdateSlide({ update }: { update: Update }) {
         {/* ─── Zwischenlinie + „Image Text“ Überschrift ────────────────── */}
         <div className="px-6 pt-4">
           <div className="h-px bg-gray-600 opacity-50 mb-2" />
-          <h3 className="text-xl font-semibold text-gray-300">Image Text</h3>
+          <h3 className="text-xl font-semibold text-gray-300">
+            Bildbeschreibung:
+          </h3>
         </div>
 
         {/* ─── Image‐Text unten (Höhe = 100-topPct%) ────────────────────── */}
