@@ -5,7 +5,7 @@ import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { useKeenSlider } from "keen-slider/react";
 import "keen-slider/keen-slider.min.css";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
@@ -66,7 +66,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-
     const onScroll = () => {
       const st = el.scrollTop;
       const vh = el.clientHeight;
@@ -76,7 +75,6 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
       });
       setCurrentIdx(idx);
     };
-
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
@@ -109,7 +107,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     setModalContent("");
   };
 
-  // ─── Pagination: max. 8 Seiten, aber safe, wenn challenge.updates fehlt ───
+  // ─── Pagination: max. 8 Seiten ────────────────────────────────────
   const total = challenge?.updates?.length ?? 0;
   const currentPage = currentIdx + 1; // 1-basierter Index
   let startPage = Math.max(1, currentPage - 3);
@@ -123,8 +121,8 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-gray-900">
-      {/* Unsichtbare Zone oben, um Mausrad-Scroll weiterzuleiten */}
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      {/* Unsichtbare Zone oben zum Weiterleiten des Mausrad-Scrolls */}
       <div
         className="fixed top-0 left-0 right-0 h-2 z-40"
         onWheel={(e) => {
@@ -133,33 +131,61 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
       />
 
       {/* Modal-Overlay */}
-      {modalOpen && modalType === "image" && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
-          onClick={closeModal}
-        >
-          <div className="relative w-[90vw] h-[90vh]">
-            <Image
-              src={modalContent}
-              alt="Vollbild"
-              fill
-              className="object-contain"
-            />
-          </div>
-        </div>
-      )}
-      {modalOpen && modalType === "text" && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
-          onClick={closeModal}
-        >
-          <div className="relative w-[80vw] h-[80vh] bg-white rounded-lg overflow-auto p-6">
-            <p className="whitespace-pre-wrap text-gray-800">{modalContent}</p>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {modalOpen && modalType === "image" && (
+          <motion.div
+            key="image-modal"
+            className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeModal}
+          >
+            <motion.div
+              className="relative w-[90vw] h-[90vh] bg-black bg-opacity-30 backdrop-blur-md rounded-lg overflow-hidden shadow-2xl"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              // Für das Image-Modal: kein Stop-Propagation, damit Klick auf Bild schließt
+              onClick={closeModal}
+            >
+              <Image
+                src={modalContent}
+                alt="Vollbild"
+                fill
+                className="object-contain"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+        {modalOpen && modalType === "text" && (
+          <motion.div
+            key="text-modal"
+            className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeModal}
+          >
+            <motion.div
+              className="relative w-[80vw] h-[80vh] bg-white rounded-lg overflow-auto p-8 shadow-2xl"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              // Bei Text-Modal Stop-Propagation, damit Klick im Text-Bereich nicht schließt
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+                {modalContent}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Scrollbarer Bereich: endet bei bottom-12 */}
+      {/* Scrollbarer Bereich: endet direkt über den Bottom Controls */}
       <div
         ref={scrollRef}
         className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
@@ -175,9 +201,9 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               ref={(el) => {
                 updateRefs.current[idx] = el;
               }}
-              className="h-full flex items-center justify-center"
+              className="h-full flex items-center justify-center px-4 py-6"
             >
-              <div className="w-full h-full p-4 flex items-center justify-center">
+              <div className="w-full h-full p-4">
                 <UpdateSlide
                   update={update}
                   index={idx}
@@ -191,44 +217,47 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
       </div>
 
       {/* Bottom Controls mit professioneller Pagination */}
-      <div className="fixed bottom-2 left-0 right-0 h-12 bg-gray-800 flex items-center justify-center space-x-4 z-50 px-4">
-        <button
+      <div className="fixed bottom-2 left-0 right-0 h-12 bg-gray-800 bg-opacity-80 backdrop-blur-sm flex items-center justify-center space-x-4 z-50 px-4">
+        <motion.button
           onClick={goPrev}
           disabled={currentIdx === 0}
+          whileHover={currentIdx !== 0 ? { scale: 1.1 } : {}}
           className={`p-2 rounded-full transition ${
-            currentIdx === 0 ? "text-gray-600" : "text-white hover:bg-gray-700"
+            currentIdx === 0 ? "text-gray-500" : "text-white hover:bg-gray-700"
           }`}
         >
           <ChevronLeft size={24} />
-        </button>
+        </motion.button>
 
         <div className="flex items-center space-x-2 overflow-x-auto hide-scrollbar">
           {pages.map((p) => (
-            <button
+            <motion.button
               key={p}
               onClick={() => scrollTo(p - 1)}
+              whileHover={{ scale: 1.1 }}
               className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
                 p - 1 === currentIdx
-                  ? "bg-orange-500 text-white hover:bg-orange-600 hover:scale-110"
-                  : "bg-gray-700 text-gray-400 hover:bg-gray-600 hover:scale-110"
+                  ? "bg-amber-500 text-white hover:bg-amber-600"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
               }`}
             >
               {p}
-            </button>
+            </motion.button>
           ))}
         </div>
 
-        <button
+        <motion.button
           onClick={goNext}
           disabled={currentIdx === total - 1}
+          whileHover={currentIdx !== total - 1 ? { scale: 1.1 } : {}}
           className={`p-2 rounded-full transition ${
             currentIdx === total - 1
-              ? "text-gray-600"
+              ? "text-gray-500"
               : "text-white hover:bg-gray-700"
           }`}
         >
           <ChevronRight size={24} />
-        </button>
+        </motion.button>
       </div>
     </div>
   );
@@ -251,22 +280,19 @@ function UpdateSlide({
   openImageModal,
   openTextModal,
 }: UpdateSlideProps) {
+  // Keen-Slider direkt mit slideChanged-Callback
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     slides: { perView: 1, spacing: 0 },
     loop: false,
     mode: "snap",
+    slideChanged(s) {
+      setCurrentImageIdx(s.track.details.rel);
+    },
   });
 
   const images = update.images ?? [];
   const multiple = images.length > 1;
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
-
-  // Wenn Folie wechselt, aktualisiere Index
-  useEffect(() => {
-    instanceRef.current?.on("slideChanged", (s) => {
-      setCurrentImageIdx(s.track.details.rel);
-    });
-  }, [instanceRef]);
 
   // Drag-Splitter für vertikale Aufteilung
   const [topPct, setTopPct] = useState(60);
@@ -298,7 +324,13 @@ function UpdateSlide({
   const textDuration = 1.2;
 
   return (
-    <div className="bg-gray-800 rounded-2xl shadow-lg w-full h-full overflow-hidden flex">
+    <motion.div
+      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl w-full h-full overflow-hidden flex transform hover:scale-[1.015] transition-transform duration-300"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.5 }}
+      transition={{ duration: 0.6 }}
+    >
       {/* ─── Linke Hälfte: Bild-Slider (2/3 Breite) ─────────────────────── */}
       <motion.div
         className="w-2/3 relative h-full overflow-hidden group"
@@ -325,20 +357,22 @@ function UpdateSlide({
                   fill
                   className="object-cover"
                 />
-                {/* Fullscreen-Button pro Slide; etwas kleiner und mit sanfterem Übergang */}
-                <button
+                {/* Fullscreen-Button pro Slide */}
+                <motion.button
                   onClick={() => openImageModal(img.url)}
                   className="
                     absolute top-2 right-2 
-                    bg-white border-2 border-orange-500 
-                    hover:bg-orange-500 hover:text-white text-orange-500 
-                    rounded-full p-1 shadow-md 
+                    bg-gray-700 bg-opacity-70 
+                    hover:bg-gray-600 
+                    text-white 
+                    rounded-full p-1 shadow-lg 
                     opacity-0 group-hover:opacity-100 
                     transition-opacity duration-300 ease-in-out
+                    transition-transform transform hover:scale-110
                   "
                 >
                   <Maximize2 size={18} />
-                </button>
+                </motion.button>
               </div>
             ))
           ) : (
@@ -355,8 +389,9 @@ function UpdateSlide({
                 className="
                   hidden group-hover:flex 
                   absolute left-4 top-1/2 transform -translate-y-1/2 
-                  bg-black bg-opacity-50 rounded-full p-3 text-white 
+                  bg-black bg-opacity-60 rounded-full p-3 text-white 
                   transition-opacity duration-300 ease-in-out
+                  transition-transform transform hover:scale-110
                 "
               >
                 <ChevronLeft size={30} />
@@ -366,8 +401,9 @@ function UpdateSlide({
                 className="
                   hidden group-hover:flex 
                   absolute right-4 top-1/2 transform -translate-y-1/2 
-                  bg-black bg-opacity-50 rounded-full p-3 text-white 
+                  bg-black bg-opacity-60 rounded-full p-3 text-white 
                   transition-opacity duration-300 ease-in-out
+                  transition-transform transform hover:scale-110
                 "
               >
                 <ChevronRight size={30} />
@@ -381,40 +417,42 @@ function UpdateSlide({
       <div className="w-px bg-gray-600 opacity-50" />
 
       {/* ─── Rechte Hälfte: Textbereich mit draggable Splitter (1/3 Breite) ── */}
-      <div
+      <motion.div
         ref={containerRef}
         className="w-1/3 flex flex-col h-full select-none relative"
       >
         {/* ─── Header: Update-Nummer + Datum + Fullscreen ───────────────── */}
         <div className="group px-6 pt-6 flex items-baseline justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-orange-500">
+            <h2 className="text-2xl font-extrabold text-orange-500 drop-shadow-lg">
               Update #{index + 1}
             </h2>
             <p className="mt-1 text-sm text-gray-400">
               {formatDate(update.createdAt)}
             </p>
           </div>
-          <button
+          <motion.button
             onClick={() => openTextModal(update.content || "Kein Text")}
             className="
-              bg-white border-2 border-orange-500 
-              hover:bg-orange-500 hover:text-white text-orange-500 
-              rounded-full p-1 shadow-md 
+              bg-gray-700 bg-opacity-70 
+              hover:bg-gray-600 
+              text-white 
+              rounded-full p-1 shadow-lg 
               opacity-0 group-hover:opacity-100 
               transition-opacity duration-300 ease-in-out
+              transition-transform transform hover:scale-110
             "
           >
             <Maximize2 size={18} />
-          </button>
+          </motion.button>
         </div>
 
         {/* Update-Text mit Buttons unten rechts */}
         <motion.div
-          className="relative overflow-auto px-6 break-words"
+          className="relative overflow-auto px-6 break-words bg-gray-800/50 backdrop-blur-sm rounded-b-lg"
           style={{ height: `${topPct}%` }}
-          initial={{ x: 100, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{
             duration: textDuration,
@@ -423,18 +461,26 @@ function UpdateSlide({
             damping: 30,
           }}
         >
-          <p className="mt-3 whitespace-pre-wrap text-lg text-gray-200">
+          <p className="mt-3 whitespace-pre-wrap text-lg text-gray-200 leading-relaxed">
             {update.content ?? "Kein Text"}
           </p>
 
-          {/* Dezente, moderne Buttons unten rechts */}
+          {/* → ICON-KONTURLINIEN = VORHERIGE ICONFARBE (ROSE) ← */}
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
-              <ThumbsUp size={20} className="text-red-400" />
-            </button>
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
-              <MessageCircle size={20} className="text-blue-400" />
-            </button>
+            <motion.button className="bg-rose-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+              <ThumbsUp
+                fill="none"
+                stroke="currentColor"
+                className="text-rose-300 opacity-50 w-6 h-6"
+              />
+            </motion.button>
+            <motion.button className="bg-sky-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+              <MessageCircle
+                fill="none"
+                stroke="currentColor"
+                className="text-sky-300 opacity-50 w-6 h-6"
+              />
+            </motion.button>
           </div>
         </motion.div>
 
@@ -447,34 +493,36 @@ function UpdateSlide({
         />
 
         {/* ─── Bildbeschreibung Header + Fullscreen ──────────────────────── */}
-        <div className="group px-6 pt-4 flex items-baseline justify-between">
-          <h3 className="text-xl font-semibold text-gray-300">
+        <div className="group px-6 py-4 flex items-baseline justify-between">
+          <h3 className="text-2xl font-extrabold text-orange-500 drop-shadow-lg">
             Bildbeschreibung:
           </h3>
-          <button
+          <motion.button
             onClick={() =>
               openTextModal(
                 images[currentImageIdx]?.imageText || "Keine Bildbeschreibung"
               )
             }
             className="
-              bg-white border-2 border-orange-500 
-              hover:bg-orange-500 hover:text-white text-orange-500 
-              rounded-full p-1 shadow-md 
+              bg-gray-700 bg-opacity-70 
+              hover:bg-gray-600 
+              text-white 
+              rounded-full p-1 shadow-lg 
               opacity-0 group-hover:opacity-100 
               transition-opacity duration-300 ease-in-out
+              transition-transform transform hover:scale-110
             "
           >
             <Maximize2 size={18} />
-          </button>
+          </motion.button>
         </div>
 
         {/* Bildbeschreibung-Text mit Buttons unten rechts */}
         <motion.div
-          className="relative overflow-auto px-6 break-words"
+          className="relative overflow-auto px-6 break-words bg-gray-800/50 backdrop-blur-sm rounded-b-lg"
           style={{ height: `${100 - topPct}%` }}
-          initial={{ x: 100, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{
             duration: textDuration,
@@ -483,21 +531,29 @@ function UpdateSlide({
             damping: 30,
           }}
         >
-          <p className="mt-3 whitespace-pre-wrap text-gray-200">
+          <p className="mt-3 whitespace-pre-wrap text-lg text-gray-200 leading-relaxed">
             {images[currentImageIdx]?.imageText ?? "Keine Bildbeschreibung"}
           </p>
 
-          {/* Dezente, moderne Buttons unten rechts */}
+          {/* → ICON-KONTURLINIEN = VORHERIGE ICONFARBE (ROSE bzw. SKY) ← */}
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
-              <ThumbsUp size={20} className="text-red-400" />
-            </button>
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
-              <MessageCircle size={20} className="text-blue-400" />
-            </button>
+            <motion.button className="bg-rose-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+              <ThumbsUp
+                fill="none"
+                stroke="currentColor"
+                className="text-rose-300 opacity-50 w-6 h-6"
+              />
+            </motion.button>
+            <motion.button className="bg-sky-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+              <MessageCircle
+                fill="none"
+                stroke="currentColor"
+                className="text-sky-300 opacity-50 w-6 h-6"
+              />
+            </motion.button>
           </div>
         </motion.div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
