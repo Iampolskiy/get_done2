@@ -88,7 +88,8 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     if (currentIdx > 0) scrollTo(currentIdx - 1);
   };
   const goNext = () => {
-    if (currentIdx < challenge.updates.length - 1) scrollTo(currentIdx + 1);
+    const total = challenge?.updates?.length ?? 0;
+    if (currentIdx < total - 1) scrollTo(currentIdx + 1);
   };
 
   // Modal-Funktionen
@@ -108,9 +109,9 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
     setModalContent("");
   };
 
-  // Professionelle Sliding-Window-Pagination (max. 8 Seiten)
-  const total = challenge.updates.length;
-  const currentPage = currentIdx + 1; // 1-based
+  // ─── Pagination: max. 8 Seiten, aber safe, wenn challenge.updates fehlt ───
+  const total = challenge?.updates?.length ?? 0;
+  const currentPage = currentIdx + 1; // 1-basierter Index
   let startPage = Math.max(1, currentPage - 3);
   if (startPage + 7 > total) {
     startPage = Math.max(1, total - 7);
@@ -163,7 +164,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         ref={scrollRef}
         className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
       >
-        {challenge.updates.length === 0 ? (
+        {total === 0 ? (
           <div className="flex items-center justify-center h-full p-8 text-gray-400">
             Noch keine Updates vorhanden.
           </div>
@@ -219,9 +220,9 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
 
         <button
           onClick={goNext}
-          disabled={currentIdx === challenge.updates.length - 1}
+          disabled={currentIdx === total - 1}
           className={`p-2 rounded-full transition ${
-            currentIdx === challenge.updates.length - 1
+            currentIdx === total - 1
               ? "text-gray-600"
               : "text-white hover:bg-gray-700"
           }`}
@@ -316,7 +317,7 @@ function UpdateSlide({
             images.map((img, i) => (
               <div
                 key={i}
-                className="keen-slider__slide relative w-full h-full"
+                className="keen-slider__slide relative w-full h-full group"
               >
                 <Image
                   src={img.url}
@@ -324,6 +325,20 @@ function UpdateSlide({
                   fill
                   className="object-cover"
                 />
+                {/* Fullscreen-Button pro Slide; etwas kleiner und mit sanfterem Übergang */}
+                <button
+                  onClick={() => openImageModal(img.url)}
+                  className="
+                    absolute top-2 right-2 
+                    bg-white border-2 border-orange-500 
+                    hover:bg-orange-500 hover:text-white text-orange-500 
+                    rounded-full p-1 shadow-md 
+                    opacity-0 group-hover:opacity-100 
+                    transition-opacity duration-300 ease-in-out
+                  "
+                >
+                  <Maximize2 size={18} />
+                </button>
               </div>
             ))
           ) : (
@@ -337,22 +352,25 @@ function UpdateSlide({
             <>
               <button
                 onClick={() => instanceRef.current?.prev()}
-                className="hidden group-hover:flex absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full p-3 text-white transition"
+                className="
+                  hidden group-hover:flex 
+                  absolute left-4 top-1/2 transform -translate-y-1/2 
+                  bg-black bg-opacity-50 rounded-full p-3 text-white 
+                  transition-opacity duration-300 ease-in-out
+                "
               >
                 <ChevronLeft size={30} />
               </button>
               <button
                 onClick={() => instanceRef.current?.next()}
-                className="hidden group-hover:flex absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 rounded-full p-3 text-white transition"
+                className="
+                  hidden group-hover:flex 
+                  absolute right-4 top-1/2 transform -translate-y-1/2 
+                  bg-black bg-opacity-50 rounded-full p-3 text-white 
+                  transition-opacity duration-300 ease-in-out
+                "
               >
                 <ChevronRight size={30} />
-              </button>
-              {/* Fullscreen-Button oben rechts nur bei Hover */}
-              <button
-                onClick={() => openImageModal(images[currentImageIdx]?.url)}
-                className="invisible group-hover:visible absolute top-2 right-2 bg-white bg-opacity-70 rounded-full p-2 hover:bg-opacity-90 transition"
-              >
-                <Maximize2 size={20} />
               </button>
             </>
           )}
@@ -379,7 +397,13 @@ function UpdateSlide({
           </div>
           <button
             onClick={() => openTextModal(update.content || "Kein Text")}
-            className="invisible group-hover:visible bg-white bg-opacity-70 rounded-full p-1 hover:bg-opacity-90 transition"
+            className="
+              bg-white border-2 border-orange-500 
+              hover:bg-orange-500 hover:text-white text-orange-500 
+              rounded-full p-1 shadow-md 
+              opacity-0 group-hover:opacity-100 
+              transition-opacity duration-300 ease-in-out
+            "
           >
             <Maximize2 size={18} />
           </button>
@@ -403,12 +427,12 @@ function UpdateSlide({
             {update.content ?? "Kein Text"}
           </p>
 
-          {/* Nun dezentere, aber wirkungsvolle Buttons unten rechts */}
+          {/* Dezente, moderne Buttons unten rechts */}
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
               <ThumbsUp size={20} className="text-red-400" />
             </button>
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
               <MessageCircle size={20} className="text-blue-400" />
             </button>
           </div>
@@ -433,7 +457,13 @@ function UpdateSlide({
                 images[currentImageIdx]?.imageText || "Keine Bildbeschreibung"
               )
             }
-            className="invisible group-hover:visible bg-white bg-opacity-70 rounded-full p-1 hover:bg-opacity-90 transition"
+            className="
+              bg-white border-2 border-orange-500 
+              hover:bg-orange-500 hover:text-white text-orange-500 
+              rounded-full p-1 shadow-md 
+              opacity-0 group-hover:opacity-100 
+              transition-opacity duration-300 ease-in-out
+            "
           >
             <Maximize2 size={18} />
           </button>
@@ -457,12 +487,12 @@ function UpdateSlide({
             {images[currentImageIdx]?.imageText ?? "Keine Bildbeschreibung"}
           </p>
 
-          {/* Nun dezentere, aber wirkungsvolle Buttons unten rechts */}
+          {/* Dezente, moderne Buttons unten rechts */}
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
               <ThumbsUp size={20} className="text-red-400" />
             </button>
-            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow transition transform hover:scale-105">
+            <button className="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 shadow-md transition transform hover:scale-105">
               <MessageCircle size={20} className="text-blue-400" />
             </button>
           </div>

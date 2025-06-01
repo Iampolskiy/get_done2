@@ -13,9 +13,9 @@ export const revalidate = 0; // :contentReference[oaicite:0]{index=0}
 
 import "./globals.css";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import { ClerkProvider } from "@clerk/nextjs";
 import { FilterProvider } from "@/app/context/FilterContext";
+import FooterWrapper from "../components/FooterWrapper";
 
 export default function RootLayout({
   children,
@@ -27,9 +27,9 @@ export default function RootLayout({
       <html lang="de">
         <body>
           <FilterProvider>
-            <Header />
-            <main className=" gb-gray-900 min-h-screen">{children}</main>
-            <Footer />
+            <Header />{" "}
+            <main className="gb-gray-900 min-h-screen">{children}</main>
+            <FooterWrapper />
           </FilterProvider>
         </body>
       </html>
