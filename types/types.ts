@@ -81,3 +81,19 @@ export interface Update {
 export interface ChallengeClientProps {
   challenge: Challenge;
 }
+
+/* GLOBE SELFMADE INTERFACES */
+
+export interface GlobeMethods {
+  pointOfView: (
+    coords: { lat: number; lng: number; altitude: number },
+    duration: number
+  ) => void;
+  controls: () => {
+    autoRotate: boolean;
+    autoRotateSpeed: number;
+    enableZoom: boolean;
+    // … falls du noch mehr Methoden/Props nutzt
+  };
+  // … weitere Methoden, falls benötigt
+}

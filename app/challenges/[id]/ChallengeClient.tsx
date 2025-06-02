@@ -14,6 +14,7 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { Challenge, Update } from "@/types/types";
+/* import { GlobeWithSearch } from "@/components/GlobeWithSearch"; */
 
 // Deterministische Datumsformatierung (Deutsch)
 function formatDate(dateInput: string | Date | undefined): string {
@@ -129,6 +130,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
           scrollRef.current?.scrollBy({ top: e.deltaY, behavior: "auto" });
         }}
       />
+      {/* <GlobeWithSearch /> */}
 
       {/* Modal-Overlay */}
       <AnimatePresence>

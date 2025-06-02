@@ -1,6 +1,8 @@
+// app/challenges/[id]/page.tsx
 import { Challenge } from "@/types/types";
 import prisma from "@/lib/prisma"; // Prisma Client
 import ChallengeClient from "./ChallengeClient";
+/* import GlobeLoader from "@/components/GlobeLoader"; // <— neu */
 
 type PageProps = {
   params: {
@@ -9,7 +11,7 @@ type PageProps = {
 };
 
 export default async function ChallengePage({ params }: PageProps) {
-  const numericId = await parseInt(params.id, 10);
+  const numericId = parseInt(params.id, 10);
 
   const challenge = await prisma.challenge.findUnique({
     where: { id: numericId },
@@ -30,5 +32,16 @@ export default async function ChallengePage({ params }: PageProps) {
     );
   }
 
-  return <ChallengeClient challenge={challenge as Challenge} />;
+  return (
+    <>
+      {/* Bestehendes Rendering der Challenge */}
+      <ChallengeClient challenge={challenge as Challenge} />
+
+      {/* Hier wird der GlobeLoader gerendert, 
+          der per dynamic(...) den Globe erst im Browser lädt */}
+      {/* <div style={{ width: "100vw", height: "100vh", marginTop: "2rem" }}>
+        <GlobeLoader />
+      </div> */}
+    </>
+  );
 }

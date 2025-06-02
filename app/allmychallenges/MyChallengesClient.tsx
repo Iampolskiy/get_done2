@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Challenge } from "@/types/types";
 import { formatGermanDateTime } from "@/lib/date";
 import { useFilter } from "@/app/context/FilterContext";
+/* import { GlobeWithSearch } from "@/components/GlobeWithSearch"; */
 
 export default function MyChallengesClient({
   challenges,
@@ -83,6 +84,7 @@ export default function MyChallengesClient({
       >
         Meine Ziele
       </h2>
+      {/* <GlobeWithSearch /> */}
 
       <div
         ref={containerRef}

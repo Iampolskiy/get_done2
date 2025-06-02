@@ -4,7 +4,8 @@ import React from "react";
 import MyChallengesClient from "./MyChallengesClient";
 import Feedback from "@/components/Feedback";
 import type { Challenge } from "@/types/types";
-
+/* import { GlobeWithSearch } from "@/components/GlobeWithSearch";
+ */
 export default async function MyChallengesPage() {
   /* -------- Auth --------------------------------------------- */
   const me = await currentUser();
@@ -51,6 +52,7 @@ export default async function MyChallengesPage() {
   return (
     <>
       <Feedback />
+
       <MyChallengesClient challenges={challenges} />
     </>
   );

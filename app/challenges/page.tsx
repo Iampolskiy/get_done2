@@ -2,6 +2,7 @@
 import { Challenge } from "@/types/types";
 import prisma from "@/lib/prisma";
 import ChallengesClient from "./ChallengesClient";
+import GlobeLoader from "@/components/GlobeLoader";
 
 export default async function ChallengesPage() {
   // fetch everything we need
@@ -38,5 +39,12 @@ export default async function ChallengesPage() {
     })),
   }));
 
-  return <ChallengesClient challenges={challenges} />;
+  return (
+    <>
+      <ChallengesClient challenges={challenges} />
+      <div style={{ width: "100vw", height: "100vh", marginTop: "2rem" }}>
+        <GlobeLoader />
+      </div>
+    </>
+  );
 }
