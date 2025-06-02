@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Challenge, Update } from "@/types/types";
 
-// Deterministische Datumsformatierung (Deutsch):
+// Deterministische Datumsformatierung (Deutsch)
 function formatDate(dateInput: string | Date | undefined): string {
   if (!dateInput) return "";
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -54,7 +54,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Hintergrund-Scrollen verhindern, wenn Modal offen
+  // Verhindert Scroll im Hintergrund, wenn Modal offen ist
   useEffect(() => {
     document.body.style.overflow = modalOpen ? "hidden" : "";
     return () => {
@@ -121,8 +121,8 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-      {/* Unsichtbare Zone oben zum Weiterleiten des Mausrad-Scrolls */}
+    <div className="h-screen overflow-hidden bg-black">
+      {/* Unsichtbare Zone oben, um Mausrad-Scroll ans Scroll-Container weiterzugeben */}
       <div
         className="fixed top-0 left-0 right-0 h-2 z-40"
         onWheel={(e) => {
@@ -147,18 +147,18 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              // Für das Image-Modal: kein Stop-Propagation, damit Klick auf Bild schließt
-              onClick={closeModal}
+              onClick={closeModal} // Klick schließt Modal
             >
               <Image
                 src={modalContent}
-                alt="Vollbild"
+                alt="Vollbild-Bild"
                 fill
-                className="object-contain"
+                className="object-contain rounded-lg"
               />
             </motion.div>
           </motion.div>
         )}
+
         {modalOpen && modalType === "text" && (
           <motion.div
             key="text-modal"
@@ -169,15 +169,14 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
             onClick={closeModal}
           >
             <motion.div
-              className="relative w-[80vw] h-[80vh] bg-white rounded-lg overflow-auto p-8 shadow-2xl"
+              className="relative w-[80vw] h-[80vh] bg-black rounded-lg overflow-auto p-8 shadow-2xl"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              // Bei Text-Modal Stop-Propagation, damit Klick im Text-Bereich nicht schließt
               onClick={(e) => e.stopPropagation()}
             >
-              <p className="whitespace-pre-wrap text-gray-800 leading-relaxed">
+              <p className="whitespace-pre-wrap text-gray-200 leading-relaxed">
                 {modalContent}
               </p>
             </motion.div>
@@ -191,7 +190,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         className="absolute top-0 bottom-12 left-0 right-0 overflow-y-auto hide-scrollbar"
       >
         {total === 0 ? (
-          <div className="flex items-center justify-center h-full p-8 text-gray-400">
+          <div className="flex items-center justify-center h-full p-8 text-gray-500">
             Noch keine Updates vorhanden.
           </div>
         ) : (
@@ -201,7 +200,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               ref={(el) => {
                 updateRefs.current[idx] = el;
               }}
-              className="h-full flex items-center justify-center px-4 py-6"
+              className="h-[calc(100vh-3rem)] flex items-center justify-center px-4 py-6"
             >
               <div className="w-full h-full p-4">
                 <UpdateSlide
@@ -216,14 +215,14 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
         )}
       </div>
 
-      {/* Bottom Controls mit professioneller Pagination */}
-      <div className="fixed bottom-2 left-0 right-0 h-12 bg-gray-800 bg-opacity-80 backdrop-blur-sm flex items-center justify-center space-x-4 z-50 px-4">
+      {/* Bottom Controls mit Pagination */}
+      <div className="fixed bottom-2 left-0 right-0 h-12 bg-black bg-opacity-90 flex items-center justify-center space-x-4 z-50 px-4">
         <motion.button
           onClick={goPrev}
           disabled={currentIdx === 0}
           whileHover={currentIdx !== 0 ? { scale: 1.1 } : {}}
           className={`p-2 rounded-full transition ${
-            currentIdx === 0 ? "text-gray-500" : "text-white hover:bg-gray-700"
+            currentIdx === 0 ? "text-gray-600" : "text-white hover:bg-gray-700"
           }`}
         >
           <ChevronLeft size={24} />
@@ -237,7 +236,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
               whileHover={{ scale: 1.1 }}
               className={`flex-none rounded-full w-8 h-8 flex items-center justify-center text-xs font-semibold shadow transition-transform duration-200 ${
                 p - 1 === currentIdx
-                  ? "bg-amber-500 text-white hover:bg-amber-600"
+                  ? "bg-white text-black"
                   : "bg-gray-700 text-gray-300 hover:bg-gray-600"
               }`}
             >
@@ -252,7 +251,7 @@ export default function ChallengeClient({ challenge }: ChallengeClientProps) {
           whileHover={currentIdx !== total - 1 ? { scale: 1.1 } : {}}
           className={`p-2 rounded-full transition ${
             currentIdx === total - 1
-              ? "text-gray-500"
+              ? "text-gray-600"
               : "text-white hover:bg-gray-700"
           }`}
         >
@@ -280,10 +279,13 @@ function UpdateSlide({
   openImageModal,
   openTextModal,
 }: UpdateSlideProps) {
-  // Keen-Slider direkt mit slideChanged-Callback
+  // State für aktuellen Bild-Index
+  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+
+  // Keen-Slider initialisieren mit loop: true
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>({
     slides: { perView: 1, spacing: 0 },
-    loop: false,
+    loop: true,
     mode: "snap",
     slideChanged(s) {
       setCurrentImageIdx(s.track.details.rel);
@@ -291,8 +293,7 @@ function UpdateSlide({
   });
 
   const images = update.images ?? [];
-  const multiple = images.length > 1;
-  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const multiple = images.length > 1; // Arrows nur anzeigen, wenn ≥2 Bilder
 
   // Drag-Splitter für vertikale Aufteilung
   const [topPct, setTopPct] = useState(60);
@@ -325,13 +326,14 @@ function UpdateSlide({
 
   return (
     <motion.div
-      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl shadow-2xl w-full h-full overflow-hidden flex transform hover:scale-[1.015] transition-transform duration-300"
+      className="rounded-2xl shadow-2xl w-full h-full overflow-hidden flex transform hover:scale-[1.015] transition-transform duration-300"
+      style={{ backgroundColor: "#0a0a0a" }}
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.5 }}
       transition={{ duration: 0.6 }}
     >
-      {/* ─── Linke Hälfte: Bild-Slider (2/3 Breite) ─────────────────────── */}
+      {/* Linke Hälfte: Bild-Container (w-2/3) */}
       <motion.div
         className="w-2/3 relative h-full overflow-hidden group"
         initial={{ x: -100, opacity: 0 }}
@@ -344,35 +346,40 @@ function UpdateSlide({
           damping: 30,
         }}
       >
-        <div ref={sliderRef} className="keen-slider w-full h-full relative">
+        <div
+          ref={sliderRef}
+          className="keen-slider w-full h-full relative overflow-hidden"
+        >
           {images.length > 0 ? (
             images.map((img, i) => (
               <div
                 key={i}
-                className="keen-slider__slide relative w-full h-full group"
+                className="keen-slider__slide relative w-full h-full group overflow-hidden"
               >
                 <Image
                   src={img.url}
                   alt={`Update-Bild ${i + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-cover rounded-2xl"
                 />
                 {/* Fullscreen-Button pro Slide */}
-                <motion.button
-                  onClick={() => openImageModal(img.url)}
-                  className="
-                    absolute top-2 right-2 
-                    bg-gray-700 bg-opacity-70 
-                    hover:bg-gray-600 
-                    text-white 
-                    rounded-full p-1 shadow-lg 
-                    opacity-0 group-hover:opacity-100 
-                    transition-opacity duration-300 ease-in-out
-                    transition-transform transform hover:scale-110
-                  "
-                >
-                  <Maximize2 size={18} />
-                </motion.button>
+                {multiple && (
+                  <motion.button
+                    onClick={() => openImageModal(img.url)}
+                    className="
+                      absolute top-2 right-2 
+                      bg-gray-700 bg-opacity-70 
+                      hover:bg-gray-600 
+                      text-white 
+                      rounded-full p-1 shadow-lg 
+                      opacity-0 group-hover:opacity-100 
+                      transition-opacity duration-300 ease-in-out
+                      transition-transform transform hover:scale-110
+                    "
+                  >
+                    <Maximize2 size={18} />
+                  </motion.button>
+                )}
               </div>
             ))
           ) : (
@@ -381,7 +388,7 @@ function UpdateSlide({
             </div>
           )}
 
-          {/* Große Pfeile nur bei Hover */}
+          {/* Große Pfeile nur bei ≥ 2 Bildern */}
           {multiple && (
             <>
               <button
@@ -413,18 +420,20 @@ function UpdateSlide({
         </div>
       </motion.div>
 
-      {/* ─── Mittellinie zwischen Bild & Text ───────────────────────────── */}
-      <div className="w-px bg-gray-600 opacity-50" />
+      {/* Gap + vertikale Linie */}
+      <div className="w-6 flex justify-center bg-black">
+        <div className="h-full w-px bg-gray-700 opacity-50" />
+      </div>
 
-      {/* ─── Rechte Hälfte: Textbereich mit draggable Splitter (1/3 Breite) ── */}
+      {/* Rechte Hälfte: Textbereich (w-1/3) */}
       <motion.div
         ref={containerRef}
-        className="w-1/3 flex flex-col h-full select-none relative"
+        className="w-1/3 flex flex-col h-full select-none bg-black"
       >
-        {/* ─── Header: Update-Nummer + Datum + Fullscreen ───────────────── */}
+        {/* Header: Update-Nummer + Datum + Fullscreen */}
         <div className="group px-6 pt-6 flex items-baseline justify-between">
           <div>
-            <h2 className="text-2xl font-extrabold text-orange-500 drop-shadow-lg">
+            <h2 className="text-2xl font-extrabold text-white drop-shadow-lg">
               Update #{index + 1}
             </h2>
             <p className="mt-1 text-sm text-gray-400">
@@ -449,7 +458,7 @@ function UpdateSlide({
 
         {/* Update-Text mit Buttons unten rechts */}
         <motion.div
-          className="relative overflow-auto px-6 break-words bg-gray-800/50 backdrop-blur-sm rounded-b-lg"
+          className="relative overflow-auto px-6 break-words bg-black/90 backdrop-blur-sm"
           style={{ height: `${topPct}%` }}
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -461,30 +470,30 @@ function UpdateSlide({
             damping: 30,
           }}
         >
-          <p className="mt-3 whitespace-pre-wrap text-lg text-gray-200 leading-relaxed">
+          <p className="mt-3 whitespace-pre-wrap text-gray-200 leading-relaxed">
             {update.content ?? "Kein Text"}
           </p>
 
-          {/* → ICON-KONTURLINIEN = VORHERIGE ICONFARBE (ROSE) ← */}
+          {/* Like- & Comment-Buttons unten rechts */}
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <motion.button className="bg-rose-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+            <motion.button className="bg-rose-500 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
               <ThumbsUp
                 fill="none"
                 stroke="currentColor"
-                className="text-rose-300 opacity-50 w-6 h-6"
+                className="text-rose-500 opacity-75 w-6 h-6"
               />
             </motion.button>
-            <motion.button className="bg-sky-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+            <motion.button className="bg-sky-500 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
               <MessageCircle
                 fill="none"
                 stroke="currentColor"
-                className="text-sky-300 opacity-50 w-6 h-6"
+                className="text-sky-500 opacity-75 w-6 h-6"
               />
             </motion.button>
           </div>
         </motion.div>
 
-        {/* ─── Draggable Splitter ─────────────────────────────────────────── */}
+        {/* Draggable Splitter */}
         <div
           onMouseDown={() => {
             dragging.current = true;
@@ -492,9 +501,9 @@ function UpdateSlide({
           className="h-1 bg-gray-700 cursor-row-resize"
         />
 
-        {/* ─── Bildbeschreibung Header + Fullscreen ──────────────────────── */}
+        {/* Bildbeschreibung Header + Fullscreen */}
         <div className="group px-6 py-4 flex items-baseline justify-between">
-          <h3 className="text-2xl font-extrabold text-orange-500 drop-shadow-lg">
+          <h3 className="text-2xl font-extrabold text-white drop-shadow-lg">
             Bildbeschreibung:
           </h3>
           <motion.button
@@ -519,7 +528,7 @@ function UpdateSlide({
 
         {/* Bildbeschreibung-Text mit Buttons unten rechts */}
         <motion.div
-          className="relative overflow-auto px-6 break-words bg-gray-800/50 backdrop-blur-sm rounded-b-lg"
+          className="relative overflow-auto px-6 break-words bg-black/90 backdrop-blur-sm"
           style={{ height: `${100 - topPct}%` }}
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -531,24 +540,24 @@ function UpdateSlide({
             damping: 30,
           }}
         >
-          <p className="mt-3 whitespace-pre-wrap text-lg text-gray-200 leading-relaxed">
+          <p className="mt-3 whitespace-pre-wrap text-gray-200 leading-relaxed">
             {images[currentImageIdx]?.imageText ?? "Keine Bildbeschreibung"}
           </p>
 
-          {/* → ICON-KONTURLINIEN = VORHERIGE ICONFARBE (ROSE bzw. SKY) ← */}
+          {/* Like- & Comment-Buttons unten rechts */}
           <div className="absolute bottom-2 right-2 flex space-x-2">
-            <motion.button className="bg-rose-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+            <motion.button className="bg-rose-500 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
               <ThumbsUp
                 fill="none"
                 stroke="currentColor"
-                className="text-rose-300 opacity-50 w-6 h-6"
+                className="text-rose-500 opacity-75 w-6 h-6"
               />
             </motion.button>
-            <motion.button className="bg-sky-300 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
+            <motion.button className="bg-sky-500 bg-opacity-0 hover:bg-opacity-20 rounded-full p-2 shadow-lg transition-transform transform hover:scale-110">
               <MessageCircle
                 fill="none"
                 stroke="currentColor"
-                className="text-sky-300 opacity-50 w-6 h-6"
+                className="text-sky-500 opacity-75 w-6 h-6"
               />
             </motion.button>
           </div>
