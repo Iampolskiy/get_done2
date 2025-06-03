@@ -4,44 +4,123 @@
 import React, { useRef, useEffect, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
 import * as THREE from "three";
-import type { Feature, Geometry, GeoJsonProperties } from "geojson";
+import type { Feature, Geometry, GeoJsonProperties, Polygon } from "geojson";
 
-// (1) URL zur Länder-GeoJSON
+// URL zur Länder-GeoJSON
 const COUNTRIES_DATA_URL =
   "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson";
 
-// (2) Blue-Marble “Day”-Textur für die Erde
+// Blue-Marble Day-Textur
 const EARTH_DAY_TEXTURE_URL =
   "//unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
 
-export const GlobeWithSearch: React.FC = () => {
-  // ── Refs und States ───────────────────────────────────────────────────────
-  const globeEl = useRef<GlobeMethods>(); // Referenz auf das Globe-Objekt
+/**
+ * Berechnet aus einem GeoJSON-Feature (Polygon oder MultiPolygon) den ungefähren Mittelpunkt
+ * als Mittelwert von min/max Koordinaten. Nicht exakt „geodätisch“, aber für Zoomzwecke meistens ausreichend.
+ */
+function computeCentroid(feat: Feature<Geometry, GeoJsonProperties>): {
+  lat: number;
+  lng: number;
+} {
+  // Wir flachen alle Koordinatenpaare auf eine Ebene ab und bestimmen Min/Max von Längen- und Breitengraden
+  const coords: number[] = [];
 
+  function collectCoords(geometry: Geometry) {
+    if (geometry.type === "Polygon") {
+      // Polygon: geometry.coordinates = Array< Array<[lng, lat]> >
+      (geometry.coordinates as number[][][]).forEach((ring) => {
+        ring.forEach(([lng, lat]) => {
+          coords.push(lng, lat);
+        });
+      });
+    } else if (geometry.type === "MultiPolygon") {
+      // MultiPolygon: Array< Array< Array<[lng, lat]> > >
+      (geometry.coordinates as number[][][][]).forEach((poly) => {
+        poly.forEach((ring) => {
+          ring.forEach(([lng, lat]) => {
+            coords.push(lng, lat);
+          });
+        });
+      });
+    } else if (geometry.type === "Point") {
+      const [lng, lat] = geometry.coordinates as number[];
+      coords.push(lng, lat);
+    } else if (geometry.type === "MultiPoint") {
+      (geometry.coordinates as number[][]).forEach(([lng, lat]) => {
+        coords.push(lng, lat);
+      });
+    } else if (geometry.type === "LineString") {
+      (geometry.coordinates as number[][]).forEach(([lng, lat]) => {
+        coords.push(lng, lat);
+      });
+    } else if (geometry.type === "MultiLineString") {
+      (geometry.coordinates as number[][][]).forEach((segment) => {
+        segment.forEach(([lng, lat]) => {
+          coords.push(lng, lat);
+        });
+      });
+    }
+    // Für andere Geometrie-Typen (GeometryCollection) müsste man entsprechend erweitern.
+  }
+
+  collectCoords(feat.geometry);
+
+  let minLng = Infinity,
+    maxLng = -Infinity,
+    minLat = Infinity,
+    maxLat = -Infinity;
+  for (let i = 0; i < coords.length; i += 2) {
+    const lng = coords[i];
+    const lat = coords[i + 1];
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  // Falls keine Koordinaten gesammelt wurden, gib 0/0 zurück
+  if (
+    minLng === Infinity ||
+    maxLng === -Infinity ||
+    minLat === Infinity ||
+    maxLat === -Infinity
+  ) {
+    return { lat: 0, lng: 0 };
+  }
+  return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 };
+}
+
+export const GlobeWithSearch: React.FC = () => {
+  const globeEl = useRef<GlobeMethods>();
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [countries, setCountries] = useState<
     Feature<Geometry, GeoJsonProperties>[] | null
   >(null);
 
-  // Für die Suchfunktion (Input + Marker-Position)
+  // Such-Input + Marker
   const [cityInput, setCityInput] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(
     null
   );
 
-  // Für das Hover-Highlight
+  // Hover-Highlight
   const [hoveredFeature, setHoveredFeature] = useState<Feature<
     Geometry,
     GeoJsonProperties
   > | null>(null);
   const [hoveredCountryName, setHoveredCountryName] = useState<string>("");
 
-  // Globe-Material (Day-Textur)
+  // Selektiertes Land + Challenge-Count
+  const [selectedFeature, setSelectedFeature] = useState<Feature<
+    Geometry,
+    GeoJsonProperties
+  > | null>(null);
+  const [challengeCount, setChallengeCount] = useState<number | null>(null);
+
+  // Globe-Material mit Day-Textur
   const [globeMaterial, setGlobeMaterial] = useState<THREE.MeshPhongMaterial>();
 
-  // --------------------------------------------------------------------------
-  // (A) Fenstergröße tracken → Globe soll sich automatisch an Viewport anpassen
+  // ── (A) Fenstergröße tracken → Globe an Viewport anpassen
   useEffect(() => {
     const updateSize = (): void => {
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -51,16 +130,14 @@ export const GlobeWithSearch: React.FC = () => {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // --------------------------------------------------------------------------
-  // (B) Kamera-Initialposition (z. B. Weltansicht)
+  // ── (B) Kamera-Startposition (Weltansicht)
   useEffect(() => {
     if (globeEl.current) {
       globeEl.current.pointOfView({ lat: 20, lng: 0, altitude: 2 }, 0);
     }
   }, []);
 
-  // --------------------------------------------------------------------------
-  // (C) Länder-GeoJSON asynchron laden
+  // ── (C) Länder-GeoJSON laden
   useEffect(() => {
     (async () => {
       try {
@@ -73,8 +150,7 @@ export const GlobeWithSearch: React.FC = () => {
     })();
   }, []);
 
-  // --------------------------------------------------------------------------
-  // (D) Globe-Material erstellen (Day-Textur, kein Displacement)
+  // ── (D) Globe-Material mit Day-Textur erzeugen
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     const mat = new THREE.MeshPhongMaterial({
@@ -85,8 +161,7 @@ export const GlobeWithSearch: React.FC = () => {
     setGlobeMaterial(mat);
   }, []);
 
-  // --------------------------------------------------------------------------
-  // (E) Geocoding: Stadt → {lat, lng} via Nominatim
+  // ── (E) Geocoding: Stadt → { lat, lng } via Nominatim
   const geocodeCity = async (
     city: string
   ): Promise<{ lat: number; lng: number } | null> => {
@@ -98,10 +173,7 @@ export const GlobeWithSearch: React.FC = () => {
       );
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-        };
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
       }
     } catch (err) {
       console.error("Geocoding-Fehler:", err);
@@ -109,8 +181,7 @@ export const GlobeWithSearch: React.FC = () => {
     return null;
   };
 
-  // --------------------------------------------------------------------------
-  // (F) Such-Button: Zoom auf Stadt
+  // ── (F) Such-Button: Zoom auf Stadt
   const handleSearch = async (): Promise<void> => {
     if (!cityInput.trim()) return;
     setIsSearching(true);
@@ -129,9 +200,7 @@ export const GlobeWithSearch: React.FC = () => {
     }
   };
 
-  // --------------------------------------------------------------------------
-  // (G) Hover-Handler für Länder-Polygone
-  //     speichert das aktuell gehighlightete GeoJSON-Feature
+  // ── (G) Hover-Handler für Länder-Polygone
   const handlePolygonHover = (
     featureObject: object | null,
     _prev: object | null
@@ -146,23 +215,55 @@ export const GlobeWithSearch: React.FC = () => {
     }
   };
 
-  // --------------------------------------------------------------------------
-  // (H) Klick-Handler für Länder-Polygone (nur ein Alert mit Ländernamen)
-  const handlePolygonClick = (
+  // ── (H) Klick-Handler für Länder-Polygone
+  const handlePolygonClick = async (
     featureObject: object,
     _event: MouseEvent,
     _coords: { lat: number; lng: number; altitude: number }
-  ): void => {
+  ): Promise<void> => {
     const feat = featureObject as Feature<Geometry, GeoJsonProperties>;
     const countryName = feat.properties?.name ?? "Unbekanntes Land";
-    alert(`Du hast geklickt auf: ${countryName}`);
+
+    // Deselektieren, wenn schon ausgewählt
+    if (selectedFeature === feat) {
+      setSelectedFeature(null);
+      setChallengeCount(null);
+      return;
+    }
+
+    // Neues Land auswählen
+    setSelectedFeature(feat);
+    setChallengeCount(null);
+
+    // Globus zentrieren: berechne Mittelpunkt selbst
+    const centerCoords = computeCentroid(feat);
+    if (globeEl.current) {
+      globeEl.current.pointOfView(
+        { lat: centerCoords.lat, lng: centerCoords.lng, altitude: 0.5 },
+        700
+      );
+    }
+
+    // Anzahl der Challenges per API holen
+    try {
+      const res = await fetch(
+        `/api/challenges/countByCountry?country=${encodeURIComponent(
+          countryName
+        )}`
+      );
+      if (!res.ok) throw new Error("Fehler beim Laden der Challenge-Anzahl");
+      const json = await res.json();
+      setChallengeCount(json.count as number);
+    } catch (err) {
+      console.error(err);
+      setChallengeCount(0);
+    }
   };
 
-  // --------------------------------------------------------------------------
-  // (I) JSX-Rückgabe: Suchfeld, Tooltip, Globe
+  // ── (I) JSX-Rückgabe
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      {/* ─── (I.1) Such-Input über dem Globe ─────────────────────────────────── */}
+      {/* (I.1) Such-Input über dem Globe */}
       <div
         style={{
           position: "absolute",
@@ -211,7 +312,7 @@ export const GlobeWithSearch: React.FC = () => {
         </button>
       </div>
 
-      {/* ─── (I.2) Tooltip für den Ländernamen (Fade-In/Out) ───────────────────── */}
+      {/* (I.2) Tooltip für den Ländernamen */}
       <div
         style={{
           position: "absolute",
@@ -232,7 +333,27 @@ export const GlobeWithSearch: React.FC = () => {
         {hoveredCountryName}
       </div>
 
-      {/* ─── (I.3) Globe selbst ─────────────────────────────────────────────────── */}
+      {/* (I.3) Anzeige der Challenge-Anzahl, wenn ein Land ausgewählt ist */}
+      {selectedFeature && challengeCount !== null && (
+        <div
+          style={{
+            position: "absolute",
+            top: "90px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 2,
+            background: "rgba(0,0,0,0.7)",
+            color: "white",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            fontSize: "14px",
+          }}
+        >
+          {`Challenges in ${selectedFeature.properties?.name}: ${challengeCount}`}
+        </div>
+      )}
+
+      {/* (I.4) Globe selbst */}
       <div style={{ width: "100%", height: "100%" }}>
         {globeMaterial && (
           <Globe
@@ -240,38 +361,40 @@ export const GlobeWithSearch: React.FC = () => {
             width={dimensions.width}
             height={dimensions.height}
             globeMaterial={globeMaterial}
-            backgroundColor="#000000" // schwarzer Hintergrund
-            // ── Punkte (Marker) für die Suche ────────────────────────
+            backgroundColor="#000000"
+            // Marker (falls Stadt-Koordinaten gesetzt)
             pointsData={marker ? [marker] : []}
             pointColor={() => "red"}
             pointAltitude={() => 0.02}
             pointRadius={() => 0.5}
-            // ── Länder-Polygone ───────────────────────────────────────
+            // Länder-Polygone
             polygonsData={countries || []}
-            // Minimal über der Oberfläche anheben, um Flackern zu vermeiden
-            polygonAltitude={() => 0.005}
-            // Fläche: transparent (kein Hover) bzw. halbtransparent (Hover)
+            polygonAltitude={() => 0.005} // knapp über Oberfläche, um Flackern zu verringern
             polygonCapColor={(feat: object) => {
               const f = feat as Feature<Geometry, GeoJsonProperties>;
+              if (selectedFeature === f) {
+                // Ausgewähltes Land: gelb halbtransparent
+                return "rgba(255,200,0,0.6)";
+              }
+              // Hover-Effekt: leicht grauer Overlay
               return hoveredFeature === f
-                ? "rgba(200,200,200,0.4)" // halbtransparente Füllung beim Hover
-                : "rgba(0,0,0,0)"; // unsichtbar, wenn kein Hover
+                ? "rgba(200,200,200,0.4)"
+                : "rgba(0,0,0,0)";
             }}
-            polygonSideColor={() => "rgba(0,0,0,0)"} // Seiten komplett transparent
-            // Konturlinie: immer VIOLETT
-            polygonStrokeColor={() => "black"}
-            // Konturstärke: dünn normal, dicker beim Hover
+            polygonSideColor={() => "rgba(0,0,0,0)"} // Seiten unsichtbar
+            polygonStrokeColor={() => "black"} // stets schwarze Linien
             polygonStrokeWidth={(feat: object) => {
               const f = feat as Feature<Geometry, GeoJsonProperties>;
+              if (selectedFeature === f) {
+                return 1.5; // dicke Linie bei Auswahl
+              }
               return hoveredFeature === f ? 1.2 : 0.4;
             }}
-            // Kein Fade-In/Out, damit kein Flackern
-            polygonsTransitionDuration={0}
+            polygonsTransitionDuration={0} // kein Fade, um Flackern zu vermeiden
             onPolygonHover={handlePolygonHover}
             onPolygonClick={handlePolygonClick}
             onGlobeReady={() => {
               if (globeEl.current) {
-                // Zoom & Pan erlauben, aber keine Auto-Rotation
                 globeEl.current.controls().enableZoom = true;
                 globeEl.current.controls().autoRotate = false;
               }

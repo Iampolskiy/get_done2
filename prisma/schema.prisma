@@ -40,6 +40,7 @@ model Challenge {
   updated_at   DateTime? @updatedAt
   edited_at    DateTime? // 👈 explizit manuell setzen bei manuellen Edits
   city_address String?
+  country      String? // ← NEU: soll später das Land enthalten
   goal         String?
   images       Image[] // Relation zu Images
   updates      Update[] // <-- NEU: Gegenstück der Relation
