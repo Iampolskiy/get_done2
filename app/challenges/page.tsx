@@ -42,7 +42,7 @@ export default async function ChallengesPage() {
   return (
     <>
       <ChallengesClient challenges={challenges} />
-      <div style={{ width: "100vw", height: "100vh", marginTop: "2rem" }}>
+      <div style={{ width: "100vw", height: "90vh", marginTop: "2rem" }}>
         <GlobeLoader />
       </div>
     </>
