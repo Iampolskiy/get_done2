@@ -16,7 +16,9 @@ export default function Header() {
 
   // Nur auf diesen Routen die Filter-Leiste einblenden:
   const showToolbar =
-    pathname === "/challenges" || pathname === "/allmychallenges";
+    pathname === "/challenges" ||
+    pathname === "/allmychallenges" ||
+    pathname.startsWith("/challenges-by-country");
 
   // Flag, um Client-seitiges Einblenden der Hover-Zone zu verhindern
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function Header() {
             <NavLink href="/create">Create</NavLink>
             <NavLink href="/allmychallenges">My Challenges</NavLink>
             <NavLink href="/challenges">Challenges</NavLink>
+            <NavLink href="/globus">Globus</NavLink>
 
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
@@ -87,6 +90,7 @@ export default function Header() {
             <MobileLink href="/create">Create</MobileLink>
             <MobileLink href="/allmychallenges">My Challenges</MobileLink>
             <MobileLink href="/challenges">Challenges</MobileLink>
+            <MobileLink href="/globus">Globus</MobileLink>
             <div className="pt-2">
               <SignedIn>
                 <UserButton afterSignOutUrl="/" />

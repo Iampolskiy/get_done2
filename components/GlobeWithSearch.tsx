@@ -1,7 +1,7 @@
 // components/GlobeWithSearch.tsx
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useMemo } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
 import * as THREE from "three";
 import type {
@@ -10,22 +10,27 @@ import type {
   MultiPolygon,
   GeoJsonProperties,
 } from "geojson";
+import type { Challenge } from "@/types/types";
+import ChallengesClient from "@/app/challenges/ChallengesClient";
 
-// (1) URL zur Länder‐GeoJSON
+// URL zur Länder‐GeoJSON (Polygon/MultiPolygon)
 const COUNTRIES_DATA_URL =
   "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson";
-// (2) Blue‐Marble “Day”‐Textur für die Erde
+// URL zur „Day“-Textur (blauer Planet)
 const EARTH_DAY_TEXTURE_URL =
   "//unpkg.com/three-globe/example/img/earth-blue-marble.jpg";
 
-// Hilfsfunktion: Centroid aus Ring‐Koordinaten berechnen
+/**
+ * Hilfsfunktion:
+ * Berechnet einen groben Zentroid aus dem ersten LinearRing eines Polygons.
+ */
 function computeCentroidFromCoordinates(ring: number[][]): {
   lat: number;
   lng: number;
 } {
-  let sumX = 0;
-  let sumY = 0;
-  let count = 0;
+  let sumX = 0,
+    sumY = 0,
+    count = 0;
   for (const [lng, lat] of ring) {
     sumX += lng;
     sumY += lat;
@@ -34,7 +39,10 @@ function computeCentroidFromCoordinates(ring: number[][]): {
   return { lat: sumY / count, lng: sumX / count };
 }
 
-// Gibt Centroid zurück, wenn Polygon oder MultiPolygon, sonst null
+/**
+ * Gibt für ein Polygon oder MultiPolygon einen Lat/Lng‐Zentroid zurück.
+ * (Wir nehmen einfach das erste LinearRing‐Array.)
+ */
 function getCentroid(
   geom: Polygon | MultiPolygon
 ): { lat: number; lng: number } | null {
@@ -47,76 +55,93 @@ function getCentroid(
   return null;
 }
 
-export const GlobeWithSearch: React.FC = () => {
-  // ───> useRef ohne initialen null‐Wert, damit globeEl.current: GlobeMethods | undefined
-  const globeEl = useRef<GlobeMethods | null>(null);
+interface GlobeWithSearchProps {
+  challenges: Challenge[];
+}
 
-  // Fenster‐Dimensionen
+export const GlobeWithSearch: React.FC<GlobeWithSearchProps> = ({
+  challenges,
+}) => {
+  // ──────────────────────────────────────────────────────────────────────────
+  // Refs und States
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // Ref auf das Globe-Objekt (für pointOfView, controls etc.)
+  const globeEl = useRef<GlobeMethods | undefined>(undefined);
+
+  // 1) Dimensions: Breite/Höhe des Viewports
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-  // Länder‐GeoJSON‐Daten (Polygon oder MultiPolygon)
+  // 2) GeoJSON‐Daten: Array von Ländern (Polygon | MultiPolygon)
   const [countries, setCountries] = useState<
     Feature<Polygon | MultiPolygon, GeoJsonProperties>[] | null
   >(null);
 
-  // Such‐Input + Marker‐Koordinaten (falls Stadt gesucht)
-  const [cityInput, setCityInput] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
-  const [marker, setMarker] = useState<{ lat: number; lng: number } | null>(
-    null
-  );
-
-  // Hover‐State: aktuell gehighlightetes Feature & dessen Name
+  // 3) Hover‐State: aktuell gehighlightetes Feature & dessen Name
   const [hoveredFeature, setHoveredFeature] = useState<Feature<
     Polygon | MultiPolygon,
     GeoJsonProperties
   > | null>(null);
   const [hoveredCountryName, setHoveredCountryName] = useState<string>("");
 
-  // Ausgewähltes Land + Challenge‐Count
+  // 4) Selection‐State: aktuell ausgewähltes Feature (Land)
+  //    und dazugehörige Challenge‐Anzahl
   const [selectedFeature, setSelectedFeature] = useState<Feature<
     Polygon | MultiPolygon,
     GeoJsonProperties
   > | null>(null);
   const [challengeCount, setChallengeCount] = useState<number | null>(null);
 
-  // Three.js‐Material für den Globus (Day‐Textur)
+  // 5) Tun den eigentlichen „View Challenges“-Modus an:
+  //    Sobald man auf „Ansehen“ klickt, verschwindet der Globe
+  const [viewChallenges, setViewChallenges] = useState(false);
+
+  // 6) Three.js‐Material für den Globe (Earth‐Day‐Textur)
   const [globeMaterial, setGlobeMaterial] = useState<THREE.MeshPhongMaterial>();
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // A) Fenstergröße tracken → Globus nutzt initial das gesamte Viewport
+  // ──────────────────────────────────────────────────────────────────────────
+  // A) Fenstergröße tracken → Globe immer an Viewport anpassen
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const updateSize = (): void => {
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
     };
     updateSize();
     window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    return () => {
+      window.removeEventListener("resize", updateSize);
+    };
   }, []);
 
-  // B) Kamera‐Startposition (grob Welt‐Übersicht)
+  // ──────────────────────────────────────────────────────────────────────────
+  // B) Kamera beim ersten Render positionieren (grob Welt‐Ansicht)
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (globeEl.current) {
       globeEl.current.pointOfView({ lat: 20, lng: 0, altitude: 2 }, 0);
     }
   }, []);
 
-  // C) Länder‐GeoJSON‐Daten asynchron laden
+  // ──────────────────────────────────────────────────────────────────────────
+  // C) Länder‐GeoJSON asynchron laden
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch(COUNTRIES_DATA_URL);
-        const data = (await res.json()) as {
+        const json = (await res.json()) as {
           features: Feature<Polygon | MultiPolygon, GeoJsonProperties>[];
         };
-        setCountries(data.features);
+        setCountries(json.features);
       } catch (err) {
         console.error("Fehler beim Laden der Länder‐GeoJSON:", err);
       }
     })();
   }, []);
 
-  // D) Globe‐Material mit Day‐Textur erzeugen
+  // ──────────────────────────────────────────────────────────────────────────
+  // D) Three.js‐Material erzeugen (Earth‐Day‐Textur)
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     const mat = new THREE.MeshPhongMaterial({
@@ -127,49 +152,13 @@ export const GlobeWithSearch: React.FC = () => {
     setGlobeMaterial(mat);
   }, []);
 
-  // E) Geocoding‐Funktion (Stadt → Koordinaten via Nominatim)
-  const geocodeCity = async (
-    city: string
-  ): Promise<{ lat: number; lng: number } | null> => {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          city
-        )}&limit=1`
-      );
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      }
-    } catch (err) {
-      console.error("Geocoding‐Fehler:", err);
-    }
-    return null;
-  };
-
-  // F) Such‐Button‐Handler: Zoom auf die eingegebene Stadt
-  const handleSearch = async (): Promise<void> => {
-    if (!cityInput.trim()) return;
-    setIsSearching(true);
-    const coords = await geocodeCity(cityInput);
-    setIsSearching(false);
-
-    if (coords && globeEl.current) {
-      setMarker({ lat: coords.lat, lng: coords.lng });
-      globeEl.current.pointOfView(
-        { lat: coords.lat, lng: coords.lng, altitude: 0.4 },
-        700
-      );
-      globeEl.current.controls().autoRotate = false;
-    } else {
-      alert("Stadt nicht gefunden. Bitte Schreibweise prüfen.");
-    }
-  };
-
-  // G) Hover‐Handler für Länder‐Polygone
+  // ──────────────────────────────────────────────────────────────────────────
+  // E) Hover‐Handler für Länder‐Polygone:
+  //    speichert das Feature in hoveredFeature und setzt den Ländernamen
+  // ──────────────────────────────────────────────────────────────────────────
   const handlePolygonHover = (
-    featureObject: object | null
-    /* _prev: object | null */
+    featureObject: object | null,
+    _prev: object | null
   ): void => {
     if (featureObject) {
       const feat = featureObject as Feature<
@@ -184,11 +173,16 @@ export const GlobeWithSearch: React.FC = () => {
     }
   };
 
-  // H) Klick‐Handler für Länder‐Polygone
+  // ──────────────────────────────────────────────────────────────────────────
+  // F) Klick‐Handler für Länder‐Polygone:
+  //    – Wenn dasselbe Land erneut anklicken → Deselect
+  //    – Sonst: ausgewähltes Land setzen, Globe auf Centroid schwenken,
+  //      Challenge‐Count vom Server holen
+  // ──────────────────────────────────────────────────────────────────────────
   const handlePolygonClick = async (
-    featureObject: object
-    /*  _event: MouseEvent,
-    _coords: { lat: number; lng: number; altitude: number } */
+    featureObject: object,
+    _event: MouseEvent,
+    _coords: { lat: number; lng: number; altitude: number }
   ): Promise<void> => {
     const feat = featureObject as Feature<
       Polygon | MultiPolygon,
@@ -196,7 +190,7 @@ export const GlobeWithSearch: React.FC = () => {
     >;
     const countryName = feat.properties?.name ?? "Unbekanntes Land";
 
-    // Deselektieren, falls dasselbe Land erneut angeklickt wird
+    // Deselektieren, falls schon ausgewählt
     if (selectedFeature === feat) {
       setSelectedFeature(null);
       setChallengeCount(null);
@@ -207,7 +201,7 @@ export const GlobeWithSearch: React.FC = () => {
     setSelectedFeature(feat);
     setChallengeCount(null);
 
-    // 1) Centroid berechnen und Globus dorthin „schwenken“
+    // 1) Centroid berechnen und Globe dorthin schwenken
     const center = getCentroid(feat.geometry);
     if (globeEl.current && center) {
       globeEl.current.pointOfView(
@@ -216,7 +210,7 @@ export const GlobeWithSearch: React.FC = () => {
       );
     }
 
-    // 2) Challenge‐Count vom Server abfragen
+    // 2) Anzahl der Challenges vom Server holen
     try {
       const res = await fetch(
         `/api/challenges/countByCountry?country=${encodeURIComponent(
@@ -232,101 +226,146 @@ export const GlobeWithSearch: React.FC = () => {
     }
   };
 
-  // I) JSX‐Rückgabe: Suchfeld, Tooltip, Challenge‐Count & Globe
+  // ──────────────────────────────────────────────────────────────────────────
+  // G) Klick auf den kleinen Globe-Button (oben links), um zu Reset zurückzukehren:
+  //    – viewChallenges zurück auf false
+  //    – selectedFeature & challengeCount zurücksetzen
+  // ──────────────────────────────────────────────────────────────────────────
+  const handleReset = (): void => {
+    setViewChallenges(false);
+    setSelectedFeature(null);
+    setChallengeCount(null);
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // H) Challenges nur für das ausgewählte Land filtern:
+  //    – Wird benutzt, wenn später „Ansehen“ geklickt wurde
+  // ──────────────────────────────────────────────────────────────────────────
+  const challengesByCountry = useMemo(() => {
+    if (!selectedFeature) return [];
+    const countryName = selectedFeature.properties?.name ?? "";
+    return challenges.filter((ch) => ch.country === countryName);
+  }, [selectedFeature, challenges]);
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // I) Styles für Layout & Animation
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // 1) Grund‐Container: dunkler Hintergrund
+  const containerStyle: React.CSSProperties = {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#111",
+    overflow: "hidden",
+  };
+
+  // 2) Overlay‐Box oben in der Mitte (nach Klick auf Land), mit „Ansehen“-Button
+  const overlayBoxStyle: React.CSSProperties = {
+    position: "absolute",
+    top: "16px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 5,
+    background: "rgba(0,0,0,0.7)",
+    color: "white",
+    padding: "8px 12px",
+    borderRadius: "4px",
+    display:
+      selectedFeature && challengeCount !== null && !viewChallenges
+        ? "flex"
+        : "none",
+    alignItems: "center",
+    gap: "12px",
+  };
+
+  // 3) Kleiner Globe‐Reset‐Button oben links (erscheint nur, wenn viewChallenges = true)
+  const resetButtonStyle: React.CSSProperties = {
+    position: "absolute",
+    top: "16px",
+    left: "16px",
+    zIndex: 5,
+    width: "32px",
+    height: "32px",
+    borderRadius: "50%",
+    background: "#222",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+    display: viewChallenges ? "flex" : "none",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  // 4) Globe‐Container: wenn viewChallenges=false → Vollbild, sonst → ausgeblendet
+  const globeWrapperStyle: React.CSSProperties = viewChallenges
+    ? {
+        width: 0,
+        height: 0,
+        opacity: 0,
+        transition: "all 0.7s ease",
+      }
+    : {
+        width: "100%",
+        height: "100%",
+        transition: "all 0.7s ease",
+      };
+
+  // 5) Tooltip (Landname beim Hover)
+  const tooltipStyle: React.CSSProperties = {
+    position: "absolute",
+    top: "60px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    pointerEvents: "none",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    color: "white",
+    padding: "4px 8px",
+    borderRadius: "4px",
+    fontSize: "13px",
+    opacity: hoveredCountryName ? 1 : 0,
+    transition: "opacity 0.2s ease",
+    zIndex: 4,
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      {/* ─── (I.1) Such‐Input über dem Globe ─────────────────────────────────── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "16px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          zIndex: 2,
-          display: "flex",
-          background: "rgba(255,255,255,0.95)",
-          borderRadius: "4px",
-          padding: "6px 10px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-        }}
+    <div style={containerStyle}>
+      {/* ─── Reset‐Button (Globe‐Icon) oben links ────────────────────────────── */}
+      <button
+        style={resetButtonStyle}
+        onClick={handleReset}
+        title="Zur Länderansicht zurück"
       >
-        <input
-          type="text"
-          value={cityInput}
-          onChange={(e) => setCityInput(e.target.value)}
-          placeholder="Stadt eingeben…"
-          style={{
-            border: "none",
-            outline: "none",
-            fontSize: "14px",
-            width: "200px",
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSearch();
-          }}
-          disabled={isSearching}
-        />
+        🌐
+      </button>
+
+      {/* ─── Overlay‐Box oben in der Mitte: „Challenges in X: Y [Ansehen]“ ────── */}
+      <div style={overlayBoxStyle}>
+        <span style={{ fontSize: "14px" }}>
+          {`Challenges in ${selectedFeature?.properties.name}: ${challengeCount}`}
+        </span>
         <button
-          onClick={handleSearch}
-          disabled={isSearching}
+          onClick={() => setViewChallenges(true)}
           style={{
-            marginLeft: "8px",
-            padding: "5px 12px",
-            fontSize: "14px",
-            cursor: isSearching ? "not-allowed" : "pointer",
-            border: "none",
             backgroundColor: "#007bff",
-            color: "white",
-            borderRadius: "3px",
+            color: "#fff",
+            border: "none",
+            padding: "6px 10px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "14px",
           }}
         >
-          {isSearching ? "Suche…" : "Los"}
+          Ansehen
         </button>
       </div>
 
-      {/* ─── (I.2) Tooltip für den Ländernamen (Fade‐In/Out) ───────────────────── */}
-      <div
-        style={{
-          position: "absolute",
-          top: "60px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          pointerEvents: "none",
-          backgroundColor: "rgba(0, 0, 0, 0.7)",
-          color: "white",
-          padding: "4px 8px",
-          borderRadius: "4px",
-          fontSize: "13px",
-          opacity: hoveredCountryName ? 1 : 0,
-          transition: "opacity 0.3s ease",
-          zIndex: 2,
-        }}
-      >
-        {hoveredCountryName}
-      </div>
+      {/* ─── Tooltip (Landname beim Hover) ──────────────────────────────────── */}
+      <div style={tooltipStyle}>{hoveredCountryName}</div>
 
-      {/* ─── (I.3) Challenge‐Count‐Anzeige, wenn ein Land ausgewählt ist ───────── */}
-      {selectedFeature && challengeCount !== null && (
-        <div
-          style={{
-            position: "absolute",
-            top: "90px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 2,
-            background: "rgba(0,0,0,0.7)",
-            color: "white",
-            padding: "6px 12px",
-            borderRadius: "4px",
-            fontSize: "14px",
-          }}
-        >
-          {`Challenges in ${selectedFeature.properties?.name}: ${challengeCount}`}
-        </div>
-      )}
-
-      {/* ─── (I.4) Globe‐Komponente selbst ───────────────────────────────────── */}
-      <div style={{ width: "100%", height: "100%" }}>
+      {/* ─── Globe selbst ──────────────────────────────────────────────────── */}
+      <div style={globeWrapperStyle}>
         {globeMaterial && (
           <Globe
             ref={globeEl}
@@ -334,12 +373,8 @@ export const GlobeWithSearch: React.FC = () => {
             height={dimensions.height}
             globeMaterial={globeMaterial}
             backgroundColor="#000000"
-            // Marker (roter Punkt), falls Such‐Koordinaten gesetzt
-            pointsData={marker ? [marker] : []}
-            pointColor={() => "red"}
-            pointAltitude={() => 0.02}
-            pointRadius={() => 0.5}
-            // Länder‐Polygone
+            pointsData={[]} // keine Marker hier
+            // ─── Länder‐Polygone ────────────────────────────────────────
             polygonsData={countries || []}
             polygonAltitude={() => 0.005}
             polygonCapColor={(featObj: object) => {
@@ -347,12 +382,15 @@ export const GlobeWithSearch: React.FC = () => {
                 Polygon | MultiPolygon,
                 GeoJsonProperties
               >;
+              // ausgewähltes Land: halbtransparentes Gelb
               if (selectedFeature === f) {
-                return "rgba(255,200,0,0.6)"; // halbtransparentes Gelb bei Auswahl
+                return "rgba(255,200,0,0.6)";
               }
-              return hoveredFeature === f
-                ? "rgba(200,200,200,0.4)" // halbtransparentes Grau beim Hover
-                : "rgba(0,0,0,0)"; // ansonsten komplett transparent
+              // Hover: leicht grauer Overlay
+              if (hoveredFeature === f) {
+                return "rgba(200,200,200,0.4)";
+              }
+              return "rgba(0,0,0,0)";
             }}
             polygonSideColor={() => "rgba(0,0,0,0)"}
             polygonStrokeColor={(featObj: object) => {
@@ -360,10 +398,11 @@ export const GlobeWithSearch: React.FC = () => {
                 Polygon | MultiPolygon,
                 GeoJsonProperties
               >;
-              if (selectedFeature === f) return "#FFD700"; // Gold‐Linie, wenn selektiert
-              return hoveredFeature === f ? "#00FF00" : "#444444"; // Grün beim Hover, sonst dunkelgrau
+              if (selectedFeature === f) return "#FFD700"; // goldene Kontur, wenn selektiert
+              if (hoveredFeature === f) return "#00FF00"; // grüne Kontur beim Hover
+              return "#444444"; // sonst dunkelgrau
             }}
-            polygonsTransitionDuration={0} // kein Fade, um Flackern zu vermeiden
+            polygonsTransitionDuration={0} // kein Fade-In, damit kein Flackern
             onPolygonHover={handlePolygonHover}
             onPolygonClick={handlePolygonClick}
             onGlobeReady={() => {
@@ -375,6 +414,24 @@ export const GlobeWithSearch: React.FC = () => {
           />
         )}
       </div>
+
+      {/* ─── Rechtes Panel: Challenges nach Land ────────────────────────────── */}
+      {viewChallenges && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "32px", // 32px Abstand, da der Reset‐Button oben links sitzt
+            right: 0,
+            bottom: 0,
+            overflowY: "auto",
+            padding: "16px",
+            backgroundColor: "#111",
+          }}
+        >
+          <ChallengesClient challenges={challengesByCountry} showCity={true} />
+        </div>
+      )}
     </div>
   );
 };

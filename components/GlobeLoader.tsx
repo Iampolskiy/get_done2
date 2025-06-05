@@ -2,15 +2,19 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { Challenge as ChallengeType } from "@/types/types";
 
-// Dynamischer Import in einer echten Client Component mit ssr: false
+// Dynamischer Import, damit „react-globe.gl“ nur clientseitig gerendert wird:
 const GlobeWithSearch = dynamic(
   () =>
     import("@/components/GlobeWithSearch").then((mod) => mod.GlobeWithSearch),
   { ssr: false }
 );
 
-export default function GlobeLoader() {
-  // Einfach die dynamisch geladene Komponente rendern
-  return <GlobeWithSearch />;
+interface GlobeLoaderProps {
+  challenges: ChallengeType[];
+}
+
+export default function GlobeLoader({ challenges }: GlobeLoaderProps) {
+  return <GlobeWithSearch challenges={challenges} />;
 }
