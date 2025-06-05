@@ -4,7 +4,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import * as THREE from "three";
-import { useRouter } from "next/navigation";
 import type {
   Feature,
   Polygon,
@@ -13,12 +12,8 @@ import type {
 } from "geojson";
 import type { GlobeMethods } from "react-globe.gl";
 import type { Challenge } from "@/types/types";
+import { useRouter } from "next/navigation";
 
-// Wir importieren die große `ChallengesClient`-Komponente,
-// brauchen sie hier aber nicht mehr, weil wir zur separaten Seite navigieren.
-// import ChallengesClient from "@/app/challenges/ChallengesClient";
-
-// Dynamisches Laden von react-globe.gl (nur im Browser, nicht SSR)
 const Globe = dynamic(() => import("react-globe.gl"), { ssr: false });
 
 const COUNTRIES_DATA_URL =
@@ -61,7 +56,7 @@ export default function GlobusChallengesClient({
   challenges,
 }: GlobusChallengesClientProps) {
   const router = useRouter();
-  const globeEl = useRef<GlobeMethods | null>(null);
+  const globeEl = useRef<GlobeMethods>();
 
   // 1) Fenstergröße tracken
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -99,7 +94,7 @@ export default function GlobusChallengesClient({
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // B) Kamera-Startposition
+  // B) Kamera-Startposition (grobe Welt-Ansicht)
   useEffect(() => {
     if (globeEl.current) {
       globeEl.current.pointOfView({ lat: 20, lng: 0, altitude: 2 }, 0);
@@ -163,27 +158,38 @@ export default function GlobusChallengesClient({
     >;
     const countryName = f.properties?.name ?? "Unbekanntes Land";
 
-    // Deselektieren, falls dasselbe Land nochmal angeklickt wird
+    // Centroid berechnen (bereits für Zoom-In genutzt)
+    const center = getCentroid(f.geometry);
+
+    // Deselektiert, falls dasselbe Land nochmal angeklickt wird
     if (selectedFeature === f) {
       setSelectedFeature(null);
       setChallengeCount(null);
+
+      // Wenn wir schon auf dem Land zentriert sind, dann zoomen wir nur die Altitude hoch.
+      // Wir behalten dieselben lat/lng bei, setzen Altitude = 2 (Welt-Ansicht), und drehen nicht herum.
+      if (globeEl.current && center) {
+        globeEl.current.pointOfView(
+          { lat: center.lat, lng: center.lng, altitude: 2 },
+          700
+        );
+      }
       return;
     }
 
-    // Neues Land auswählen
+    // Neuer Länder-Selektionsfall:
     setSelectedFeature(f);
     setChallengeCount(null);
 
-    // Zentroid berechnen und hingehen
-    const center = getCentroid(f.geometry);
+    // 1) Zentroid berechnen und hingehen
     if (globeEl.current && center) {
       globeEl.current.pointOfView(
-        { lat: center.lat, lng: center.lng, altitude: 0.5 },
+        { lat: center.lat, lng: center.lng, altitude: 1 },
         700
       );
     }
 
-    // Challenge-Count für dieses Land vom API-Endpoint holen
+    // 2) Challenge-Count für dieses Land vom API-Endpoint holen
     try {
       const res = await fetch(
         `/api/challenges/countByCountry?country=${encodeURIComponent(
@@ -245,7 +251,7 @@ export default function GlobusChallengesClient({
     zIndex: 4,
   };
 
-  // 4) Globe-Wrapper: Vollbild (immer sichtbar, wir navigieren später weg)
+  // 4) Globe-Wrapper: Vollbild
   const globeWrapperStyle: React.CSSProperties = {
     width: "100%",
     height: "100%",
@@ -264,7 +270,6 @@ export default function GlobusChallengesClient({
           onClick={() => {
             if (!selectedFeature) return;
             const countryName = selectedFeature.properties?.name ?? "";
-            //  => Navigation zur neuen Seite `/challenges-by-country/[countryName]`
             router.push(
               `/challenges-by-country/${encodeURIComponent(countryName)}`
             );
