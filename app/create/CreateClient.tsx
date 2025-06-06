@@ -1,3 +1,4 @@
+// app/create/CreateClient.tsx
 "use client";
 
 import { createChallenge } from "@/actions/challengeActions/createChallenge";
@@ -5,12 +6,19 @@ import Image from "next/image";
 import React, { useState, useRef } from "react";
 import { Info, File } from "lucide-react";
 
-export default function CreateClient() {
+interface CreateClientProps {
+  countryList: string[];
+}
+
+export default function CreateClient({ countryList }: CreateClientProps) {
   const [images, setImages] = useState<{ url: string; isMain: boolean }[]>([]);
   const [isUploading, setUploading] = useState(false);
   const [isSubmitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const durationRef = useRef<HTMLInputElement>(null);
+
+  // Ausgewähltes Land (Dropdown-Select)
+  const [country, setCountry] = useState("");
 
   // Modal-Flags
   const [showNameInfo, setShowNameInfo] = useState(false);
@@ -65,26 +73,36 @@ export default function CreateClient() {
     }
     setImages((prev) => [...prev, ...uploaded]);
     setUploading(false);
-    fileInputRef.current!.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isUploading || isSubmitting) return;
-    setSubmitting(true);
+
+    // Validierung: Land ausgewählt?
+    if (!country) {
+      alert("Bitte wähle ein Land aus der Dropdown-Liste.");
+      return;
+    }
+
     const form = e.currentTarget as HTMLFormElement;
+    // Dauer-Fallback
     if (!durationEnabled) {
       form.querySelector<HTMLInputElement>("#duration")!.value = "0";
     }
+    // Eigene Kategorie deaktivieren
     if (customCategory) {
       form.querySelector<HTMLSelectElement>("#category")!.value = "";
     }
+
+    setSubmitting(true);
     const fd = new FormData(form);
+    fd.set("country", country);
     await createChallenge(images, fd);
     setSubmitting(false);
   }
 
-  // Schaltet Dauer um und leert bei Abschalten
   function toggleDuration() {
     const next = !durationEnabled;
     setDurationEnabled(next);
@@ -322,6 +340,36 @@ export default function CreateClient() {
             />
           </div>
 
+          {/* Land (Dropdown-Select) */}
+          <div className="space-y-1">
+            <div className="flex items-center">
+              <label htmlFor="country" className="text-white mr-2 font-medium">
+                Land
+              </label>
+              <Info
+                size={16}
+                className="cursor-pointer text-white hover:text-teal-300"
+                onClick={() => alert("Bitte wähle ein Land aus der Liste.")}
+              />
+            </div>
+            <select
+              id="country"
+              name="country"
+              value={country}
+              onChange={(e) => setCountry(e.target.value)}
+              required
+              disabled={isUploading || isSubmitting}
+              className="w-full h-12 p-3 bg-white/5 border border-white/20 rounded-lg focus:outline-none disabled:opacity-50"
+            >
+              <option value="">Bitte Land auswählen…</option>
+              {countryList.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Dauer */}
           <div className="space-y-1">
             <div className="flex justify-between items-center">
@@ -382,7 +430,7 @@ export default function CreateClient() {
         </button>
       </form>
 
-      {/* GLAS-MODALS */}
+      {/* Gläserne Modals */}
       {showNameInfo && (
         <Modal title="Titel" onClose={() => setShowNameInfo(false)}>
           Gib deinem Ziel einen prägnanten Titel – kurz und aussagekräftig.
@@ -402,7 +450,7 @@ export default function CreateClient() {
       )}
       {showCategoryInfo && (
         <Modal title="Kategorie" onClose={() => setShowCategoryInfo(false)}>
-          Wähle aus den Vorschlägen oder aktiviere «Eigene», um frei zu
+          Wähle aus den Vorschlägen oder aktiviere „Eigene“, um frei zu
           definieren.
         </Modal>
       )}
@@ -411,9 +459,7 @@ export default function CreateClient() {
           title="Schwierigkeitsgrad"
           onClose={() => setShowDifficultyInfo(false)}
         >
-          1 = sehr leicht bis 5 = extrem.
-          <br />
-          Wähle nach deinem Empfinden – alles ist okay!
+          1 = sehr leicht bis 5 = extrem. Wähle nach deinem Empfinden.
         </Modal>
       )}
       {showCityInfo && (
@@ -423,7 +469,7 @@ export default function CreateClient() {
       )}
       {showDurationInfo && (
         <Modal title="Dauer" onClose={() => setShowDurationInfo(false)}>
-          Standardmäßig unbegrenzt. Aktiviere «Eigene», um eine Tagesanzahl zu
+          Standardmäßig unbegrenzt. Aktiviere „Eigene“, um eine Tagesanzahl zu
           setzen.
         </Modal>
       )}
@@ -431,7 +477,6 @@ export default function CreateClient() {
   );
 }
 
-// Wiederverwendbare Glas-Modal-Komponente
 function Modal({
   title,
   onClose,

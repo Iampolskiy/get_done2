@@ -3,10 +3,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Menu, X } from "lucide-react";
-import { UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import SearchSortFilterSplitBar from "@/components/SearchSortFilterSplitBar";
 import { usePathname } from "next/navigation";
+
+// UserButton dynamisch ohne SSR importieren, um Hydration-Mismatch mit Clerk zu verhindern
+const UserButton = dynamic(
+  () =>
+    import("@clerk/nextjs").then((mod) => {
+      return mod.UserButton;
+    }),
+  { ssr: false }
+);
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,20 +24,21 @@ export default function Header() {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
-  // Nur auf diesen Routen die Filter-Leiste einblenden:
-  const showToolbar =
-    pathname === "/challenges" ||
-    pathname === "/allmychallenges" ||
-    pathname.startsWith("/challenges-by-country");
-
-  // Flag, um Client-seitiges Einblenden der Hover-Zone zu verhindern
+  // Nach dem Client-Mount ist markup stabil
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Filter-Leiste erst client-seitig anzeigen
+  const showToolbar =
+    mounted &&
+    (pathname === "/challenges" ||
+      pathname === "/allmychallenges" ||
+      pathname === "/challengesbycountry");
+
   return (
     <>
-      {/* ─── UNSICHTBARE ZONE oben: Maus-Hover zeigt Header ────────────── */}
+      {/* Unsichtbare Hover-Zone oben */}
       {mounted && (
         <div
           className="fixed top-0 left-0 right-0 h-2 z-50"
@@ -35,10 +46,10 @@ export default function Header() {
         />
       )}
 
-      {/* ─── HEADER: erscheint/verschwindet per Slide-Effekt ───────────── */}
+      {/* Header mit Slide-Effekt */}
       <header
         className={`
-          fixed inset-x-0 top-0 z-50 
+          fixed inset-x-0 top-0 z-50
           bg-transparent backdrop-blur-md
           transform transition-transform duration-300 ease-out
           ${showHeader ? "translate-y-0" : "-translate-y-full"}
@@ -50,6 +61,7 @@ export default function Header() {
             Get Done
           </Link>
 
+          {/* Such-/Filterleiste nur nach Mount und auf bestimmten Seiten */}
           {showToolbar && <SearchSortFilterSplitBar />}
 
           <button
@@ -72,14 +84,17 @@ export default function Header() {
             <NavLink href="/globus">Globus</NavLink>
 
             <SignedIn>
-              <UserButton afterSignOutUrl="/" />
+              {/* UserButton erst nach Mount */}
+              {mounted && <UserButton afterSignOutUrl="/" />}
             </SignedIn>
             <SignedOut>
-              <SignInButton mode="modal">
-                <button className="text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
-                  Anmelden
-                </button>
-              </SignInButton>
+              {mounted && (
+                <SignInButton mode="modal">
+                  <button className="text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
+                    Anmelden
+                  </button>
+                </SignInButton>
+              )}
             </SignedOut>
           </nav>
         </div>
@@ -93,14 +108,16 @@ export default function Header() {
             <MobileLink href="/globus">Globus</MobileLink>
             <div className="pt-2">
               <SignedIn>
-                <UserButton afterSignOutUrl="/" />
+                {mounted && <UserButton afterSignOutUrl="/" />}
               </SignedIn>
               <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="w-full text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
-                    Anmelden
-                  </button>
-                </SignInButton>
+                {mounted && (
+                  <SignInButton mode="modal">
+                    <button className="w-full text-white bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition">
+                      Anmelden
+                    </button>
+                  </SignInButton>
+                )}
               </SignedOut>
             </div>
           </div>
