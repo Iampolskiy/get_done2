@@ -34,7 +34,9 @@ export default function Header() {
     mounted &&
     (pathname === "/challenges" ||
       pathname === "/allmychallenges" ||
-      pathname === "/challengesbycountry");
+      /* pathname === "/challengesbycountry" || */
+      pathname.startsWith("/challenges-by-country/") ||
+      pathname === "/challenges-by-country");
 
   return (
     <>

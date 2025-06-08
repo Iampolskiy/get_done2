@@ -1,4 +1,6 @@
 // app/deleteUpdate/[id]/page.tsx
+export const dynamic = "force-dynamic";
+
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import DeleteUpdateClient from "./DeleteUpdateClient";

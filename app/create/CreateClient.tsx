@@ -1,21 +1,28 @@
 // app/create/CreateClient.tsx
 "use client";
 
-import { createChallenge } from "@/actions/challengeActions/createChallenge";
-import Image from "next/image";
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { Info, File } from "lucide-react";
+import { createChallenge } from "@/actions/challengeActions/createChallenge";
+import { useRouter } from "next/navigation";
+
+interface ImageUpload {
+  url: string;
+  isMain: boolean;
+}
 
 interface CreateClientProps {
   countryList: string[];
 }
 
 export default function CreateClient({ countryList }: CreateClientProps) {
-  const [images, setImages] = useState<{ url: string; isMain: boolean }[]>([]);
+  const [images, setImages] = useState<ImageUpload[]>([]);
   const [isUploading, setUploading] = useState(false);
   const [isSubmitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const durationRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // Ausgewähltes Land (Dropdown-Select)
   const [country, setCountry] = useState("");
@@ -47,8 +54,9 @@ export default function CreateClient({ countryList }: CreateClientProps) {
   ];
   const slotsLeft = 1 - images.length;
 
-  const removeImage = (idx: number) =>
+  function removeImage(idx: number) {
     setImages((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   async function handleUpload(files: FileList | null) {
     if (!files || isUploading) return;
@@ -57,12 +65,15 @@ export default function CreateClient({ countryList }: CreateClientProps) {
       return;
     }
     setUploading(true);
-    const uploaded: { url: string; isMain: boolean }[] = [];
+    const uploaded: ImageUpload[] = [];
     for (const file of Array.from(files).slice(0, slotsLeft)) {
       const data = new FormData();
       data.set("file", file);
       try {
-        const res = await fetch("/api/upload", { method: "POST", body: data });
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: data,
+        });
         if (!res.ok) throw new Error(res.statusText);
         const json = await res.json();
         const url = json.url ?? json.secure_url;
@@ -97,10 +108,20 @@ export default function CreateClient({ countryList }: CreateClientProps) {
     }
 
     setSubmitting(true);
+
+    // Server‐Action createChallenge(images, formData) aufrufen
     const fd = new FormData(form);
     fd.set("country", country);
-    await createChallenge(images, fd);
-    setSubmitting(false);
+    try {
+      await createChallenge(images, fd);
+      // Nach erfolgreichem Anlegen weiterleiten
+      router.push("/challenges");
+    } catch (err) {
+      console.error("Fehler beim Erstellen der Challenge:", err);
+      alert("Beim Erstellen der Challenge ist ein Fehler aufgetreten.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function toggleDuration() {

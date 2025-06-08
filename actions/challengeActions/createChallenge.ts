@@ -8,7 +8,7 @@ import prisma from "@/lib/prisma";
 /** Datentyp eines hochgeladenen Bildes */
 export type UploadedImage = {
   url: string;
-  /** true → Titelbild  */
+  /** true → Titelbild  */
   isMain?: boolean;
 };
 
@@ -16,14 +16,14 @@ export async function createChallenge(
   images: UploadedImage[],
   formData: FormData
 ): Promise<void> {
-  console.log("DEBUG ‑ images im Server Action:", images);
+  console.log("DEBUG - images im Server Action:", images);
 
-  /* ---------- 1) Auth‑Check + User anlegen falls nötig ------- */
+  /* ---------- 1) Auth-Check + User anlegen falls nötig ------- */
   const me = await currentUser();
   if (!me) throw new Error("Benutzer ist nicht authentifiziert");
 
   const email = me.emailAddresses?.[0]?.emailAddress;
-  if (!email) throw new Error("Keine E‑Mail‑Adresse gefunden");
+  if (!email) throw new Error("Keine E-Mail-Adresse gefunden");
 
   // ✅ Benutzer suchen oder anlegen
   let user = await prisma.user.findUnique({ where: { email } });
@@ -38,9 +38,9 @@ export async function createChallenge(
     });
   }
 
-  /* ---------- 2) Form‑Daten ---------------------------------- */
+  /* ---------- 2) Form-Daten ---------------------------------- */
   const data = {
-    title: formData.get("title") as string,
+    title: (formData.get("title") as string).trim(),
     category: (formData.get("category") as string) || undefined,
     difficulty: (formData.get("difficulty") as string) || undefined,
     description: (formData.get("description") as string) || undefined,
@@ -50,6 +50,8 @@ export async function createChallenge(
     gender: (formData.get("gender") as string) || undefined,
     city_address: (formData.get("city_address") as string) || undefined,
     goal: (formData.get("goal") as string) || undefined,
+    // Neu: Land aus dem Formular
+    country: ((formData.get("country") as string) || "").trim() || undefined,
   };
 
   /* ---------- 3) Transaktion --------------------------------- */

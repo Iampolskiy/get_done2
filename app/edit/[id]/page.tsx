@@ -1,5 +1,7 @@
 // app/edit/[id]/page.tsx
-"use server";
+/* eslint-disable @typescript-eslint/no-unused-expressions */
+export const dynamic = "force-dynamic";
+("use server");
 
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
