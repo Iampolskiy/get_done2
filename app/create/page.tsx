@@ -6,7 +6,6 @@ import CreateClient from "./CreateClient";
 import countryList from "@/lib/data/countries.json";
 
 export default function CreatePage() {
-  // Diese Seite rendert nur die Client‐Komponente. Die Authentifizierung
-  // (via Clerk) findet direkt in der Server‐Action createChallenge() statt.
+  // Diese Seite rendert nur die Client-Komponente.
   return <CreateClient countryList={countryList as string[]} />;
 }

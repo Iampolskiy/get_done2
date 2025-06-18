@@ -1,7 +1,7 @@
-/* actions/challengeActions/createChallenge.ts */
+// actions/challengeActions/createChallenge.ts
 "use server";
 
-import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
@@ -12,22 +12,23 @@ export type UploadedImage = {
   isMain?: boolean;
 };
 
+/**
+ * Server Action zum Erstellen einer neuen Challenge.
+ * Läuft ausschließlich serverseitig und kann direkt im <form action> genutzt werden.
+ */
 export async function createChallenge(
   images: UploadedImage[],
   formData: FormData
 ): Promise<void> {
-  console.log("DEBUG - images im Server Action:", images);
-
-  /* ---------- 1) Auth-Check + User anlegen falls nötig ------- */
+  // 1) Auth-Check
   const me = await currentUser();
   if (!me) throw new Error("Benutzer ist nicht authentifiziert");
 
   const email = me.emailAddresses?.[0]?.emailAddress;
   if (!email) throw new Error("Keine E-Mail-Adresse gefunden");
 
-  // ✅ Benutzer suchen oder anlegen
+  // 2) User suchen oder anlegen
   let user = await prisma.user.findUnique({ where: { email } });
-
   if (!user) {
     user = await prisma.user.create({
       data: {
@@ -38,7 +39,7 @@ export async function createChallenge(
     });
   }
 
-  /* ---------- 2) Form-Daten ---------------------------------- */
+  // 3) Form-Daten auslesen
   const data = {
     title: (formData.get("title") as string).trim(),
     category: (formData.get("category") as string) || undefined,
@@ -50,21 +51,19 @@ export async function createChallenge(
     gender: (formData.get("gender") as string) || undefined,
     city_address: (formData.get("city_address") as string) || undefined,
     goal: (formData.get("goal") as string) || undefined,
-    // Neu: Land aus dem Formular
     country: ((formData.get("country") as string) || "").trim() || undefined,
   };
 
-  /* ---------- 3) Transaktion --------------------------------- */
+  // 4) Prisma-Transaction
   await prisma.$transaction(async (tx) => {
     const newChallenge = await tx.challenge.create({
       data: {
         ...data,
-        author: { connect: { id: user.id } },
+        author: { connect: { id: user!.id } },
       },
     });
 
     const coverImages = images.slice(0, 10);
-
     if (coverImages.length) {
       await tx.image.createMany({
         data: coverImages.map(({ url, isMain }) => ({
@@ -72,12 +71,12 @@ export async function createChallenge(
           isMain: isMain ?? true,
           duration: 0,
           challengeId: newChallenge.id,
-          userId: user.id,
+          userId: user!.id,
         })),
       });
     }
   });
 
-  /* ---------- 4) Redirect ------------------------------------ */
-  redirect("/allmychallenges?success=true");
+  // 5) Cache-Invalidierung (damit /challenges neu gerendert wird)
+  revalidatePath("/challenges");
 }

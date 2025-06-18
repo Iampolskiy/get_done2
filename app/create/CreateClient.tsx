@@ -4,20 +4,18 @@
 import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { Info, File } from "lucide-react";
-import { createChallenge } from "@/actions/challengeActions/createChallenge";
 import { useRouter } from "next/navigation";
-
-interface ImageUpload {
-  url: string;
-  isMain: boolean;
-}
+import {
+  createChallenge,
+  UploadedImage,
+} from "@/actions/challengeActions/createChallenge";
 
 interface CreateClientProps {
   countryList: string[];
 }
 
 export default function CreateClient({ countryList }: CreateClientProps) {
-  const [images, setImages] = useState<ImageUpload[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>([]);
   const [isUploading, setUploading] = useState(false);
   const [isSubmitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +63,7 @@ export default function CreateClient({ countryList }: CreateClientProps) {
       return;
     }
     setUploading(true);
-    const uploaded: ImageUpload[] = [];
+    const uploaded: UploadedImage[] = [];
     for (const file of Array.from(files).slice(0, slotsLeft)) {
       const data = new FormData();
       data.set("file", file);
@@ -109,13 +107,12 @@ export default function CreateClient({ countryList }: CreateClientProps) {
 
     setSubmitting(true);
 
-    // Server‐Action createChallenge(images, formData) aufrufen
+    // Server-Action aufrufen und danach clientseitig navigieren
     const fd = new FormData(form);
     fd.set("country", country);
     try {
       await createChallenge(images, fd);
-      // Nach erfolgreichem Anlegen weiterleiten
-      router.push("/challenges");
+      router.push("/allmychallenges?success=true");
     } catch (err) {
       console.error("Fehler beim Erstellen der Challenge:", err);
       alert("Beim Erstellen der Challenge ist ein Fehler aufgetreten.");
@@ -361,7 +358,7 @@ export default function CreateClient({ countryList }: CreateClientProps) {
             />
           </div>
 
-          {/* Land (Dropdown-Select) */}
+          {/* Land */}
           <div className="space-y-1">
             <div className="flex items-center">
               <label htmlFor="country" className="text-white mr-2 font-medium">
