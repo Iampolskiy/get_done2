@@ -157,8 +157,8 @@ export const GlobeWithSearch: React.FC<GlobeWithSearchProps> = ({
   //    speichert das Feature in hoveredFeature und setzt den Ländernamen
   // ──────────────────────────────────────────────────────────────────────────
   const handlePolygonHover = (
-    featureObject: object | null,
-    _prev: object | null
+    featureObject: object | null
+    /*  _prev: object | null */
   ): void => {
     if (featureObject) {
       const feat = featureObject as Feature<
@@ -180,9 +180,9 @@ export const GlobeWithSearch: React.FC<GlobeWithSearchProps> = ({
   //      Challenge‐Count vom Server holen
   // ──────────────────────────────────────────────────────────────────────────
   const handlePolygonClick = async (
-    featureObject: object,
-    _event: MouseEvent,
-    _coords: { lat: number; lng: number; altitude: number }
+    featureObject: object
+    /* _event: MouseEvent,
+    _coords: { lat: number; lng: number; altitude: number } */
   ): Promise<void> => {
     const feat = featureObject as Feature<
       Polygon | MultiPolygon,
@@ -343,7 +343,7 @@ export const GlobeWithSearch: React.FC<GlobeWithSearchProps> = ({
       {/* ─── Overlay‐Box oben in der Mitte: „Challenges in X: Y [Ansehen]“ ────── */}
       <div style={overlayBoxStyle}>
         <span style={{ fontSize: "14px" }}>
-          {`Challenges in ${selectedFeature?.properties.name}: ${challengeCount}`}
+          {`Challenges in ${selectedFeature?.properties?.name}: ${challengeCount}`}
         </span>
         <button
           onClick={() => setViewChallenges(true)}
@@ -429,7 +429,9 @@ export const GlobeWithSearch: React.FC<GlobeWithSearchProps> = ({
             backgroundColor: "#111",
           }}
         >
-          <ChallengesClient challenges={challengesByCountry} showCity={true} />
+          <ChallengesClient
+            challenges={challengesByCountry} /* showCity={true} */
+          />
         </div>
       )}
     </div>

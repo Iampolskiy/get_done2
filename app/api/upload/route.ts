@@ -8,12 +8,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
-const me = await currentUser();
-if (!me) throw new Error("Benutzer ist nicht authentifiziert");
-const email = me?.emailAddresses?.[0]?.emailAddress;
-console.log(email);
-
 export async function POST(request: Request) {
+  const me = await currentUser();
+  if (!me) throw new Error("Benutzer ist nicht authentifiziert");
+  const email = me?.emailAddresses?.[0]?.emailAddress;
+  console.log(email);
   const formData = await request.formData();
   const file = formData.get("file") as File;
 

@@ -40,7 +40,7 @@ const ChallengesByCountryClient: React.FC<Props> = ({
       */}
       <ChallengesClient
         challenges={challenges} // <–– das ist niemals undefined
-        showCity={true} // falls du dieses Prop brauchst
+        /* showCity={true} */ // falls du dieses Prop brauchst
       />
     </div>
   );

@@ -1,4 +1,3 @@
-// app/globus/GlobusChallengesClient.tsx
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
@@ -52,39 +51,26 @@ interface GlobusChallengesClientProps {
   challenges: Challenge[];
 }
 
-export default function GlobusChallengesClient({
-  challenges,
-}: GlobusChallengesClientProps) {
+export default function GlobusChallengesClient({}: /* challenges, */
+GlobusChallengesClientProps) {
   const router = useRouter();
-  const globeEl = useRef<GlobeMethods>();
-
-  // 1) Fenstergröße tracken
+  const globeEl = useRef<GlobeMethods>(undefined);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
-  // 2) GeoJSON-Daten aller Länder
   const [countries, setCountries] = useState<
     Feature<Polygon | MultiPolygon, GeoJsonProperties>[] | null
   >(null);
-
-  // 3) Hover-State: welche Feature gerade gehighlightet ist
   const [hoveredFeature, setHoveredFeature] = useState<Feature<
     Polygon | MultiPolygon,
     GeoJsonProperties
   > | null>(null);
   const [hoveredCountryName, setHoveredCountryName] = useState<string>("");
-
-  // 4) Ausgewähltes Land + Challenge-Count
   const [selectedFeature, setSelectedFeature] = useState<Feature<
     Polygon | MultiPolygon,
     GeoJsonProperties
   > | null>(null);
   const [challengeCount, setChallengeCount] = useState<number | null>(null);
-
-  // 5) Drei.js-Material (Textur) für den Globus
   const [globeMaterial, setGlobeMaterial] = useState<THREE.MeshPhongMaterial>();
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // A) Fenstergröße tracken
   useEffect(() => {
     function updateSize() {
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -94,14 +80,12 @@ export default function GlobusChallengesClient({
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  // B) Kamera-Startposition (grobe Welt-Ansicht)
   useEffect(() => {
     if (globeEl.current) {
       globeEl.current.pointOfView({ lat: 20, lng: 0, altitude: 2 }, 0);
     }
   }, []);
 
-  // C) Länder-GeoJSON asynchron laden
   useEffect(() => {
     (async () => {
       try {
@@ -116,7 +100,6 @@ export default function GlobusChallengesClient({
     })();
   }, []);
 
-  // D) Three.js-Material erzeugen (Earth Day Texture)
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     const mat = new THREE.MeshPhongMaterial({
@@ -127,11 +110,9 @@ export default function GlobusChallengesClient({
     setGlobeMaterial(mat);
   }, []);
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // E) Hover-Handler (Landname anzeigen)
   const handlePolygonHover = (
-    featureObject: object | null,
-    _prev: object | null
+    featureObject: object | null
+    /* _prev: object | null */
   ): void => {
     if (featureObject) {
       const f = featureObject as Feature<
@@ -146,70 +127,71 @@ export default function GlobusChallengesClient({
     }
   };
 
-  // F) Klick auf Land: Zoom + Challenge-Count abrufen
-  const handlePolygonClick = async (
-    featureObject: object
-    /*  _event: MouseEvent,
-    _coords: { lat: number; lng: number; altitude: number } */
-  ): Promise<void> => {
-    const f = featureObject as Feature<
-      Polygon | MultiPolygon,
-      GeoJsonProperties
-    >;
-    const countryName = f.properties?.name ?? "Unbekanntes Land";
+  let clickTimer: NodeJS.Timeout | null = null;
 
-    // Centroid berechnen (bereits für Zoom-In genutzt)
-    const center = getCentroid(f.geometry);
+  const handlePolygonClick = async (featureObject: object): Promise<void> => {
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
 
-    // Deselektiert, falls dasselbe Land nochmal angeklickt wird
-    if (selectedFeature === f) {
-      setSelectedFeature(null);
-      setChallengeCount(null);
-
-      // Wenn wir schon auf dem Land zentriert sind, dann zoomen wir nur die Altitude hoch.
-      // Wir behalten dieselben lat/lng bei, setzen Altitude = 2 (Welt-Ansicht), und drehen nicht herum.
-      if (globeEl.current && center) {
-        globeEl.current.pointOfView(
-          { lat: center.lat, lng: center.lng, altitude: 2 },
-          700
-        );
-      }
+      // Doppel-Klick erkannt → Weiterleitung
+      const f = featureObject as Feature<
+        Polygon | MultiPolygon,
+        GeoJsonProperties
+      >;
+      const countryName = f.properties?.name ?? "";
+      router.push(`/challenges-by-country/${encodeURIComponent(countryName)}`);
       return;
     }
 
-    // Neuer Länder-Selektionsfall:
-    setSelectedFeature(f);
-    setChallengeCount(null);
+    clickTimer = setTimeout(async () => {
+      clickTimer = null;
 
-    // 1) Zentroid berechnen und hingehen
-    if (globeEl.current && center) {
-      globeEl.current.pointOfView(
-        { lat: center.lat, lng: center.lng, altitude: 1 },
-        700
-      );
-    }
+      const f = featureObject as Feature<
+        Polygon | MultiPolygon,
+        GeoJsonProperties
+      >;
+      const countryName = f.properties?.name ?? "Unbekanntes Land";
+      const center = getCentroid(f.geometry);
 
-    // 2) Challenge-Count für dieses Land vom API-Endpoint holen
-    try {
-      const res = await fetch(
-        `/api/challenges/countByCountry?country=${encodeURIComponent(
-          countryName
-        )}`
-      );
-      if (!res.ok) throw new Error("API-Fehler beim Laden der Anzahl");
-      const json = await res.json();
-      setChallengeCount(json.count as number);
-    } catch (err) {
-      console.error(err);
-      setChallengeCount(0);
-    }
+      if (selectedFeature === f) {
+        setSelectedFeature(null);
+        setChallengeCount(null);
+        if (globeEl.current && center) {
+          globeEl.current.pointOfView(
+            { lat: center.lat, lng: center.lng, altitude: 2 },
+            700
+          );
+        }
+        return;
+      }
+
+      setSelectedFeature(f);
+      setChallengeCount(null);
+
+      if (globeEl.current && center) {
+        globeEl.current.pointOfView(
+          { lat: center.lat, lng: center.lng, altitude: 1 },
+          700
+        );
+      }
+
+      try {
+        const res = await fetch(
+          `/api/challenges/countByCountry?country=${encodeURIComponent(
+            countryName
+          )}`
+        );
+        if (!res.ok) throw new Error("API-Fehler beim Laden der Anzahl");
+        const json = await res.json();
+        setChallengeCount(json.count as number);
+      } catch (err) {
+        console.error(err);
+        setChallengeCount(0);
+      }
+    }, 280);
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // STYLES / LAYOUT
-  // ──────────────────────────────────────────────────────────────────────────
-
-  // 1) Hauptcontainer
   const containerStyle: React.CSSProperties = {
     position: "relative",
     width: "100%",
@@ -218,11 +200,10 @@ export default function GlobusChallengesClient({
     overflow: "hidden",
   };
 
-  // 2) Overlay oben Mitte: "Challenges in <Land>: <Anzahl> [Ansehen]"
   const overlayBoxStyle: React.CSSProperties = {
     position: "absolute",
-    top: "16px",
-    left: "50%",
+    top: "50px",
+    left: "75%",
     transform: "translateX(-50%)",
     zIndex: 5,
     background: "rgba(0, 0, 0, 0.7)",
@@ -234,7 +215,6 @@ export default function GlobusChallengesClient({
     gap: "12px",
   };
 
-  // 3) Tooltip (Landname beim Hover)
   const tooltipStyle: React.CSSProperties = {
     position: "absolute",
     top: "60px",
@@ -251,17 +231,14 @@ export default function GlobusChallengesClient({
     zIndex: 4,
   };
 
-  // 4) Globe-Wrapper: Vollbild
   const globeWrapperStyle: React.CSSProperties = {
     width: "100%",
     height: "100%",
     transition: "all 0.7s ease",
   };
 
-  // ──────────────────────────────────────────────────────────────────────────
   return (
     <div style={containerStyle}>
-      {/* Overlay oben Mitte: "Challenges in <Land>: <Anzahl> [Ansehen]" */}
       <div style={overlayBoxStyle}>
         <span style={{ fontSize: "14px" }}>
           {`Challenges in ${selectedFeature?.properties?.name}: ${challengeCount}`}
@@ -288,10 +265,8 @@ export default function GlobusChallengesClient({
         </button>
       </div>
 
-      {/* Tooltip für Landname beim Hover */}
       <div style={tooltipStyle}>{hoveredCountryName}</div>
 
-      {/* Globus selbst */}
       <div style={globeWrapperStyle}>
         {globeMaterial && (
           <Globe

@@ -32,6 +32,7 @@ export interface Challenge {
   edited_at?: string | Date | null;
   city_address?: string | null;
   goal?: string | null;
+  country?: string | null;
 
   // Relationen
   author: {

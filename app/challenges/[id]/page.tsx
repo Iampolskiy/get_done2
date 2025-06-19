@@ -11,7 +11,10 @@ type PageProps = {
 };
 
 export default async function ChallengePage({ params }: PageProps) {
-  const numericId = parseInt(params.id, 10);
+  const numericId = Number(params.id);
+  if (isNaN(numericId)) {
+    return <div className="p-4 text-center text-red-500">Ungültige ID</div>;
+  }
 
   const challenge = await prisma.challenge.findUnique({
     where: { id: numericId },
