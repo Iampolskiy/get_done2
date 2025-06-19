@@ -1,13 +1,10 @@
 /* app/allmychallenges/[id]/page.tsx */
 "use server";
 
-import {
-  PrismaClient,
-  Image as PrismaImage,
-  Update as PrismaUpdate,
-} from "@prisma/client";
+import { Image as PrismaImage, Update as PrismaUpdate } from "@prisma/client";
 import { currentUser } from "@clerk/nextjs/server";
 import MyChallengeClient from "./MyChallengeClient";
+import prisma from "@/lib/prisma";
 
 /* ---------- Frontend‑Typen ----------------------------------- */
 import {
@@ -17,7 +14,6 @@ import {
 } from "@/types/types";
 
 /* ---------- Prisma Client (Singleton wäre noch besser) ------- */
-const prisma = new PrismaClient();
 
 export default async function ChallengesPage({
   params,
