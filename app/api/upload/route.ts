@@ -10,7 +10,8 @@ cloudinary.config({
 
 export async function POST(request: Request) {
   const me = await currentUser();
-  if (!me) throw new Error("Benutzer ist nicht authentifiziert");
+  /* if (!me) throw new Error("Benutzer ist nicht authentifiziert"); */
+  if (!me) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const email = me?.emailAddresses?.[0]?.emailAddress;
   console.log(email);
   const formData = await request.formData();
