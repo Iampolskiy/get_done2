@@ -99,9 +99,7 @@ export default function ChallengesClient({
 
   // 6) Card-Basis-Stile
   const cardBaseClasses =
-    "bg-white/10 backdrop-blur-md border-transparent sm:border sm:border-white/20 " +
-    "rounded-2xl overflow-hidden shadow-sm hover:border-teal-300 " +
-    "hover:shadow-[0_0_20px_rgba(14,211,181,0.5)] transition";
+    "bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-teal-300 transition";
 
   return (
     <div className="w-full px-2 sm:px-4 pt-4 overflow-x-hidden">
@@ -125,7 +123,7 @@ export default function ChallengesClient({
               <Link key={c.id} href={`/challenges/${c.id}`} className="block">
                 <div className={`${cardSizeClass} ${cardBaseClasses}`}>
                   {/* Bild-Bereich */}
-                  <div className="h-[75%] relative bg-gray-700">
+                  <div className="h-[75%] relative bg-gray-200">
                     {imgUrl ? (
                       <Image
                         src={imgUrl}

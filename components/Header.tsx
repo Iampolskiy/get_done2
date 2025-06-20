@@ -59,7 +59,7 @@ export default function Header() {
         onMouseLeave={() => setShowHeader(false)}
       >
         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-white">
+          <Link href="/" className="text-2xl font-bold text-gray-900">
             Get Done
           </Link>
 
@@ -67,7 +67,7 @@ export default function Header() {
           {showToolbar && <SearchSortFilterSplitBar />}
 
           <button
-            className="md:hidden text-white"
+            className="md:hidden text-gray-900"
             onClick={() => setMobileMenuOpen((o) => !o)}
             aria-label="Menü öffnen"
           >
@@ -78,7 +78,7 @@ export default function Header() {
             )}
           </button>
 
-          <nav className="hidden md:flex items-center space-x-6 text-white">
+          <nav className="hidden md:flex items-center space-x-6 text-gray-900">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/create">Create</NavLink>
             <NavLink href="/allmychallenges">My Challenges</NavLink>
@@ -102,7 +102,7 @@ export default function Header() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden bg-black/50 backdrop-blur-md px-4 pb-4 space-y-2">
+          <div className="md:hidden bg-white/90 backdrop-blur-md px-4 pb-4 space-y-2">
             <MobileLink href="/">Home</MobileLink>
             <MobileLink href="/create">Create</MobileLink>
             <MobileLink href="/allmychallenges">My Challenges</MobileLink>
@@ -137,7 +137,7 @@ function NavLink({
   children: React.ReactNode;
 }) {
   return (
-    <Link href={href} className="text-white hover:text-blue-300 transition">
+    <Link href={href} className="text-gray-900 hover:text-blue-600 transition">
       {children}
     </Link>
   );
@@ -158,7 +158,7 @@ function MobileLink({
           ? "page"
           : undefined
       }
-      className="block px-4 py-2 rounded text-gray-100 hover:bg-gray-700"
+      className="block px-4 py-2 rounded text-gray-900 hover:bg-gray-200"
     >
       {children}
     </Link>

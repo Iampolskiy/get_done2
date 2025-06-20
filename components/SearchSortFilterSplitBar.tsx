@@ -80,8 +80,8 @@ export default function SearchSortFilterSplitBar() {
       {/* Such-Icon */}
       <button
         onClick={() => setShowSearch((v) => !v)}
-        className={`p-0 rounded-full hover:bg-white/10 transition ${
-          search ? "text-teal-300" : "text-white"
+        className={`p-0 rounded-full hover:bg-gray-200 transition ${
+          search ? "text-teal-500" : "text-gray-900"
         }`}
         title="Suche"
       >
@@ -105,7 +105,7 @@ export default function SearchSortFilterSplitBar() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Suche…"
               autoFocus
-              className="w-[80%] max-w-lg h-10 px-4 rounded-full border-2 border-teal-300 bg-black placeholder-teal-300 text-teal-300 focus:outline-none"
+              className="w-[80%] max-w-lg h-10 px-4 rounded-full border-2 border-teal-300 bg-white placeholder-teal-600 text-teal-900 focus:outline-none"
             />
           </motion.form>
         )}
@@ -115,7 +115,7 @@ export default function SearchSortFilterSplitBar() {
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((o) => !o)}
-          className="flex items-center p-2 rounded-full hover:bg-white/10 transition text-white"
+          className="flex items-center p-2 rounded-full hover:bg-gray-200 transition text-gray-900"
           title="Sortieren"
         >
           <Sliders size={20} />
@@ -132,7 +132,7 @@ export default function SearchSortFilterSplitBar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-full mt-2 w-44 bg-black/80 text-white rounded-md shadow-lg overflow-hidden z-30"
+              className="absolute top-full mt-2 w-44 bg-white text-gray-900 rounded-md shadow-lg overflow-hidden z-30"
             >
               {sortFields.map((field) => {
                 const active = currentSort === field.key;
@@ -140,8 +140,8 @@ export default function SearchSortFilterSplitBar() {
                   <button
                     key={field.key}
                     onClick={() => toggleSort(field.key)}
-                    className={`flex items-center w-full text-left px-4 py-2 hover:bg-white/10 transition ${
-                      active ? "bg-white/10 font-semibold" : ""
+                    className={`flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 transition ${
+                      active ? "bg-gray-100 font-semibold" : ""
                     }`}
                   >
                     <span>{field.label}</span>
@@ -164,8 +164,8 @@ export default function SearchSortFilterSplitBar() {
       {/* Nur mit Bildern */}
       <button
         onClick={() => setOnlyWithImages((v) => !v)}
-        className={`p-2 rounded-full hover:bg-white/10 transition ${
-          onlyWithImages ? "text-teal-300" : "text-white/40"
+        className={`p-2 rounded-full hover:bg-gray-200 transition ${
+          onlyWithImages ? "text-teal-500" : "text-gray-400"
         }`}
         title="Nur mit Bildern"
       >
@@ -175,14 +175,14 @@ export default function SearchSortFilterSplitBar() {
       {/* Ansicht (Lämpchen) */}
       <button
         onClick={() => setViewCols((v) => (v === 2 ? 1 : 2))}
-        className="flex items-center space-x-1 p-2 rounded-full hover:bg-white/10 transition"
+        className="flex items-center space-x-1 p-2 rounded-full hover:bg-gray-200 transition"
         title="Ansicht wechseln"
       >
         {[1, 2].map((i) => (
           <span
             key={i}
             className={`w-2 h-2 rounded-full transition-colors ${
-              i <= viewCols ? "bg-teal-300" : "bg-white/30"
+              i <= viewCols ? "bg-teal-500" : "bg-gray-300"
             }`}
           />
         ))}

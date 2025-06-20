@@ -29,7 +29,7 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="relative overflow-hidden bg-black text-white font-sans">
+    <div className="relative overflow-hidden bg-gray-50 text-gray-900 font-sans">
       <Header />
 
       {/* Hero Section */}
@@ -98,12 +98,12 @@ export default function HomePage() {
       </motion.section>
 
       {/* Feature Highlights with 3D tilt */}
-      <section className="py-24 bg-black">
+      <section className="py-24 bg-gray-100">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 px-6">
           {features.map((f, i) => (
             <motion.div
               key={i}
-              className="p-8 bg-black/70 border border-gray-700 rounded-3xl backdrop-blur-md text-center cursor-pointer"
+              className="p-8 bg-white border border-gray-200 rounded-3xl shadow-md text-center cursor-pointer"
               whileHover={{ rotateY: 10, scale: 1.05 }}
               transition={{ type: "spring", stiffness: 200 }}
             >
@@ -111,14 +111,14 @@ export default function HomePage() {
                 {f.icon}
               </div>
               <h3 className="text-2xl font-bold mb-2">{f.title}</h3>
-              <p className="text-gray-400">{f.desc}</p>
+              <p className="text-gray-600">{f.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* CTA Banner */}
-      <section className="relative py-32 overflow-hidden bg-gradient-to-r from-purple-900 to-indigo-900 text-white text-center">
+      <section className="relative py-32 overflow-hidden bg-gradient-to-r from-purple-500 to-indigo-700 text-white text-center">
         {/* Swirling Rings Background */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center"
