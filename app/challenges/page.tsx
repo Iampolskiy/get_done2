@@ -70,7 +70,7 @@ export default async function ChallengesPage() {
   return (
     <>
       {/* 1) Oben: Gesamtliste aller Challenges (ohne Globe) */}
-      <div style={{ padding: "16px", backgroundColor: "#111" }}>
+      <div style={{ padding: "16px", backgroundColor: "#f0f0f0" }}>
         <ChallengesClient challenges={challenges} showCity={false} />
       </div>
 
